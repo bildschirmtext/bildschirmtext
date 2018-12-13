@@ -9,7 +9,7 @@
 int
 main(int argc, char **argv)
 {
-	FILE *f = fopen("/Users/mist/Documents/btx/corpus/20095a", "r");
+	FILE *f = fopen(argv[1], "r");
 	uint8_t buffer[10*1024];
 	int total_length = fread(buffer, 1, sizeof(buffer), f);
 
@@ -28,10 +28,52 @@ main(int argc, char **argv)
 			d = "home";
 		} else if (*p == 0x18) {
 			d = "clear line";
+		} else if (p[0] == 0x1B && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x40) {
+			l = 4;
+			snprintf(tmpstr, sizeof(tmpstr), "set bg color of line to %d", p[3] - 0x40);
+			d = tmpstr;
 		} else if (p[0] == 0x1B && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x50) {
 			l = 4;
 			snprintf(tmpstr, sizeof(tmpstr), "set bg color of screen to %d", p[3] - 0x50);
 			d = tmpstr;
+		} else if (p[0] == 0x1B && p[1] == 0x23 && p[2] == 0x21 && (p[3] & 0xF0) == 0x40) {
+			l = 4;
+			snprintf(tmpstr, sizeof(tmpstr), "set fg color of line to %d", p[3] - 0x40);
+			d = tmpstr;
+		} else if (p[0] == 0x1B && p[1] == 0x23 && p[2] == 0x21 && (p[3] & 0xF0) == 0x50) {
+			l = 4;
+			snprintf(tmpstr, sizeof(tmpstr), "set fg color of screen to %d", p[3] - 0x50);
+			d = tmpstr;
+		} else if (p[0] == 0x1F && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x40 && (p[4] & 0xF0) == 0x40) {
+			l = 5;
+			char *res;
+			switch (p[3] - 0x40) {
+				case 6: res = "12x12"; break;
+				case 7: res = "12x10"; break;
+				case 0xA: res = "6x12"; break;
+				case 0xB: res = "6x10"; break;
+				case 0xC: res = "6x5"; break;
+				case 0xF: res = "6x6"; break;
+				default: res = "???"; break;
+			}
+			int col;
+			switch (p[4] - 0x40) {
+				case 1: col = 2; break;
+				case 2: col = 4; break;
+				case 4: col = 16; break;
+				default: col = "???"; break;
+			}
+			snprintf(tmpstr, sizeof(tmpstr), "define characters %s, %d colors", res, col);
+			d = tmpstr;
+		} else if (p[0] == 0x1F && p[1] == 0x23 && p[3] == 0x30) {
+			l = 4;
+			snprintf(tmpstr, sizeof(tmpstr), "define characters 0x%02x+", p[2]);
+			d = tmpstr;
+			uint8_t *q = p + 4;
+			while (*q != 0x1f) {
+				q++;
+				l++;
+			}
 		} else if (p[0] == 0x1F && p[1] == 0x26 && p[2] == 0x20) {
 			l = 3;
 			d = "start defining colors";
