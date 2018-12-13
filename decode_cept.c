@@ -227,9 +227,15 @@ main(int argc, char **argv)
 			l = 3;
 			d = "parallel limited mode";
 		} else if (p[0] == 0x1F && p[1] == 0x3D && (p[2] & 0xF0) >= 0x30) {
-			l = 3;
-			snprintf(tmpstr, sizeof(tmpstr), "define key '%c'", p[2]);
-			d = tmpstr;
+			if (p[3] == 0x1f){
+				l = 3;
+				snprintf(tmpstr, sizeof(tmpstr), "define shortcut #%d", p[2] - 0x30);
+				d = tmpstr;
+			} else {
+				l = 5;
+				snprintf(tmpstr, sizeof(tmpstr), "define shortcut #%d \"%c%c\"", p[2] - 0x30, p[3], p[4]);
+				d = tmpstr;
+			}
 		} else if (p[0] == 0x1F && p[1] >= 0x41 && p[2] >= 0x41) {
 			l = 3;
 			snprintf(tmpstr, sizeof(tmpstr), "set cursor to x=%d y=%d", p[1] - 0x40, p[2] - 0x40);
@@ -312,6 +318,8 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x9B && p[1] == 0x36 && p[2] == 0x41) {
 			l = 3;
 			d = "blinking shift left";
+		} else if (*p == 0x9c) {
+			d = "Hintergrundfarbe schwarz bzw. normale Polarität";
 		} else if (*p == 0x9d) {
 			d = "Hintergrundfarbe setzen bzw. inverse Polarität";
 		} else if (*p == 0x9e) {
