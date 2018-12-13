@@ -194,11 +194,11 @@ main(int argc, char **argv)
 			l = 3;
 			snprintf(tmpstr, sizeof(tmpstr), "set cursor to x=%d y=%d", p[1] - 0x40, p[2] - 0x40);
 			d = tmpstr;
-		} else if (is_printable(p[0])) {
+		} else if (is_printable(p[0]) && p[1] != 0x12) {
 			uint8_t *q = p;
 			l = 0;
 			tmpstr[0] = '"';
-			while (l < HEX_PER_LINE && is_printable(q[0])) {
+			while (l < HEX_PER_LINE && is_printable(q[0]) && q[1] != 0x12) {
 				tmpstr[l++ + 1] = *q < 0x80 ? *q : '.';
 				q++;
 			}
