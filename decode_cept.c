@@ -59,6 +59,12 @@ main(int argc, char **argv)
 			d = "switch to G3 for one character";
 		} else if (*p == 0x1e) {
 			d = "cursor home";
+		} else if (p[0] == 0x1B && p[1] == 0x22 && p[2] == 0x40) {
+			l = 3;
+			d = "serial mode";
+		} else if (p[0] == 0x1B && p[1] == 0x22 && p[2] == 0x41) {
+			l = 3;
+			d = "parallel mode";
 		} else if (p[0] == 0x1B && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x40) {
 			l = 4;
 			snprintf(tmpstr, sizeof(tmpstr), "set bg color of line to %d", p[3] - 0x40);
@@ -186,6 +192,9 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x1F && p[1] == 0x26 && p[2] == 0x20) {
 			l = 3;
 			d = "start defining colors";
+		} else if (p[0] == 0x1F && p[1] == 0x26 && p[2] == 0x21) {
+			l = 3;
+			d = "reset palette";
 		} else if (p[0] == 0x1F && p[1] == 0x26 && (p[2] & 0xF0) == 0x30 && (p[3] & 0xF0) == 0x30) {
 			l = 4;
 			snprintf(tmpstr, sizeof(tmpstr), "define colors %c%c+", p[2], p[3]);
