@@ -1,10 +1,17 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
 #define HEX_PER_LINE 16
+
+static bool
+is_printable(unsigned char c)
+{
+	return (c >= 0x20 && c <= 0x7F) || (c >= 0xa0);
+}
 
 int
 main(int argc, char **argv)
@@ -30,6 +37,10 @@ main(int argc, char **argv)
 			d = "clear screen";
 		} else if (*p == 0x0d) {
 			d = "cursor to beginning of line";
+		} else if (p[0] == 0x12 && p[1] >= 0x41) {
+			l = 2;
+			snprintf(tmpstr, sizeof(tmpstr), "repeat previous char %d times", p[1] - 0x40);
+			d = tmpstr;
 		} else if (*p == 0x14) {
 			d = "hide cursor";
 		} else if (*p == 0x18) {
@@ -56,9 +67,33 @@ main(int argc, char **argv)
 			l = 4;
 			snprintf(tmpstr, sizeof(tmpstr), "set fg color of screen to %d", p[3] - 0x50);
 			d = tmpstr;
-		} else if (p[0] == 0x1B && p[1] == 0x29 && p[2] == 0x20 && p[3] == 0x20) {
+		} else if (p[0] == 0x1B && p[1] == 0x28 && p[2] == 0x20 && p[3] == 0x40) {
+			l = 4;
+			d = "load DRCs into G0";
+		} else if (p[0] == 0x1B && p[1] == 0x29 && p[2] == 0x20 && p[3] == 0x40) {
 			l = 4;
 			d = "load DRCs into G1";
+		} else if (p[0] == 0x1B && p[1] == 0x2A && p[2] == 0x20 && p[3] == 0x40) {
+			l = 4;
+			d = "load DRCs into G2";
+		} else if (p[0] == 0x1B && p[1] == 0x2B && p[2] == 0x20 && p[3] == 0x40) {
+			l = 4;
+			d = "load DRCs into G3";
+		} else if (p[0] == 0x1B && p[1] == 0x6E) {
+			l = 2;
+			d = "G2 into left charset";
+		} else if (p[0] == 0x1B && p[1] == 0x6F) {
+			l = 2;
+			d = "G3 into left charset";
+		} else if (p[0] == 0x1B && p[1] == 0x7C) {
+			l = 2;
+			d = "G3 into right charset";
+		} else if (p[0] == 0x1B && p[1] == 0x7D) {
+			l = 2;
+			d = "G2 into right charset";
+		} else if (p[0] == 0x1B && p[1] == 0x7E) {
+			l = 2;
+			d = "G1 into right charset";
 		} else if (p[0] == 0x1F && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x40 && (p[4] & 0xF0) == 0x40) {
 			l = 5;
 			char *res;
@@ -76,7 +111,7 @@ main(int argc, char **argv)
 				case 1: col = 2; break;
 				case 2: col = 4; break;
 				case 4: col = 16; break;
-				default: col = "???"; break;
+				default: col = -1; break;
 			}
 			snprintf(tmpstr, sizeof(tmpstr), "define characters %s, %d colors", res, col);
 			d = tmpstr;
@@ -123,7 +158,7 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x1F && p[1] == 0x2F && p[2] == 0x44) {
 			l = 3;
 			d = "parallel limited mode";
-		} else if (p[0] == 0x1F && p[1] >= 0x3D && (p[2] & 0xF0) == 0x30) {
+		} else if (p[0] == 0x1F && p[1] == 0x3D && (p[2] & 0xF0) == 0x30) {
 			l = 3;
 			char key;
 			if (p[2] - 0x30 <= 9) {
@@ -139,12 +174,12 @@ main(int argc, char **argv)
 			l = 3;
 			snprintf(tmpstr, sizeof(tmpstr), "set cursor to x=%d y=%d", p[1] - 0x40, p[2] - 0x40);
 			d = tmpstr;
-		} else if (p[0] >= 0x20 && p[0] <= 0x7F) {
+		} else if (is_printable(p[0])) {
 			uint8_t *q = p;
 			l = 0;
 			tmpstr[0] = '"';
-			while (l < HEX_PER_LINE && q[0] >= 0x20 && q[0] <= 0x7F) {
-				tmpstr[l++ + 1] = *q;
+			while (l < HEX_PER_LINE && is_printable(q[0])) {
+				tmpstr[l++ + 1] = *q < 0x80 ? *q : '.';
 				q++;
 			}
 			tmpstr[l + 1] = '"';
