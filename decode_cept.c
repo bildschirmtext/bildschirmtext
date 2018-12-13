@@ -236,9 +236,15 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x9B && p[1] == 0x30 && p[2] == 0x40) {
 			l = 3;
 			d = "select palette #0";
+		} else if (p[0] == 0x9B && p[1] == 0x30 && p[2] == 0x41) {
+			l = 3;
+			d = "invert blinking";
 		} else if (p[0] == 0x9B && p[1] == 0x31 && p[2] == 0x40) {
 			l = 3;
 			d = "select palette #1";
+		} else if (p[0] == 0x9B && p[1] == 0x31 && p[2] == 0x41) {
+			l = 3;
+			d = "blink palettes 0/1 or 2/3";
 		} else if (p[0] == 0x9B && p[1] == 0x31 && p[2] == 0x51) {
 			l = 3;
 			d = "unprotect line";
@@ -248,9 +254,24 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x9B && p[1] == 0x32 && p[2] == 0x40) {
 			l = 3;
 			d = "select palette #2";
+		} else if (p[0] == 0x9B && p[1] == 0x32 && p[2] == 0x41) {
+			l = 3;
+			d = "fast blinking (on, off, off)";
 		} else if (p[0] == 0x9B && p[1] == 0x33 && p[2] == 0x40) {
 			l = 3;
 			d = "select palette #3";
+		} else if (p[0] == 0x9B && p[1] == 0x33 && p[2] == 0x41) {
+			l = 3;
+			d = "fast blinking (off, on, off)";
+		} else if (p[0] == 0x9B && p[1] == 0x34 && p[2] == 0x41) {
+			l = 3;
+			d = "fast blinking (off, off, on)";
+		} else if (p[0] == 0x9B && p[1] == 0x35 && p[2] == 0x41) {
+			l = 3;
+			d = "blinking shift right";
+		} else if (p[0] == 0x9B && p[1] == 0x36 && p[2] == 0x41) {
+			l = 3;
+			d = "blinking shift left";
 		} else if (*p == 0x9d) {
 			d = "Hintergrundfarbe setzen bzw. inverse Polarität";
 		} else if (*p == 0x9e) {
