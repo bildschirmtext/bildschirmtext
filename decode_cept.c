@@ -56,6 +56,9 @@ main(int argc, char **argv)
 			l = 4;
 			snprintf(tmpstr, sizeof(tmpstr), "set fg color of screen to %d", p[3] - 0x50);
 			d = tmpstr;
+		} else if (p[0] == 0x1B && p[1] == 0x29 && p[2] == 0x20 && p[3] == 0x20) {
+			l = 4;
+			d = "load DRCs into G1";
 		} else if (p[0] == 0x1F && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x40 && (p[4] & 0xF0) == 0x40) {
 			l = 5;
 			char *res;
