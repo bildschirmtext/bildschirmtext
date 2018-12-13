@@ -25,7 +25,11 @@ main(int argc, char **argv)
 		int l = 1;
 		char *d = "";
 		char tmpstr[80];
-		if (*p == 0x08) {
+		if (is_printable(p[0]) && p[1] == 0x12 && p[2] >= 0x41) {
+			l = 3;
+			snprintf(tmpstr, sizeof(tmpstr), "repeat '%c' %d times", p[0] < 0x80 ? p[0] : '.', p[2] - 0x40);
+			d = tmpstr;
+		} else if (*p == 0x08) {
 			d = "cursor left";
 		} else if (*p == 0x09) {
 			d = "cursor right";
@@ -43,10 +47,6 @@ main(int argc, char **argv)
 			d = "G0 into left charset";
 		} else if (*p == 0x11) {
 			d = "show cursor";
-		} else if (p[0] == 0x12 && p[1] >= 0x41) {
-			l = 2;
-			snprintf(tmpstr, sizeof(tmpstr), "repeat previous char %d times", p[1] - 0x40);
-			d = tmpstr;
 		} else if (*p == 0x14) {
 			d = "hide cursor";
 		} else if (*p == 0x18) {
