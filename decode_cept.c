@@ -132,6 +132,9 @@ main(int argc, char **argv)
 				q++;
 				l++;
 			}
+		} else if (p[0] == 0x1F && p[1] == 0x26 && p[2] == 0x20 && p[3] == 0x22 && p[4] == 0x20 && p[5] == 0x35 && p[6] == 0x40) {
+			l = 7;
+			d = "start defining colors for DRCs";
 		} else if (p[0] == 0x1F && p[1] == 0x26 && p[2] == 0x20) {
 			l = 3;
 			d = "start defining colors";
@@ -140,6 +143,15 @@ main(int argc, char **argv)
 			snprintf(tmpstr, sizeof(tmpstr), "define colors %c%c+", p[2], p[3]);
 			d = tmpstr;
 			uint8_t *q = p + 4;
+			while (*q != 0x1f) {
+				q++;
+				l++;
+			}
+		} else if (p[0] == 0x1F && p[1] == 0x26 && (p[2] & 0xF0) == 0x30) {
+			l = 3;
+			snprintf(tmpstr, sizeof(tmpstr), "define DRC color %i", p[2] - 0x30);
+			d = tmpstr;
+			uint8_t *q = p + 3;
 			while (*q != 0x1f) {
 				q++;
 				l++;
