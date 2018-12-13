@@ -226,17 +226,9 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x1F && p[1] == 0x2F && p[2] == 0x44) {
 			l = 3;
 			d = "parallel limited mode";
-		} else if (p[0] == 0x1F && p[1] == 0x3D && (p[2] & 0xF0) == 0x30) {
+		} else if (p[0] == 0x1F && p[1] == 0x3D && (p[2] & 0xF0) >= 0x30) {
 			l = 3;
-			char key;
-			if (p[2] - 0x30 <= 9) {
-				key = p[2];
-			} else if (p[2] == 0x3A) {
-				key = ' ';
-			} else if (p[2] >= 0x3B && p[2] <= 0x3F) {
-				key = '#';
-			}
-			snprintf(tmpstr, sizeof(tmpstr), "define key '%c'", key);
+			snprintf(tmpstr, sizeof(tmpstr), "define key '%c'", p[2]);
 			d = tmpstr;
 		} else if (p[0] == 0x1F && p[1] >= 0x41 && p[2] >= 0x41) {
 			l = 3;
