@@ -78,15 +78,63 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x1B && p[1] == 0x28 && p[2] == 0x20 && p[3] == 0x40) {
 			l = 4;
 			d = "load DRCs into G0";
+		} else if (p[0] == 0x1B && p[1] == 0x28 && p[2] == 0x40) {
+			l = 3;
+			d = "load G0 into G0";
+		} else if (p[0] == 0x1B && p[1] == 0x28 && p[2] == 0x62) {
+			l = 3;
+			d = "load G2 into G0";
+		} else if (p[0] == 0x1B && p[1] == 0x28 && p[2] == 0x63) {
+			l = 3;
+			d = "load G1 into G0";
+		} else if (p[0] == 0x1B && p[1] == 0x28 && p[2] == 0x64) {
+			l = 3;
+			d = "load G3 into G0";
 		} else if (p[0] == 0x1B && p[1] == 0x29 && p[2] == 0x20 && p[3] == 0x40) {
 			l = 4;
 			d = "load DRCs into G1";
+		} else if (p[0] == 0x1B && p[1] == 0x29 && p[2] == 0x40) {
+			l = 3;
+			d = "load G0 into G1";
+		} else if (p[0] == 0x1B && p[1] == 0x29 && p[2] == 0x62) {
+			l = 3;
+			d = "load G2 into G1";
+		} else if (p[0] == 0x1B && p[1] == 0x29 && p[2] == 0x63) {
+			l = 3;
+			d = "load G1 into G1";
+		} else if (p[0] == 0x1B && p[1] == 0x29 && p[2] == 0x64) {
+			l = 3;
+			d = "load G3 into G1";
 		} else if (p[0] == 0x1B && p[1] == 0x2A && p[2] == 0x20 && p[3] == 0x40) {
 			l = 4;
 			d = "load DRCs into G2";
+		} else if (p[0] == 0x1B && p[1] == 0x2A && p[2] == 0x40) {
+			l = 3;
+			d = "load G0 into G2";
+		} else if (p[0] == 0x1B && p[1] == 0x2A && p[2] == 0x62) {
+			l = 3;
+			d = "load G2 into G2";
+		} else if (p[0] == 0x1B && p[1] == 0x2A && p[2] == 0x63) {
+			l = 3;
+			d = "load G1 into G2";
+		} else if (p[0] == 0x1B && p[1] == 0x2A && p[2] == 0x64) {
+			l = 3;
+			d = "load G3 into G2";
 		} else if (p[0] == 0x1B && p[1] == 0x2B && p[2] == 0x20 && p[3] == 0x40) {
 			l = 4;
 			d = "load DRCs into G3";
+		} else if (p[0] == 0x1B && p[1] == 0x2B && p[2] == 0x40) {
+			l = 3;
+			d = "load G0 into G3";
+		} else if (p[0] == 0x1B && p[1] == 0x2B && p[2] == 0x62) {
+			l = 3;
+			d = "load G2 into G3";
+		} else if (p[0] == 0x1B && p[1] == 0x2B && p[2] == 0x63) {
+			l = 3;
+			d = "load G1 into G3";
+		} else if (p[0] == 0x1B && p[1] == 0x2B && p[2] == 0x64) {
+			l = 3;
+			d = "load G3 into G3";
 		} else if (p[0] == 0x1B && p[1] == 0x6E) {
 			l = 2;
 			d = "G2 into left charset";
