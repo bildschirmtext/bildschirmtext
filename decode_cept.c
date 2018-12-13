@@ -37,6 +37,12 @@ main(int argc, char **argv)
 			d = "clear screen";
 		} else if (*p == 0x0d) {
 			d = "cursor to beginning of line";
+		} else if (*p == 0x0e) {
+			d = "G1 into left charset";
+		} else if (*p == 0x0f) {
+			d = "G0 into left charset";
+		} else if (*p == 0x11) {
+			d = "show cursor";
 		} else if (p[0] == 0x12 && p[1] >= 0x41) {
 			l = 2;
 			snprintf(tmpstr, sizeof(tmpstr), "repeat previous char %d times", p[1] - 0x40);
@@ -47,6 +53,8 @@ main(int argc, char **argv)
 			d = "clear line";
 		} else if (*p == 0x19) {
 			d = "switch to G2 for one character";
+		} else if (*p == 0x1a) {
+			d = "end of page";
 		} else if (*p == 0x1d) {
 			d = "switch to G3 for one character";
 		} else if (*p == 0x1e) {
@@ -188,11 +196,31 @@ main(int argc, char **argv)
 		} else if (*p >= 0x80 && *p <= 0x87) {
 			snprintf(tmpstr, sizeof(tmpstr), "set fg color to #%d", p[0] - 0x80);
 			d = tmpstr;
+		} else if (*p == 0x88) {
+			d = "blink on";
+		} else if (*p == 0x89) {
+			d = "blink off";
+		} else if (*p == 0x8a) {
+			d = "transparency on";
+		} else if (*p == 0x8b) {
+			d = "transparency off";
+		} else if (*p == 0x8c) {
+			d = "normal size";
+		} else if (*p == 0x8d) {
+			d = "double height";
+		} else if (*p == 0x8e) {
+			d = "double width";
+		} else if (*p == 0x8f) {
+			d = "double width and height";
 		} else if (*p >= 0x90 && *p <= 0x97) {
 			snprintf(tmpstr, sizeof(tmpstr), "set bg color to #%d", p[0] - 0x90);
 			d = tmpstr;
 		} else if (*p == 0x98) {
 			d = "hide";
+		} else if (*p == 0x99) {
+			d = "underline off";
+		} else if (*p == 0x9a) {
+			d = "underline on";
 		} else if (p[0] == 0x9B && p[1] == 0x30 && p[2] == 0x40) {
 			l = 3;
 			d = "select palette #0";
@@ -213,6 +241,8 @@ main(int argc, char **argv)
 			d = "select palette #3";
 		} else if (*p == 0x9d) {
 			d = "Hintergrundfarbe setzen bzw. inverse Polarität";
+		} else if (*p == 0x9e) {
+			d = "Mosaikzeichenwiederholung bzw. Hintergrund transparent";
 		} else {
 			d = "unknown";
 		}
