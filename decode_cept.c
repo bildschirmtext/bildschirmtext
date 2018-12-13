@@ -19,15 +19,27 @@ main(int argc, char **argv)
 		char *d = "";
 		char tmpstr[80];
 		if (*p == 0x08) {
-			d = "backspace";
+			d = "cursor left";
+		} else if (*p == 0x09) {
+			d = "cursor right";
 		} else if (*p == 0x0a) {
-			d = "down";
+			d = "cursor down";
+		} else if (*p == 0x0b) {
+			d = "cursor up";
 		} else if (*p == 0x0c) {
 			d = "clear screen";
+		} else if (*p == 0x0d) {
+			d = "cursor to beginning of line";
 		} else if (*p == 0x14) {
-			d = "home";
+			d = "hide cursor";
 		} else if (*p == 0x18) {
 			d = "clear line";
+		} else if (*p == 0x19) {
+			d = "switch to G2 for one character";
+		} else if (*p == 0x1d) {
+			d = "switch to G3 for one character";
+		} else if (*p == 0x1e) {
+			d = "cursor home";
 		} else if (p[0] == 0x1B && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x40) {
 			l = 4;
 			snprintf(tmpstr, sizeof(tmpstr), "set bg color of line to %d", p[3] - 0x40);
@@ -86,6 +98,9 @@ main(int argc, char **argv)
 				q++;
 				l++;
 			}
+		} else if (p[0] == 0x1F && p[1] == 0x2D) {
+			l = 2;
+			d = "set resolution to 40x24";
 		} else if (p[0] == 0x1F && p[1] == 0x2F && p[2] == 0x40) {
 			l = 4;
 			snprintf(tmpstr, sizeof(tmpstr), "service break to row %d", p[3] - 0x40);
@@ -93,9 +108,30 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x1F && p[1] == 0x2F && p[2] == 0x4f) {
 			l = 3;
 			d = "service break back";
+		} else if (p[0] == 0x1F && p[1] == 0x2F && p[2] == 0x41) {
+			l = 3;
+			d = "serial mode";
+		} else if (p[0] == 0x1F && p[1] == 0x2F && p[2] == 0x42) {
+			l = 3;
+			d = "parallel mode";
 		} else if (p[0] == 0x1F && p[1] == 0x2F && p[2] == 0x43) {
 			l = 3;
 			d = "serial limited mode";
+		} else if (p[0] == 0x1F && p[1] == 0x2F && p[2] == 0x44) {
+			l = 3;
+			d = "parallel limited mode";
+		} else if (p[0] == 0x1F && p[1] >= 0x3D && (p[2] & 0xF0) == 0x30) {
+			l = 3;
+			char key;
+			if (p[2] - 0x30 <= 9) {
+				key = p[2];
+			} else if (p[2] == 0x3A) {
+				key = ' ';
+			} else if (p[2] >= 0x3B && p[2] <= 0x3F) {
+				key = '#';
+			}
+			snprintf(tmpstr, sizeof(tmpstr), "define key '%c'", key);
+			d = tmpstr;
 		} else if (p[0] == 0x1F && p[1] >= 0x41 && p[2] >= 0x41) {
 			l = 3;
 			snprintf(tmpstr, sizeof(tmpstr), "set cursor to x=%d y=%d", p[1] - 0x40, p[2] - 0x40);
@@ -125,12 +161,20 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x9B && p[1] == 0x31 && p[2] == 0x40) {
 			l = 3;
 			d = "select palette #1";
+		} else if (p[0] == 0x9B && p[1] == 0x31 && p[2] == 0x51) {
+			l = 3;
+			d = "unprotect line";
+		} else if (p[0] == 0x9B && p[1] == 0x31 && p[2] == 0x50) {
+			l = 3;
+			d = "protect line";
 		} else if (p[0] == 0x9B && p[1] == 0x32 && p[2] == 0x40) {
 			l = 3;
 			d = "select palette #2";
 		} else if (p[0] == 0x9B && p[1] == 0x33 && p[2] == 0x40) {
 			l = 3;
 			d = "select palette #3";
+		} else if (*p == 0x9d) {
+			d = "Hintergrundfarbe setzen bzw. inverse Polarität";
 		} else {
 			d = "unknown";
 		}
