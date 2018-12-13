@@ -65,10 +65,10 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x1B && p[1] == 0x22 && p[2] == 0x41) {
 			l = 3;
 			d = "parallel mode";
-		} else if (p[0] == 0x1B && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x40) {
-			l = 4;
-			snprintf(tmpstr, sizeof(tmpstr), "set bg color of line to %d", p[3] - 0x40);
-			d = tmpstr;
+//		} else if (p[0] == 0x1B && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x40) {
+//			l = 4;
+//			snprintf(tmpstr, sizeof(tmpstr), "set fg color of screen to %d", p[3] - 0x40);
+//			d = tmpstr;
 		} else if (p[0] == 0x1B && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x50) {
 			l = 4;
 			snprintf(tmpstr, sizeof(tmpstr), "set bg color of screen to %d", p[3] - 0x50);
@@ -79,7 +79,7 @@ main(int argc, char **argv)
 			d = tmpstr;
 		} else if (p[0] == 0x1B && p[1] == 0x23 && p[2] == 0x21 && (p[3] & 0xF0) == 0x50) {
 			l = 4;
-			snprintf(tmpstr, sizeof(tmpstr), "set fg color of screen to %d", p[3] - 0x50);
+			snprintf(tmpstr, sizeof(tmpstr), "set bg color of line to %d", p[3] - 0x50);
 			d = tmpstr;
 		} else if (p[0] == 0x1B && p[1] == 0x28 && p[2] == 0x20 && p[3] == 0x40) {
 			l = 4;
@@ -247,7 +247,7 @@ main(int argc, char **argv)
 			}
 		} else if (p[0] == 0x1F && p[1] >= 0x41 && p[2] >= 0x41) {
 			l = 3;
-			snprintf(tmpstr, sizeof(tmpstr), "set cursor to x=%d y=%d", p[1] - 0x40, p[2] - 0x40);
+			snprintf(tmpstr, sizeof(tmpstr), "set cursor to line %d, column %d", p[1] - 0x40, p[2] - 0x40);
 			d = tmpstr;
 		} else if (is_printable(p[0]) && p[1] != 0x12) {
 			uint8_t *q = p;
@@ -312,6 +312,12 @@ main(int argc, char **argv)
 		} else if (p[0] == 0x9B && p[1] == 0x32 && p[2] == 0x41) {
 			l = 3;
 			d = "fast blinking (on, off, off)";
+		} else if (p[0] == 0x9B && p[1] == 0x32 && p[2] == 0x53) {
+			l = 3;
+			d = "start selection";
+		} else if (p[0] == 0x9B && p[1] == 0x32 && p[2] == 0x54) {
+			l = 3;
+			d = "end selection";
 		} else if (p[0] == 0x9B && p[1] == 0x33 && p[2] == 0x40) {
 			l = 3;
 			d = "select palette #3";
