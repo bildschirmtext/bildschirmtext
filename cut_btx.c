@@ -210,6 +210,92 @@ main(int argc, char **argv)
 		return 1;
 	}
 
+	const uint8_t data9[] = {
+		0x1f,0x2f,0x44,                           // parallel limited mode
+		0x1f,                                     // set cursor to line X, column X
+	};
+
+	found = 0;
+	p_old = p;
+	do {
+
+		if (!memcmp(p, data9, sizeof(data9))) {
+			found = 1;
+			break;
+		}
+		p++;
+	} while(p <= buffer + total_length - sizeof(data9));
+
+	if (found) {
+		printf("links:\n");
+		print_hex(p_old, p - p_old);
+
+		printf("HEADER5 detected.\n");
+		p += sizeof(data4);
+
+	} else {
+		printf("HEADER5 not detected.\n");
+		return 1;
+	}
+
+	printf("cursor:\n");
+	print_hex(p, 2);
+	p += 2;
+
+	const uint8_t data10[] = {
+		0x39,                                     // "9"
+		0x1f,0x2f,0x43,                           // serial limited mode
+		// same as data5
+		0x1f,0x2d,                                // set resolution to 40x24
+		0x1f,0x57,0x41,                           // set cursor to line 23, column 1
+		0x9b,0x31,0x51,                           // unprotect line
+		0x1b,0x23,0x21,0x4c,                      // set fg color of line to 12
+		0x1f,0x2f,0x44,                           // parallel limited mode
+		0x1f,0x58,0x41,                           // set cursor to line 24, column 1
+		0x9b,0x31,0x51,                           // unprotect line
+		0x20,                                     // " "
+		0x08,                                     // cursor left
+		0x18,                                     // clear line
+		0x1e,                                     // cursor home
+		0x9b,0x31,0x51,                           // unprotect line
+		0x20,                                     // " "
+		0x08,                                     // cursor left
+		0x18,                                     // clear line
+		0x1f,0x2f,0x43,                           // serial limited mode
+		0x1f,0x58,0x41,                           // set cursor to line 24, column 1
+		0x9b,0x31,0x40,                           // select palette #1
+		0x80,                                     // set fg color to #0
+		0x08,                                     // cursor left
+		0x9d,                                     // Hintergrundfarbe setzen bzw. inverse Polarität
+		0x08,                                     // cursor left
+		0x87,                                     // set fg color to #7
+		0x1f,0x58,0x53,                           // set cursor to line 24, column 19
+	};
+
+
+	found = 0;
+	p_old = p;
+	do {
+
+		if (!memcmp(p, data10, sizeof(data10))) {
+			found = 1;
+			break;
+		}
+		p++;
+	} while(p <= buffer + total_length - sizeof(data10));
+
+	if (found) {
+		printf("payload:\n");
+		print_hex(p_old, p - p_old);
+
+		printf("FOOTER1 detected.\n");
+		p += sizeof(data4);
+
+	} else {
+		printf("FOOTER1 not detected.\n");
+		return 1;
+	}
+
 	// debug
 //	print_hex(p, 32);
 
