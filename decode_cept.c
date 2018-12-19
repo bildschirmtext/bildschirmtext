@@ -8,9 +8,38 @@
 #define HEX_PER_LINE 16
 
 static bool
-is_printable(unsigned char c)
+is_printable(uint8_t c)
 {
 	return (c >= 0x20 && c <= 0x7F) || (c >= 0xa0);
+}
+
+static char *
+decode_res(uint8_t c)
+{
+	char *res;
+	switch (c - 0x40) {
+		case 6: res = "12x12"; break;
+		case 7: res = "12x10"; break;
+		case 0xA: res = "6x12"; break;
+		case 0xB: res = "6x10"; break;
+		case 0xC: res = "6x5"; break;
+		case 0xF: res = "6x6"; break;
+		default: res = "???"; break;
+	}
+	return res;
+}
+
+static int
+decode_col(uint8_t c)
+{
+	int col;
+	switch (c - 0x40) {
+		case 1: col = 2; break;
+		case 2: col = 4; break;
+		case 4: col = 16; break;
+		default: col = -1; break;
+	}
+	return col;
 }
 
 int
@@ -158,24 +187,11 @@ main(int argc, char **argv)
 			d = "G1 into right charset";
 		} else if (p[0] == 0x1F && p[1] == 0x23 && p[2] == 0x20 && (p[3] & 0xF0) == 0x40 && (p[4] & 0xF0) == 0x40) {
 			l = 5;
-			char *res;
-			switch (p[3] - 0x40) {
-				case 6: res = "12x12"; break;
-				case 7: res = "12x10"; break;
-				case 0xA: res = "6x12"; break;
-				case 0xB: res = "6x10"; break;
-				case 0xC: res = "6x5"; break;
-				case 0xF: res = "6x6"; break;
-				default: res = "???"; break;
-			}
-			int col;
-			switch (p[4] - 0x40) {
-				case 1: col = 2; break;
-				case 2: col = 4; break;
-				case 4: col = 16; break;
-				default: col = -1; break;
-			}
-			snprintf(tmpstr, sizeof(tmpstr), "define characters %s, %d colors", res, col);
+			snprintf(tmpstr, sizeof(tmpstr), "define characters %s, %d colors", decode_res(p[3]), decode_col(p[4]));
+			d = tmpstr;
+		} else if (p[0] == 0x1F && p[1] == 0x23 && p[2] == 0x20 && p[3] == 0x28 && p[4] == 0x20 && p[5] == 0x40 && (p[6] & 0xF0) == 0x40 && (p[7] & 0xF0) == 0x40) {
+			l = 8;
+			snprintf(tmpstr, sizeof(tmpstr), "clear character set %s, %d colors", decode_res(p[6]), decode_col(p[7]));
 			d = tmpstr;
 		} else if (p[0] == 0x1F && p[1] == 0x23 && p[3] == 0x30) {
 			l = 4;
