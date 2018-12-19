@@ -131,11 +131,18 @@ main(int argc, char **argv)
 		0x08,                                     // cursor left
 		0x9d,                                     // Hintergrundfarbe setzen bzw. inverse Polarität
 		0x08,                                     // cursor left
-		0x87,                                     // set fg color to #7
+	};
+
+//
+//		0x87,                                     // set fg color to #7
+
 // 9D
 // 08
 // 9B 30 40
 // 80
+
+
+	const uint8_t data5b[] = {
 		0x1f,0x58,0x53,                           // set cursor to line 24, column 19
 	};
 
@@ -175,6 +182,30 @@ main(int argc, char **argv)
 		p += sizeof(data5);
 	} else {
 		printf("CLS/HEADER1 not detected.\n");
+		print_hex(p, 32);
+		return 1;
+	}
+
+	found = 0;
+	p_old = p;
+	do {
+
+		if (!memcmp(p, data5b, sizeof(data5b))) {
+			found = 1;
+			break;
+		}
+		p++;
+	} while(p <= buffer + total_length - sizeof(data5b));
+
+	if (found) {
+		printf("publisher color:\n");
+		print_hex(p_old, p - p_old);
+
+		printf("HEADERX detected.\n");
+		p += sizeof(data5b);
+
+	} else {
+		printf("HEADERX not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
