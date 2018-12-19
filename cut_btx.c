@@ -195,6 +195,20 @@ main(int argc, char **argv)
 	print_hex(p, 10);
 	p += 10;
 
+	const uint8_t data8[] = {
+		0x1e,                                     // cursor home
+		0x9b,0x30,0x40,                           // select palette #0
+		0x9b,0x31,0x50,                           // protect line
+		0x0a,                                     // cursor down
+	};
+
+	if (!memcmp(p, data8, sizeof(data8))) {
+		printf("HEADER4 detected.\n");
+		p += sizeof(data8);
+	} else {
+		printf("HEADER4 not detected.\n");
+		return 1;
+	}
 
 	// debug
 //	print_hex(p, 32);
