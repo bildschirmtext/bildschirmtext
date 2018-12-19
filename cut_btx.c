@@ -221,7 +221,9 @@ main(int argc, char **argv)
 		0x08,                                     // cursor left
 		0x9d,                                     // Hintergrundfarbe setzen bzw. inverse Polarität
 		0x08,                                     // cursor left
-		0x87,                                     // set fg color to #7
+	};
+//		0x87,                                     // set fg color to #7
+	const uint8_t data6b[] = {
 		0x0d,                                     // cursor to beginning of line
 	};
 
@@ -230,6 +232,30 @@ main(int argc, char **argv)
 		p += sizeof(data6);
 	} else {
 		printf("HEADER2 not detected.\n");
+		print_hex(p, 32);
+		return 1;
+	}
+
+	found = 0;
+	p_old = p;
+	do {
+
+		if (!memcmp(p, data6b, sizeof(data6b))) {
+			found = 1;
+			break;
+		}
+		p++;
+	} while(p <= buffer + total_length - sizeof(data6b));
+
+	if (found) {
+		printf("publisher color 2:\n");
+		print_hex(p_old, p - p_old);
+
+		printf("HEADERY detected.\n");
+		p += sizeof(data6b);
+
+	} else {
+		printf("HEADERY not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -368,6 +394,30 @@ main(int argc, char **argv)
 		p += sizeof(data6);
 	} else {
 		printf("FOOTER2 not detected.\n");
+		print_hex(p, 32);
+		return 1;
+	}
+
+	found = 0;
+	p_old = p;
+	do {
+
+		if (!memcmp(p, data6b, sizeof(data6b))) {
+			found = 1;
+			break;
+		}
+		p++;
+	} while(p <= buffer + total_length - sizeof(data6b));
+
+	if (found) {
+		printf("publisher color 3:\n");
+		print_hex(p_old, p - p_old);
+
+		printf("FOOTERY detected.\n");
+		p += sizeof(data6b);
+
+	} else {
+		printf("FOOTERY not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
