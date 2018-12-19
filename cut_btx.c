@@ -356,7 +356,9 @@ main(int argc, char **argv)
 		0x08,                                     // cursor left
 		0x9d,                                     // Hintergrundfarbe setzen bzw. inverse Polarität
 		0x08,                                     // cursor left
-		0x87,                                     // set fg color to #7
+	};
+//		0x87,                                     // set fg color to #7
+	const uint8_t data10b[] = {
 		0x1f,0x58,0x53,                           // set cursor to line 24, column 19
 	};
 
@@ -381,6 +383,30 @@ main(int argc, char **argv)
 
 	} else {
 		printf("FOOTER1 not detected.\n");
+		print_hex(p, 32);
+		return 1;
+	}
+
+	found = 0;
+	p_old = p;
+	do {
+
+		if (!memcmp(p, data10b, sizeof(data10b))) {
+			found = 1;
+			break;
+		}
+		p++;
+	} while(p <= buffer + total_length - sizeof(data10b));
+
+	if (found) {
+		printf("publisher color 3:\n");
+		print_hex(p_old, p - p_old);
+
+		printf("FOOTERX detected.\n");
+		p += sizeof(data10b);
+
+	} else {
+		printf("FOOTERX not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -410,7 +436,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data6b));
 
 	if (found) {
-		printf("publisher color 3:\n");
+		printf("publisher color 4:\n");
 		print_hex(p_old, p - p_old);
 
 		printf("FOOTERY detected.\n");
