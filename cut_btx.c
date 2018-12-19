@@ -320,8 +320,35 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	// debug
-//	print_hex(p, 32);
+	printf("price:\n");
+	print_hex(p, 10);
+	p += 10;
+
+	const uint8_t data11[] = {
+		0x1e,                                     // cursor home
+		0x9b,0x30,0x40,                           // select palette #0
+		0x9b,0x31,0x50,                           // protect line
+		0x0a,                                     // cursor down
+		0x1f,0x58,0x41,                           // set cursor to x=24 y=1
+		0x11,                                     // show cursor
+		0x1a,                                     // end of page
+	};
+
+
+	if (!memcmp(p, data11, sizeof(data11))) {
+		printf("FOOTER4 detected.\n");
+		p += sizeof(data11);
+	} else {
+		printf("FOOTER4 not detected.\n");
+		return 1;
+	}
+
+	if (p != buffer + total_length) {
+		printf("trailing bytes!\n");
+		return 1;
+	}
+
+	printf("OK!\n");
 
 	return 0;
 }
