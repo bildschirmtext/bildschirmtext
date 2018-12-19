@@ -61,25 +61,24 @@ main(int argc, char **argv)
 	if (!memcmp(p, data2, sizeof(data2))) {
 		printf("INCLUDE1 detected.\n");
 		p += sizeof(data2);
+
+		printf("palette definitions:\n");
+		print_hex(p, 32);
+		p += 32;
+
+		const uint8_t data3[] = {
+			0x1f,0x41,0x41,                           // set cursor to x=1 y=1
+		};
+
+		if (!memcmp(p, data3, sizeof(data3))) {
+			printf("INCLUDE2 detected.\n");
+			p += sizeof(data3);
+		} else {
+			printf("INCLUDE2 not detected.\n");
+			return 1;
+		}
 	} else {
 		printf("INCLUDE1 not detected.\n");
-		return 1;
-	}
-
-	printf("palette definitions:\n");
-	print_hex(p, 32);
-	p += 32;
-
-	const uint8_t data3[] = {
-		0x1f,0x41,0x41,                           // set cursor to x=1 y=1
-	};
-
-	if (!memcmp(p, data3, sizeof(data3))) {
-		printf("INCLUDE2 detected.\n");
-		p += sizeof(data3);
-	} else {
-		printf("INCLUDE2 not detected.\n");
-		return 1;
 	}
 
 	const uint8_t data4[] = {
@@ -243,7 +242,7 @@ main(int argc, char **argv)
 	p += 2;
 
 	const uint8_t data10[] = {
-		0x39,                                     // "9"
+//		0x39,                                     // "9"
 		0x1f,0x2f,0x43,                           // serial limited mode
 		// same as data5
 		0x1f,0x2d,                                // set resolution to 40x24
