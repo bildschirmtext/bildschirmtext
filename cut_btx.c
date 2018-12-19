@@ -26,7 +26,7 @@ main(int argc, char **argv)
 
 	// skip remote echo of previous user entry that
 	// ended up in the dump
-	while ((*p >= '0' && *p <= '9') || *p == '#' || *p == ' ' || *p == 8) {
+	while ((*p >= '0' && *p <= '9') || *p == '#' || *p == ' ' || *p == 8 || *p == 0xbe || *p == 0xff) {
 		p++;
 	}
 
