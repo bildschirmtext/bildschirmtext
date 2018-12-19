@@ -36,7 +36,7 @@ main(int argc, char **argv)
 		printf("HIDE_CURSOR detected.\n");
 		p += sizeof(data1);
 	} else {
-		printf("HIDE_CURSOR not detected.\n");
+		printf("ERROR: HIDE_CURSOR not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -95,7 +95,7 @@ main(int argc, char **argv)
 			printf("INCLUDE2 detected.\n");
 			p += sizeof(data3);
 		} else {
-			printf("INCLUDE2 not detected.\n");
+			printf("ERROR: INCLUDE2 not detected.\n");
 			print_hex(p, 32);
 			return 1;
 		}
@@ -173,7 +173,7 @@ main(int argc, char **argv)
 			printf("HEADER1 detected.\n");
 			p += sizeof(data5);
 		} else {
-			printf("HEADER1 not detected.\n");
+			printf("ERROR: HEADER1 not detected.\n");
 			print_hex(p, 32);
 			return 1;
 		}
@@ -181,7 +181,7 @@ main(int argc, char **argv)
 		printf("HEADER1 detected.\n");
 		p += sizeof(data5);
 	} else {
-		printf("CLS/HEADER1 not detected.\n");
+		printf("ERROR: CLS/HEADER1 not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -205,7 +205,7 @@ main(int argc, char **argv)
 		p += sizeof(data5b);
 
 	} else {
-		printf("HEADERX not detected.\n");
+		printf("ERROR: HEADERX not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -231,7 +231,7 @@ main(int argc, char **argv)
 		printf("HEADER2 detected.\n");
 		p += sizeof(data6);
 	} else {
-		printf("HEADER2 not detected.\n");
+		printf("ERROR: HEADER2 not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -255,7 +255,7 @@ main(int argc, char **argv)
 		p += sizeof(data6b);
 
 	} else {
-		printf("HEADERY not detected.\n");
+		printf("ERROR: HEADERY not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -272,7 +272,7 @@ main(int argc, char **argv)
 		printf("HEADER3 detected.\n");
 		p += sizeof(data7);
 	} else {
-		printf("HEADER3 not detected.\n");
+		printf("ERROR: HEADER3 not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -292,7 +292,7 @@ main(int argc, char **argv)
 		printf("HEADER4 detected.\n");
 		p += sizeof(data8);
 	} else {
-		printf("HEADER4 not detected.\n");
+		printf("ERROR: HEADER4 not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -321,7 +321,7 @@ main(int argc, char **argv)
 		p += sizeof(data4);
 
 	} else {
-		printf("HEADER5 not detected.\n");
+		printf("ERROR: HEADER5 not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -382,7 +382,7 @@ main(int argc, char **argv)
 		p += sizeof(data10);
 
 	} else {
-		printf("FOOTER1 not detected.\n");
+		printf("ERROR: FOOTER1 not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -406,7 +406,7 @@ main(int argc, char **argv)
 		p += sizeof(data10b);
 
 	} else {
-		printf("FOOTERX not detected.\n");
+		printf("ERROR: FOOTERX not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -419,7 +419,7 @@ main(int argc, char **argv)
 		printf("FOOTER2 detected.\n");
 		p += sizeof(data6);
 	} else {
-		printf("FOOTER2 not detected.\n");
+		printf("ERROR: FOOTER2 not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -443,7 +443,7 @@ main(int argc, char **argv)
 		p += sizeof(data6b);
 
 	} else {
-		printf("FOOTERY not detected.\n");
+		printf("ERROR: FOOTERY not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -456,7 +456,7 @@ main(int argc, char **argv)
 		printf("FOOTER3 detected.\n");
 		p += sizeof(data7);
 	} else {
-		printf("FOOTER3 not detected.\n");
+		printf("ERROR: FOOTER3 not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
@@ -480,13 +480,13 @@ main(int argc, char **argv)
 		printf("FOOTER4 detected.\n");
 		p += sizeof(data11);
 	} else {
-		printf("FOOTER4 not detected.\n");
+		printf("ERROR: FOOTER4 not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
 
 	if (p != buffer + total_length) {
-		printf("trailing bytes!\n");
+		printf("ERROR: trailing bytes!\n");
 		print_hex(p, 32);
 		return 1;
 	}
