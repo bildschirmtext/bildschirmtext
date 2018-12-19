@@ -289,10 +289,34 @@ main(int argc, char **argv)
 		print_hex(p_old, p - p_old);
 
 		printf("FOOTER1 detected.\n");
-		p += sizeof(data4);
+		p += sizeof(data10);
 
 	} else {
 		printf("FOOTER1 not detected.\n");
+		return 1;
+	}
+
+	printf("page number:\n");
+	print_hex(p, 22);
+	p += 22;
+
+	if (!memcmp(p, data6, sizeof(data6))) {
+		printf("FOOTER2 detected.\n");
+		p += sizeof(data6);
+	} else {
+		printf("FOOTER2 not detected.\n");
+		return 1;
+	}
+
+	printf("publisher:\n");
+	print_hex(p, 30);
+	p += 30;
+
+	if (!memcmp(p, data7, sizeof(data7))) {
+		printf("FOOTER3 detected.\n");
+		p += sizeof(data7);
+	} else {
+		printf("FOOTER3 not detected.\n");
 		return 1;
 	}
 
