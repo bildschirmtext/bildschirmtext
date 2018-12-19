@@ -26,7 +26,7 @@ main(int argc, char **argv)
 
 	// skip remote echo of previous user entry that
 	// ended up in the dump
-	while ((*p >= '0' && *p <= '9') || *p == '#') {
+	while ((*p >= '0' && *p <= '9') || *p == '#' || *p == ' ' || *p == 8) {
 		p++;
 	}
 
@@ -198,7 +198,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data5b));
 
 	if (found) {
-		printf("publisher color:\n");
+		printf("publisher color: ");
 		print_hex(p_old, p - p_old);
 
 		printf("HEADERX detected.\n");
@@ -248,7 +248,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data6b));
 
 	if (found) {
-		printf("publisher color 2:\n");
+		printf("publisher color 2: ");
 		print_hex(p_old, p - p_old);
 
 		printf("HEADERY detected.\n");
@@ -399,7 +399,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data10b));
 
 	if (found) {
-		printf("publisher color 3:\n");
+		printf("publisher color 3: ");
 		print_hex(p_old, p - p_old);
 
 		printf("FOOTERX detected.\n");
@@ -436,7 +436,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data6b));
 
 	if (found) {
-		printf("publisher color 4:\n");
+		printf("publisher color 4: ");
 		print_hex(p_old, p - p_old);
 
 		printf("FOOTERY detected.\n");
