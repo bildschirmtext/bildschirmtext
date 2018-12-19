@@ -37,12 +37,23 @@ main(int argc, char **argv)
 		p += sizeof(data1);
 	} else {
 		printf("HIDE_CURSOR not detected.\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
 	const uint8_t data2[] = {
 		0x1f,0x2f,0x43,                          // serial limited mode
 		0x0c,                                    // clear screen
+	};
+
+	if (!memcmp(p, data2, sizeof(data2))) {
+		printf("INCLUDE$ detected.\n");
+		p += sizeof(data2);
+	} else {
+		printf("INCLUDE$ not detected.\n");
+	}
+
+	const uint8_t data2b[] = {
 		0x1f,0x2f,0x40,0x58,                     // service break to row 24
 		0x18,                                    // clear line
 		0x53,0x65,0x69,0x74,0x65,0x20,0x77,0x69, // "Seite wi"
@@ -54,13 +65,23 @@ main(int argc, char **argv)
 		0x08,                                    // cursor left
 		0x53,0x48,0x32,0x39,0x31,                // "SH291"
 		0x1f,0x2f,0x4f,                          // service break back
+	};
+
+	if (!memcmp(p, data2b, sizeof(data2b))) {
+		printf("INCLUDE0 detected.\n");
+		p += sizeof(data2b);
+	} else {
+		printf("INCLUDE0 not detected.\n");
+	}
+
+	const uint8_t data2c[] = {
 		0x1f,0x26,0x20,                          // start defining colors
 		0x1f,0x26,0x31,0x36,                     // define colors 16+
 	};
 
-	if (!memcmp(p, data2, sizeof(data2))) {
+	if (!memcmp(p, data2c, sizeof(data2c))) {
 		printf("INCLUDE1 detected.\n");
-		p += sizeof(data2);
+		p += sizeof(data2c);
 
 		printf("palette definitions:\n");
 		print_hex(p, 32);
@@ -75,6 +96,7 @@ main(int argc, char **argv)
 			p += sizeof(data3);
 		} else {
 			printf("INCLUDE2 not detected.\n");
+			print_hex(p, 32);
 			return 1;
 		}
 	} else {
@@ -110,6 +132,10 @@ main(int argc, char **argv)
 		0x9d,                                     // Hintergrundfarbe setzen bzw. inverse Polarität
 		0x08,                                     // cursor left
 		0x87,                                     // set fg color to #7
+// 9D
+// 08
+// 9B 30 40
+// 80
 		0x1f,0x58,0x53,                           // set cursor to line 24, column 19
 	};
 
@@ -141,6 +167,7 @@ main(int argc, char **argv)
 			p += sizeof(data5);
 		} else {
 			printf("HEADER1 not detected.\n");
+			print_hex(p, 32);
 			return 1;
 		}
 	} else if (found == 2) {
@@ -148,6 +175,7 @@ main(int argc, char **argv)
 		p += sizeof(data5);
 	} else {
 		printf("CLS/HEADER1 not detected.\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
@@ -171,6 +199,7 @@ main(int argc, char **argv)
 		p += sizeof(data6);
 	} else {
 		printf("HEADER2 not detected.\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
@@ -187,6 +216,7 @@ main(int argc, char **argv)
 		p += sizeof(data7);
 	} else {
 		printf("HEADER3 not detected.\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
@@ -206,6 +236,7 @@ main(int argc, char **argv)
 		p += sizeof(data8);
 	} else {
 		printf("HEADER4 not detected.\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
@@ -234,6 +265,7 @@ main(int argc, char **argv)
 
 	} else {
 		printf("HEADER5 not detected.\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
@@ -292,6 +324,7 @@ main(int argc, char **argv)
 
 	} else {
 		printf("FOOTER1 not detected.\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
@@ -304,6 +337,7 @@ main(int argc, char **argv)
 		p += sizeof(data6);
 	} else {
 		printf("FOOTER2 not detected.\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
@@ -316,6 +350,7 @@ main(int argc, char **argv)
 		p += sizeof(data7);
 	} else {
 		printf("FOOTER3 not detected.\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
@@ -339,11 +374,13 @@ main(int argc, char **argv)
 		p += sizeof(data11);
 	} else {
 		printf("FOOTER4 not detected.\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
 	if (p != buffer + total_length) {
 		printf("trailing bytes!\n");
+		print_hex(p, 32);
 		return 1;
 	}
 
