@@ -20,6 +20,7 @@ main(int argc, char **argv)
 {
 	FILE *f = fopen(argv[1], "r");
 	uint8_t buffer[10*1024];
+	memset(buffer, 255, sizeof(buffer));
 	int total_length = fread(buffer, 1, sizeof(buffer), f);
 
 	uint8_t *p = buffer;
@@ -272,9 +273,9 @@ main(int argc, char **argv)
 		printf("HEADER3 detected.\n");
 		p += sizeof(data7);
 	} else {
-		printf("ERROR: HEADER3 not detected.\n");
-		print_hex(p, 32);
-		return 1;
+		printf("publisher (extra characters):\n");
+		print_hex(p, 5);
+		p += 5;
 	}
 
 	printf("price:\n");
@@ -448,13 +449,24 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("publisher:\n");
-	print_hex(p, 30);
-	p += 30;
+	found = 0;
+	p_old = p;
+	do {
 
-	if (!memcmp(p, data7, sizeof(data7))) {
+		if (!memcmp(p, data7, sizeof(data7))) {
+			found = 1;
+			break;
+		}
+		p++;
+	} while(p <= buffer + total_length - sizeof(data7));
+
+	if (found) {
+		printf("publisher:\n");
+		print_hex(p_old, p - p_old);
+
 		printf("FOOTER3 detected.\n");
 		p += sizeof(data7);
+
 	} else {
 		printf("ERROR: FOOTER3 not detected.\n");
 		print_hex(p, 32);
