@@ -2,17 +2,47 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 
 void
 print_hex(uint8_t *q, int c)
 {
 	for (int i = 0; i < c; i++) {
-		if (i && !(i & 15)) {
-			printf("\n");
-		}
+//		if (i && !(i & 15)) {
+//			printf("\n");
+//		}
 		printf("%02x ", *q++);
 	}
 	printf("\n");
+}
+
+void
+print_text(uint8_t *p, int c)
+{
+	uint8_t *q = p;
+	printf("\"");
+	for (; q < p + c;) {
+		if (*q == 0x19) {
+			uint8_t ch = *++q;
+			if (ch == 0x48) {
+				switch (*++q) {
+					case 'u':
+						printf("ü");
+						break;
+					case 'O':
+						printf("Ö");
+						break;
+					default:
+						printf("ERROR: unknown encoding: 0x48 + 0x%02x\n", *q);
+						exit(1);
+				}
+				q++;
+			}
+		} else {
+			printf("%c", *q++);
+		}
+	}
+	printf("\"\n");
 }
 
 int
@@ -84,7 +114,7 @@ main(int argc, char **argv)
 		printf("INCLUDE1 detected.\n");
 		p += sizeof(data2c);
 
-		printf("palette definitions:\n");
+		printf("palette definitions: ");
 		print_hex(p, 32);
 		p += 32;
 
@@ -163,7 +193,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data4));
 
 	if (found) {
-		printf("include:\n");
+		printf("include: ");
 		print_hex(p_old, p - p_old);
 	}
 	if (found == 1) {
@@ -211,8 +241,8 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("page number:\n");
-	print_hex(p, 22);
+	printf("page number: ");
+	print_text(p, 22);
 	p += 22;
 
 	const uint8_t data6[] = {
@@ -268,8 +298,8 @@ main(int argc, char **argv)
 		}
 	}
 
-	printf("publisher:\n");
-	print_hex(p, i);
+	printf("publisher: ");
+	print_text(p, i);
 	p += i;
 
 	const uint8_t data7[] = {
@@ -280,13 +310,13 @@ main(int argc, char **argv)
 		printf("HEADER3 detected.\n");
 		p += sizeof(data7);
 	} else {
-		printf("publisher (extra characters):\n");
-		print_hex(p, 5);
+		printf("publisher (extra characters): ");
+		print_text(p, 5);
 		p += 5;
 	}
 
-	printf("price:\n");
-	print_hex(p, 10);
+	printf("price: ");
+	print_text(p, 10);
 	p += 10;
 
 	const uint8_t data8[] = {
@@ -322,8 +352,9 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data9));
 
 	if (found) {
-		printf("links:\n");
+		printf("links: ");
 		print_hex(p_old, p - p_old);
+		// TODO: decode
 
 		printf("HEADER5 detected.\n");
 		p += sizeof(data4);
@@ -334,7 +365,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("cursor:\n");
+	printf("cursor position: ");
 	print_hex(p, 2);
 	p += 2;
 
@@ -383,7 +414,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data10));
 
 	if (found) {
-		printf("payload:\n");
+		printf("payload: ");
 		print_hex(p_old, p - p_old);
 
 		printf("FOOTER1 detected.\n");
@@ -419,8 +450,8 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("page number:\n");
-	print_hex(p, 22);
+	printf("page number: ");
+	print_text(p, 22);
 	p += 22;
 
 	if (!memcmp(p, data6, sizeof(data6))) {
@@ -468,8 +499,8 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data7));
 
 	if (found) {
-		printf("publisher:\n");
-		print_hex(p_old, p - p_old);
+		printf("publisher: ");
+		print_text(p_old, p - p_old);
 
 		printf("FOOTER3 detected.\n");
 		p += sizeof(data7);
@@ -480,8 +511,8 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("price:\n");
-	print_hex(p, 10);
+	printf("price: ");
+	print_text(p, 10);
 	p += 10;
 
 	const uint8_t data11[] = {
