@@ -19,6 +19,19 @@ print_hex(uint8_t *q, int c)
 void
 print_text(uint8_t *p, int c)
 {
+	for (int d = c - 1; d > 0; d--) {
+		if (p[d] == ' ') {
+			c--;
+		} else {
+			break;
+		}
+	}
+
+	while (*p == ' ') {
+		p++;
+		c--;
+	}
+
 	uint8_t *q = p;
 	printf("\"");
 	for (; q < p + c;) {
@@ -360,8 +373,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("cursor position: ");
-	print_hex(p, 2);
+	printf("cursor position: %d, %d\n", p[1] - 0x40, p[0] - 0x40);
 	p += 2;
 
 	const uint8_t data10[] = {
