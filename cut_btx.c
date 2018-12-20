@@ -505,9 +505,8 @@ main(int argc, char **argv)
 	}
 
 	if (p != buffer + total_length) {
-		printf("ERROR: trailing bytes!\n");
+		printf("WARNING: trailing bytes!\n");
 		print_hex(p, 32);
-		return 1;
 	}
 
 	printf("OK!\n");
