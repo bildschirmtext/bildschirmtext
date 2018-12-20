@@ -292,7 +292,7 @@ main(int argc, char **argv)
 	}
 
 	int i;
-	for (i = 0; i < 30; i++) {
+	for (i = 0; i < 35; i++) {
 		if (p[i] == 0x1f) {
 			break;
 		}
@@ -310,9 +310,7 @@ main(int argc, char **argv)
 		printf("HEADER3 detected.\n");
 		p += sizeof(data7);
 	} else {
-		printf("publisher (extra characters): ");
-		print_text(p, 5);
-		p += 5;
+		printf("HEADER3 not detected.\n");
 	}
 
 	printf("price: ");
