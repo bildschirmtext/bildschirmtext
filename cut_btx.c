@@ -91,10 +91,10 @@ main(int argc, char **argv)
 	};
 
 	if (!memcmp(p, data2, sizeof(data2))) {
-//		printf("INCLUDE$ detected.\n");
+		printf("clear_screen: yes\n");
 		p += sizeof(data2);
 	} else {
-		printf("INCLUDE$ not detected.\n");
+		printf("clear_screen: no\n");
 	}
 
 	const uint8_t data2b[] = {
@@ -112,10 +112,10 @@ main(int argc, char **argv)
 	};
 
 	if (!memcmp(p, data2b, sizeof(data2b))) {
-//		printf("INCLUDE0 detected.\n");
+		printf("sh291: yes\n");
 		p += sizeof(data2b);
 	} else {
-//		printf("INCLUDE0 not detected.\n");
+		printf("sh291: no\n");
 	}
 
 	const uint8_t data2c[] = {
@@ -205,7 +205,7 @@ main(int argc, char **argv)
 		p++;
 	} while(p <= buffer + total_length - sizeof(data4));
 
-	if (found) {
+	if (found && p != p_old) {
 		printf("include: ");
 		print_hex(p_old, p - p_old);
 	}
@@ -242,7 +242,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data5b));
 
 	if (found) {
-		printf("publisher color: ");
+		printf("publisher_color: ");
 		print_hex(p_old, p - p_old);
 
 //		printf("HEADERX detected.\n");
@@ -253,7 +253,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("page number: ");
+	printf("page_number: ");
 	print_text(p, 22);
 	p += 22;
 
@@ -291,7 +291,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data6b));
 
 	if (found) {
-		printf("publisher color 2: ");
+		printf("publisher_color_2: ");
 		print_hex(p_old, p - p_old);
 
 //		printf("HEADERY detected.\n");
@@ -444,7 +444,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data10b));
 
 	if (found) {
-		printf("publisher color 3: ");
+		printf("publisher_color_3: ");
 		print_hex(p_old, p - p_old);
 
 //		printf("FOOTERX detected.\n");
@@ -455,7 +455,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("page number: ");
+	printf("page_number_2: ");
 	print_text(p, 22);
 	p += 22;
 
@@ -480,7 +480,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data6b));
 
 	if (found) {
-		printf("publisher color 4: ");
+		printf("publisher_color_4: ");
 		print_hex(p_old, p - p_old);
 
 //		printf("FOOTERY detected.\n");
@@ -503,7 +503,7 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data7));
 
 	if (found) {
-		printf("publisher: ");
+		printf("publisher_2: ");
 		print_text(p_old, p - p_old);
 
 //		printf("FOOTER3 detected.\n");
@@ -514,7 +514,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("price: ");
+	printf("price_2: ");
 	print_text(p, 10);
 	p += 10;
 
@@ -543,7 +543,7 @@ main(int argc, char **argv)
 		print_hex(p, 32);
 	}
 
-	printf("OK!\n");
+//	printf("OK!\n");
 
 	return 0;
 }
