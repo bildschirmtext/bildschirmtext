@@ -261,9 +261,16 @@ main(int argc, char **argv)
 		return 1;
 	}
 
+	int i;
+	for (i = 0; i < 30; i++) {
+		if (p[i] == 0x1f) {
+			break;
+		}
+	}
+
 	printf("publisher:\n");
-	print_hex(p, 30);
-	p += 30;
+	print_hex(p, i);
+	p += i;
 
 	const uint8_t data7[] = {
 		0x1f,0x41,0x5f,                           // set cursor to line 1, column 31
