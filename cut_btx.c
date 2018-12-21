@@ -143,6 +143,8 @@ main(int argc, char **argv)
 		0x1f,0x2f,0x4f,                          // service break back
 	};
 
+again:
+
 	if (!memcmp(p, data2b, sizeof(data2b))) {
 		printf("sh291: yes\n");
 		p += sizeof(data2b);
@@ -209,19 +211,6 @@ main(int argc, char **argv)
 		0x08,                                     // cursor left
 	};
 
-//
-//		0x87,                                     // set fg color to #7
-
-// 9D
-// 08
-// 9B 30 40
-// 80
-
-
-	const uint8_t data5b[] = {
-		0x1f,0x58,0x53,                           // set cursor to line 24, column 19
-	};
-
 	int found = 0;
 	uint8_t *p_old = p;
 	do {
@@ -261,6 +250,10 @@ main(int argc, char **argv)
 		print_hex(p, 32);
 		return 1;
 	}
+
+	const uint8_t data5b[] = {
+		0x1f,0x58,0x53,                           // set cursor to line 24, column 19
+	};
 
 	found = 0;
 	p_old = p;
@@ -559,17 +552,33 @@ main(int argc, char **argv)
 		0x9b,0x30,0x40,                           // select palette #0
 		0x9b,0x31,0x50,                           // protect line
 		0x0a,                                     // cursor down
+	};
+
+	const uint8_t data11b[] = {
 		0x1f,0x58,0x41,                           // set cursor to x=24 y=1
 		0x11,                                     // show cursor
 		0x1a,                                     // end of page
 	};
-
 
 	if (!memcmp(p, data11, sizeof(data11))) {
 //		printf("FOOTER4 detected.\n");
 		p += sizeof(data11);
 	} else {
 		printf("ERROR: FOOTER4 not detected.\n");
+		print_hex(p, 32);
+		return 1;
+	}
+
+	if (!memcmp(p, data2b, sizeof(data2))) {
+		printf("again: yes\n");
+		goto again;
+	}
+
+	if (!memcmp(p, data11b, sizeof(data11b))) {
+//		printf("FOOTER4 detected.\n");
+		p += sizeof(data11b);
+	} else {
+		printf("ERROR: FOOTER5 not detected.\n");
 		print_hex(p, 32);
 		return 1;
 	}
