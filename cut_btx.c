@@ -58,6 +58,37 @@ print_text(uint8_t *p, int c)
 	printf("\"\n");
 }
 
+void
+print_links(uint8_t *p, int c)
+{
+	uint8_t *q = p;
+	for (; q < p + c;) {
+		if (q[0] != 0x1f || q[1] != 0x3d || (q[2] & 0xf0) != 0x30) {
+			printf("ERROR: unknown links encoding\n");
+			print_hex(q, 16);
+			exit(1);
+		}
+		q += 3;
+		if (*q == 0x1f) {
+			// empty
+			continue;
+		}
+		printf("%c", q[0]);
+		if (q[1] != ' ') {
+			printf("%c", q[1]);
+		}
+		q += 2;
+		printf(": ");
+		while (*q != 0x1f) {
+			printf("%c", *q++);
+		}
+		if (q != p + c) {
+			printf("; ");
+		}
+	}
+	printf("\n");
+}
+
 int
 main(int argc, char **argv)
 {
@@ -362,8 +393,7 @@ main(int argc, char **argv)
 
 	if (found) {
 		printf("links: ");
-		print_hex(p_old, p - p_old);
-		// TODO: decode
+		print_links(p_old, p - p_old);
 
 //		printf("HEADER5 detected.\n");
 		p += sizeof(data4);
