@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+int debug = 0;
+
 void
 print_hex(uint8_t *q, int c)
 {
@@ -61,10 +63,8 @@ print_text(uint8_t *p, int c)
 uint8_t *
 print_links(uint8_t *p)
 {
-//	print_hex(p, 16);
 	uint8_t *q = p;
 	for (;;) {
-//		printf("%p %p %d\n", p, q, c);
 		if (q[0] != 0x1f || q[1] != 0x3d || (q[2] & 0xf0) != 0x30) {
 			break;
 		}
@@ -82,9 +82,7 @@ print_links(uint8_t *p)
 		while (*q != 0x1f) {
 			printf("%c", *q++);
 		}
-//		if (q != p + c) {
-			printf("; ");
-//		}
+		printf("; ");
 	}
 	printf("\n");
 	return q;
@@ -112,7 +110,7 @@ main(int argc, char **argv)
 	const uint8_t data1[] = { 0x14 };
 
 	if (!memcmp(p, data1, sizeof(data1))) {
-//		printf("HIDE_CURSOR detected.\n");
+		if (debug) printf("HIDE_CURSOR detected.\n");
 		p += sizeof(data1);
 	} else {
 		printf("ERROR: HIDE_CURSOR not detected.\n");
@@ -161,7 +159,7 @@ again:
 	};
 
 	if (!memcmp(p, data2c, sizeof(data2c))) {
-//		printf("INCLUDE1 detected.\n");
+		if (debug) printf("INCLUDE1 detected.\n");
 		p += sizeof(data2c);
 
 		uint8_t *p_old = p;
@@ -181,11 +179,9 @@ again:
 			p += sizeof(data3);
 		} else {
 			printf("set_cursor: no\n");
-//			print_hex(p, 32);
-//			return 1;
 		}
 	} else {
-//		printf("INCLUDE1 not detected.\n");
+		if (debug) printf("INCLUDE1 not detected.\n");
 	}
 
 	const uint8_t data4[] = {
@@ -218,8 +214,6 @@ again:
 		0x08,                                     // cursor left
 	};
 
-again2:
-
 	found = 0;
 	p_old = p;
 	do {
@@ -240,11 +234,11 @@ again2:
 		print_hex(p_old, p - p_old);
 	}
 	if (found == 1) {
-//		printf("CLS detected.\n");
+		if (debug) printf("CLS detected.\n");
 		p += sizeof(data4);
 
 		if (!memcmp(p, data5, sizeof(data5))) {
-//			printf("HEADER1 detected.\n");
+			if (debug) printf("HEADER1 detected.\n");
 			p += sizeof(data5);
 		} else {
 			printf("ERROR: HEADER1 not detected.\n");
@@ -252,7 +246,7 @@ again2:
 			return 1;
 		}
 	} else if (found == 2) {
-//		printf("HEADER1 detected.\n");
+		if (debug) printf("HEADER1 detected.\n");
 		p += sizeof(data5);
 	} else {
 		printf("ERROR: CLS/HEADER1 not detected.\n");
@@ -279,7 +273,7 @@ again2:
 		printf("publisher_color: ");
 		print_hex(p_old, p - p_old);
 
-//		printf("HEADERX detected.\n");
+		if (debug) printf("HEADERX detected.\n");
 		p += sizeof(data5b);
 	} else {
 		printf("ERROR: HEADERX not detected.\n");
@@ -305,7 +299,7 @@ again2:
 	};
 
 	if (!memcmp(p, data6, sizeof(data6))) {
-//		printf("HEADER2 detected.\n");
+		if (debug) printf("HEADER2 detected.\n");
 		p += sizeof(data6);
 	} else {
 		printf("ERROR: HEADER2 not detected.\n");
@@ -328,7 +322,7 @@ again2:
 		printf("publisher_color_2: ");
 		print_hex(p_old, p - p_old);
 
-//		printf("HEADERY detected.\n");
+		if (debug) printf("HEADERY detected.\n");
 		p += sizeof(data6b);
 	} else {
 		printf("ERROR: HEADERY not detected.\n");
@@ -352,10 +346,10 @@ again2:
 	};
 
 	if (!memcmp(p, data7, sizeof(data7))) {
-//		printf("HEADER3 detected.\n");
+		if (debug) printf("HEADER3 detected.\n");
 		p += sizeof(data7);
 	} else {
-//		printf("HEADER3 not detected.\n");
+		if (debug) printf("HEADER3 not detected.\n");
 	}
 
 	printf("price: ");
@@ -370,7 +364,7 @@ again2:
 	};
 
 	if (!memcmp(p, data8, sizeof(data8))) {
-//		printf("HEADER4 detected.\n");
+		if (debug) printf("HEADER4 detected.\n");
 		p += sizeof(data8);
 	} else {
 		printf("ERROR: HEADER4 not detected.\n");
@@ -429,7 +423,7 @@ again2:
 		printf("payload: ");
 		print_hex(p_old, p - p_old);
 
-//		printf("FOOTER1 detected.\n");
+		if (debug) printf("FOOTER1 detected.\n");
 		p += sizeof(data10);
 	} else {
 		printf("ERROR: FOOTER1 not detected.\n");
@@ -452,7 +446,7 @@ again2:
 		printf("publisher_color_3: ");
 		print_hex(p_old, p - p_old);
 
-//		printf("FOOTERX detected.\n");
+		if (debug) printf("FOOTERX detected.\n");
 		p += sizeof(data10b);
 	} else {
 		printf("ERROR: FOOTERX not detected.\n");
@@ -465,7 +459,7 @@ again2:
 	p += 22;
 
 	if (!memcmp(p, data6, sizeof(data6))) {
-//		printf("FOOTER2 detected.\n");
+		if (debug) printf("FOOTER2 detected.\n");
 		p += sizeof(data6);
 	} else {
 		printf("ERROR: FOOTER2 not detected.\n");
@@ -488,7 +482,7 @@ again2:
 		printf("publisher_color_4: ");
 		print_hex(p_old, p - p_old);
 
-//		printf("FOOTERY detected.\n");
+		if (debug) printf("FOOTERY detected.\n");
 		p += sizeof(data6b);
 	} else {
 		printf("ERROR: FOOTERY not detected.\n");
@@ -511,7 +505,7 @@ again2:
 		printf("publisher_2: ");
 		print_text(p_old, p - p_old);
 
-//		printf("FOOTER3 detected.\n");
+		if (debug) printf("FOOTER3 detected.\n");
 		p += sizeof(data7);
 	} else {
 		printf("ERROR: FOOTER3 not detected.\n");
@@ -537,7 +531,7 @@ again2:
 	};
 
 	if (!memcmp(p, data11, sizeof(data11))) {
-//		printf("FOOTER4 detected.\n");
+		if (debug) printf("FOOTER4 detected.\n");
 		p += sizeof(data11);
 	} else {
 		printf("ERROR: FOOTER4 not detected.\n");
@@ -552,11 +546,11 @@ again2:
 
 	if (!memcmp(p, data5, sizeof(data5))) {
 		printf("again2: yes\n");
-		goto again2;
+		goto again;
 	}
 
 	if (!memcmp(p, data11b, sizeof(data11b))) {
-//		printf("FOOTER4 detected.\n");
+		if (debug) printf("FOOTER4 detected.\n");
 		p += sizeof(data11b);
 	} else {
 		printf("ERROR: FOOTER5 not detected.\n");
@@ -569,7 +563,7 @@ again2:
 		print_hex(p, 32);
 	}
 
-//	printf("OK!\n");
+	if (debug) printf("OK!\n");
 
 	return 0;
 }
