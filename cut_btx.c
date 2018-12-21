@@ -21,7 +21,7 @@ print_hex(uint8_t *q, int c)
 }
 
 void
-print_text(uint8_t *p, int c)
+print_text(FILE *f, uint8_t *p, int c)
 {
 	for (int d = c - 1; d > 0; d--) {
 		if (p[d] == ' ') {
@@ -37,17 +37,17 @@ print_text(uint8_t *p, int c)
 	}
 
 	uint8_t *q = p;
-	printf("\"");
+	fprintf(f, "\"");
 	for (; q < p + c;) {
 		if (*q == 0x19) {
 			uint8_t ch = *++q;
 			if (ch == 0x48) {
 				switch (*++q) {
 					case 'u':
-						printf("ü");
+						fprintf(f, "ü");
 						break;
 					case 'O':
-						printf("Ö");
+						fprintf(f, "Ö");
 						break;
 					default:
 						printf("ERROR: unknown encoding: 0x48 + 0x%02x\n", *q);
@@ -56,10 +56,10 @@ print_text(uint8_t *p, int c)
 				q++;
 			}
 		} else {
-			printf("%c", *q++);
+			fprintf(f, "%c", *q++);
 		}
 	}
-	printf("\"");
+	fprintf(f, "\"");
 }
 
 uint8_t *
@@ -128,15 +128,23 @@ main(int argc, char **argv)
 		verbose = 1;
 	}
 
+	char filename_globals[256];
 	char filename_palette[256];
 	char filename_include[256];
 	char filename_payload[256];
+	strcpy(filename_globals, argv[1]);
+	strcpy(filename_globals + strlen(argv[1]), ".glob");
 	strcpy(filename_palette, argv[1]);
 	strcpy(filename_palette + strlen(argv[1]), ".pal");
 	strcpy(filename_include, argv[1]);
 	strcpy(filename_include + strlen(argv[1]), ".inc");
 	strcpy(filename_payload, argv[1]);
 	strcpy(filename_payload + strlen(argv[1]), ".cept");
+
+	FILE *file_globals;
+	if (create_files) {
+		file_globals = fopen(filename_globals, "w");
+	}
 
 	FILE *f = fopen(argv[1], "r");
 	uint8_t buffer[10*1024];
@@ -192,10 +200,14 @@ main(int argc, char **argv)
 again:
 
 	if (!memcmp(p, data2b, sizeof(data2b))) {
-		printf("\"sh291\": true,\n");
+		if (verbose) {
+			printf("\"sh291\": true,\n");
+		}
 		p += sizeof(data2b);
 	} else {
-		printf("\"sh291\": false,\n");
+		if (verbose) {
+			printf("\"sh291\": false,\n");
+		}
 	}
 
 	const uint8_t data2c[] = {
@@ -213,7 +225,7 @@ again:
 		}
 
 		if (create_files) {
-			f = fopen(filename_include, "w");
+			f = fopen(filename_palette, "w");
 			fprintf(f, "\"palette\": ");
 			print_palette(f, p_old, p - p_old);
 			fclose(f);
@@ -329,15 +341,20 @@ again:
 	} while(p <= buffer + total_length - sizeof(data5b));
 
 	if (found) {
-		printf("\"publisher_color\": ");
-		if (debug) {
-			print_hex(p_old, p - p_old);
+		if (p_old[0] == 0x9b && p_old[1] == 0x30 && p_old[2] == 0x40) {
+			p_old += 3;
+		}
+		uint8_t color = p_old[0] & 0xf;
+
+		if (create_files) {
+			fprintf(file_globals, "\"publisher_color\": %d,\n", color);
 		} else {
-			if (p_old[0] == 0x9b && p_old[1] == 0x30 && p_old[2] == 0x40) {
-				p_old += 3;
+			printf("\"publisher_color\": ");
+			if (debug) {
+				print_hex(p_old, p - p_old);
+			} else {
+				printf("%d,\n", color);
 			}
-			uint8_t color = p_old[0] & 0xf;
-			printf("%d,\n", color);
 		}
 
 		if (debug) printf("HEADERX detected.\n");
@@ -350,7 +367,7 @@ again:
 
 	if (verbose) {
 		printf("\"page_number\": ");
-		print_text(p, 22);
+		print_text(stdout, p, 22);
 	printf(",\n");
 	}
 	p += 22;
@@ -409,9 +426,14 @@ again:
 		}
 	}
 
-	printf("\"publisher_name\": ");
-	print_text(p, i);
-	printf(",\n");
+	if (create_files) {
+		f = file_globals;
+	} else {
+		f = stdout;
+	}
+	fprintf(f, "\"publisher_name\": ");
+	print_text(f, p, i);
+	fprintf(f, ",\n");
 	p += i;
 
 	const uint8_t data7[] = {
@@ -427,7 +449,7 @@ again:
 
 	if (verbose || memcmp(p, "   0,00 DM", 7)) {
 		printf("\"price\": ");
-		print_text(p, 10);
+		print_text(stdout, p, 10);
 		printf(",\n");
 	}
 	p += 10;
@@ -541,7 +563,7 @@ again:
 
 	if (verbose) {
 		printf("page_number_2: ");
-		print_text(p, 22);
+		print_text(stdout, p, 22);
 	}
 	p += 22;
 
@@ -593,7 +615,7 @@ again:
 	if (found) {
 		if (verbose) {
 			printf("publisher_name_2: ");
-			print_text(p_old, p - p_old);
+			print_text(stdout, p_old, p - p_old);
 		}
 
 		if (debug) printf("FOOTER3 detected.\n");
@@ -606,7 +628,7 @@ again:
 
 	if (verbose) {
 		printf("price_2: ");
-		print_text(p, 10);
+		print_text(stdout, p, 10);
 	}
 	p += 10;
 
