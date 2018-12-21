@@ -89,6 +89,32 @@ print_links(uint8_t *p)
 	return q;
 }
 
+void
+print_palette(uint8_t *p, int c)
+{
+	uint8_t *q = p;
+	for (; q < p + c;) {
+		int r3 = (q[0] >> 5) & 1;
+		int g3 = (q[0] >> 4) & 1;
+		int b3 = (q[0] >> 3) & 1;
+		int r2 = (q[0] >> 2) & 1;
+		int g2 = (q[0] >> 1) & 1;
+		int b2 = (q[0] >> 0) & 1;
+		int r1 = (q[1] >> 5) & 1;
+		int g1 = (q[1] >> 4) & 1;
+		int b1 = (q[1] >> 3) & 1;
+		int r0 = (q[1] >> 2) & 1;
+		int g0 = (q[1] >> 1) & 1;
+		int b0 = (q[1] >> 0) & 1;
+		int r = (r0 | (r1 << 1) | (r2 << 2) | (r3 << 3)) << 4;
+		int g = (g0 | (g1 << 1) | (g2 << 2) | (g3 << 3)) << 4;
+		int b = (b0 | (b1 << 1) | (b2 << 2) | (b3 << 3)) << 4;
+		printf("#%02x%02x%02x ", r, g, b);
+		q += 2;
+	}
+	printf("\n");
+}
+
 int
 main(int argc, char **argv)
 {
@@ -172,10 +198,8 @@ again:
 			p++;
 		}
 
-		if (verbose) {
-			printf("palette definitions (%ld): ", p - p_old);
-			print_hex(p_old, p - p_old);
-		}
+		printf("palette: ");
+		print_palette(p_old, p - p_old);
 
 		const uint8_t data3[] = {
 			0x1f,0x41,0x41,                           // set cursor to x=1 y=1
