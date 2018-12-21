@@ -304,7 +304,15 @@ again:
 
 	if (found) {
 		printf("publisher_color: ");
-		print_hex(p_old, p - p_old);
+		if (debug) {
+			print_hex(p_old, p - p_old);
+		} else {
+			if (p_old[0] == 0x9b && p_old[1] == 0x30 && p_old[2] == 0x40) {
+				p_old += 3;
+			}
+			uint8_t color = p_old[0] & 0xf;
+			printf("%d\n", color);
+		}
 
 		if (debug) printf("HEADERX detected.\n");
 		p += sizeof(data5b);
