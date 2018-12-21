@@ -380,7 +380,7 @@ again:
 		}
 	}
 
-	printf("publisher: ");
+	printf("publisher_name: ");
 	print_text(p, i);
 	p += i;
 
@@ -554,7 +554,7 @@ again:
 
 	if (found) {
 		if (verbose) {
-			printf("publisher_2: ");
+			printf("publisher_name_2: ");
 			print_text(p_old, p - p_old);
 		}
 
