@@ -93,6 +93,9 @@ print_links(uint8_t *p)
 int
 main(int argc, char **argv)
 {
+	int found;
+	uint8_t *p_old;
+
 	FILE *f = fopen(argv[1], "r");
 	uint8_t buffer[10*1024];
 	memset(buffer, 255, sizeof(buffer));
@@ -215,8 +218,10 @@ again:
 		0x08,                                     // cursor left
 	};
 
-	int found = 0;
-	uint8_t *p_old = p;
+again2:
+
+	found = 0;
+	p_old = p;
 	do {
 
 		if (!memcmp(p, data4, sizeof(data4))) {
@@ -543,6 +548,11 @@ again:
 	if (!memcmp(p, data2b, sizeof(data2))) {
 		printf("again: yes\n");
 		goto again;
+	}
+
+	if (!memcmp(p, data5, sizeof(data5))) {
+		printf("again2: yes\n");
+		goto again2;
 	}
 
 	if (!memcmp(p, data11b, sizeof(data11b))) {
