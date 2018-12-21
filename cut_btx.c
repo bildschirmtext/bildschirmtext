@@ -91,6 +91,7 @@ print_links(uint8_t *p)
 		while (*q != 0x1f) {
 			printf("%c", *q++);
 		}
+		printf("\"");
 	}
 	printf("\n},\n");
 	return q;
@@ -101,7 +102,12 @@ print_palette(FILE *f, uint8_t *p, int c)
 {
 	fprintf(f, "[\n");
 	uint8_t *q = p;
+	bool first = true;
 	for (; q < p + c;) {
+		if (!first) {
+			fprintf(f, ",\n");
+		}
+		first = false;
 		int r3 = (q[0] >> 5) & 1;
 		int g3 = (q[0] >> 4) & 1;
 		int b3 = (q[0] >> 3) & 1;
@@ -117,10 +123,10 @@ print_palette(FILE *f, uint8_t *p, int c)
 		int r = (r0 | (r1 << 1) | (r2 << 2) | (r3 << 3)) << 4;
 		int g = (g0 | (g1 << 1) | (g2 << 2) | (g3 << 3)) << 4;
 		int b = (b0 | (b1 << 1) | (b2 << 2) | (b3 << 3)) << 4;
-		fprintf(f, "\t\"#%02x%02x%02x\",\n", r, g, b);
+		fprintf(f, "\t\"#%02x%02x%02x\"", r, g, b);
 		q += 2;
 	}
-	fprintf(f, "],\n");
+	fprintf(f, "\n]\n");
 }
 
 int
