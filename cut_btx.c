@@ -674,8 +674,10 @@ again:
 	}
 
 	if (p != buffer + total_length) {
-		if (debug) printf("WARNING: trailing bytes!\n");
-		print_hex(p, 32);
+		if (debug) {
+			printf("WARNING: trailing bytes!\n");
+			print_hex(p, 32);
+		}
 	}
 
 	if (debug) printf("OK!\n");
