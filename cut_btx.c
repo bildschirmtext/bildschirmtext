@@ -379,38 +379,38 @@ main(int argc, char **argv)
 	printf("links: ");
 	p = print_links(p);
 
-	const uint8_t data9[] = {
-		0x1f,0x2f,0x44,                           // parallel limited mode
-		0x1f,                                     // set cursor to line X, column X
-	};
-
-	found = 0;
-	p_old = p;
-	do {
-
-		if (!memcmp(p, data9, sizeof(data9))) {
-			found = 1;
-			break;
-		}
-		p++;
-	} while(p <= buffer + total_length - sizeof(data9));
-
-	if (found) {
-		if (p != p_old) {
-			printf("include2: ");
-			print_hex(p_old, p - p_old);
-		}
-
-//		printf("HEADER5 detected.\n");
-		p += sizeof(data9);
-	} else {
-		printf("ERROR: HEADER5 not detected.\n");
-		print_hex(p, 32);
-		return 1;
-	}
-
-	printf("cursor position: %d, %d\n", p[1] - 0x40, p[0] - 0x40);
-	p += 2;
+//	const uint8_t data9[] = {
+//		0x1f,0x2f,0x44,                           // parallel limited mode
+//		0x1f,                                     // set cursor to line X, column X
+//	};
+//
+//	found = 0;
+//	p_old = p;
+//	do {
+//
+//		if (!memcmp(p, data9, sizeof(data9))) {
+//			found = 1;
+//			break;
+//		}
+//		p++;
+//	} while(p <= buffer + total_length - sizeof(data9));
+//
+//	if (found) {
+//		if (p != p_old) {
+//			printf("include2: ");
+//			print_hex(p_old, p - p_old);
+//		}
+//
+////		printf("HEADER5 detected.\n");
+//		p += sizeof(data9);
+//	} else {
+//		printf("ERROR: HEADER5 not detected.\n");
+//		print_hex(p, 32);
+//		return 1;
+//	}
+//
+//	printf("cursor position: %d, %d\n", p[1] - 0x40, p[0] - 0x40);
+//	p += 2;
 
 	const uint8_t data10[] = {
 //		0x39,                                     // "9"
