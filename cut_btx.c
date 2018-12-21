@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 int debug = 0;
+int verbose = 0;
 
 void
 print_hex(uint8_t *q, int c)
@@ -94,6 +95,10 @@ main(int argc, char **argv)
 	int found;
 	uint8_t *p_old;
 
+	if (debug) {
+		verbose = 1;
+	}
+
 	FILE *f = fopen(argv[1], "r");
 	uint8_t buffer[10*1024];
 	memset(buffer, 255, sizeof(buffer));
@@ -167,8 +172,10 @@ again:
 			p++;
 		}
 
-		printf("palette definitions (%ld): ", p - p_old);
-		print_hex(p_old, p - p_old);
+		if (verbose) {
+			printf("palette definitions (%ld): ", p - p_old);
+			print_hex(p_old, p - p_old);
+		}
 
 		const uint8_t data3[] = {
 			0x1f,0x41,0x41,                           // set cursor to x=1 y=1
@@ -230,8 +237,10 @@ again:
 	} while(p <= buffer + total_length - sizeof(data4));
 
 	if (found && p != p_old) {
-		printf("include: ");
-		print_hex(p_old, p - p_old);
+		if (verbose) {
+			printf("include: ");
+			print_hex(p_old, p - p_old);
+		}
 	}
 	if (found == 1) {
 		if (debug) printf("CLS detected.\n");
@@ -319,8 +328,10 @@ again:
 	} while(p <= buffer + total_length - sizeof(data6b));
 
 	if (found) {
-		printf("publisher_color_2: ");
-		print_hex(p_old, p - p_old);
+		if (verbose) {
+			printf("publisher_color_2: ");
+			print_hex(p_old, p - p_old);
+		}
 
 		if (debug) printf("HEADERY detected.\n");
 		p += sizeof(data6b);
@@ -420,8 +431,10 @@ again:
 	} while(p <= buffer + total_length - sizeof(data10));
 
 	if (found) {
-		printf("payload: ");
-		print_hex(p_old, p - p_old);
+		if (verbose) {
+			printf("payload: ");
+			print_hex(p_old, p - p_old);
+		}
 
 		if (debug) printf("FOOTER1 detected.\n");
 		p += sizeof(data10);
@@ -443,8 +456,10 @@ again:
 	} while(p <= buffer + total_length - sizeof(data10b));
 
 	if (found) {
-		printf("publisher_color_3: ");
-		print_hex(p_old, p - p_old);
+		if (verbose) {
+			printf("publisher_color_3: ");
+			print_hex(p_old, p - p_old);
+		}
 
 		if (debug) printf("FOOTERX detected.\n");
 		p += sizeof(data10b);
@@ -454,8 +469,10 @@ again:
 		return 1;
 	}
 
-	printf("page_number_2: ");
-	print_text(p, 22);
+	if (verbose) {
+		printf("page_number_2: ");
+		print_text(p, 22);
+	}
 	p += 22;
 
 	if (!memcmp(p, data6, sizeof(data6))) {
@@ -479,8 +496,10 @@ again:
 	} while(p <= buffer + total_length - sizeof(data6b));
 
 	if (found) {
-		printf("publisher_color_4: ");
-		print_hex(p_old, p - p_old);
+		if (verbose) {
+			printf("publisher_color_4: ");
+			print_hex(p_old, p - p_old);
+		}
 
 		if (debug) printf("FOOTERY detected.\n");
 		p += sizeof(data6b);
@@ -502,8 +521,10 @@ again:
 	} while(p <= buffer + total_length - sizeof(data7));
 
 	if (found) {
-		printf("publisher_2: ");
-		print_text(p_old, p - p_old);
+		if (verbose) {
+			printf("publisher_2: ");
+			print_text(p_old, p - p_old);
+		}
 
 		if (debug) printf("FOOTER3 detected.\n");
 		p += sizeof(data7);
@@ -513,8 +534,10 @@ again:
 		return 1;
 	}
 
-	printf("price_2: ");
-	print_text(p, 10);
+	if (verbose) {
+		printf("price_2: ");
+		print_text(p, 10);
+	}
 	p += 10;
 
 	const uint8_t data11[] = {
@@ -559,7 +582,7 @@ again:
 	}
 
 	if (p != buffer + total_length) {
-		printf("WARNING: trailing bytes!\n");
+		if (debug) printf("WARNING: trailing bytes!\n");
 		print_hex(p, 32);
 	}
 
