@@ -58,15 +58,15 @@ print_text(uint8_t *p, int c)
 	printf("\"\n");
 }
 
-void
-print_links(uint8_t *p, int c)
+uint8_t *
+print_links(uint8_t *p)
 {
+//	print_hex(p, 16);
 	uint8_t *q = p;
-	for (; q < p + c;) {
+	for (;;) {
+//		printf("%p %p %d\n", p, q, c);
 		if (q[0] != 0x1f || q[1] != 0x3d || (q[2] & 0xf0) != 0x30) {
-			printf("ERROR: unknown links encoding\n");
-			print_hex(q, 16);
-			exit(1);
+			break;
 		}
 		q += 3;
 		if (*q == 0x1f) {
@@ -82,11 +82,12 @@ print_links(uint8_t *p, int c)
 		while (*q != 0x1f) {
 			printf("%c", *q++);
 		}
-		if (q != p + c) {
+//		if (q != p + c) {
 			printf("; ");
-		}
+//		}
 	}
 	printf("\n");
+	return q;
 }
 
 int
@@ -375,6 +376,9 @@ main(int argc, char **argv)
 		return 1;
 	}
 
+	printf("links: ");
+	p = print_links(p);
+
 	const uint8_t data9[] = {
 		0x1f,0x2f,0x44,                           // parallel limited mode
 		0x1f,                                     // set cursor to line X, column X
@@ -392,11 +396,13 @@ main(int argc, char **argv)
 	} while(p <= buffer + total_length - sizeof(data9));
 
 	if (found) {
-		printf("links: ");
-		print_links(p_old, p - p_old);
+		if (p != p_old) {
+			printf("include2: ");
+			print_hex(p_old, p - p_old);
+		}
 
 //		printf("HEADER5 detected.\n");
-		p += sizeof(data4);
+		p += sizeof(data9);
 	} else {
 		printf("ERROR: HEADER5 not detected.\n");
 		print_hex(p, 32);
