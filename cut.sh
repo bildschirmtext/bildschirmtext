@@ -1,0 +1,1 @@
+make cut_btx && rm test/*.meta test/*.glob test/*.cept test/*.pal test/*.inc; for i in test/*; do echo $i; ./cut_btx $i > $i.meta; done; mv test/*.meta test/*.glob test/*.cept test/*.pal test/*.inc x; for i in x/*.meta; do perl -e 'truncate $ARGV[0], ((-s $ARGV[0]) -2)' $i; done

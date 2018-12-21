@@ -67,15 +67,21 @@ print_links(uint8_t *p)
 {
 	printf("{\n");
 	uint8_t *q = p;
+	bool first = true;
 	for (;;) {
 		if (q[0] != 0x1f || q[1] != 0x3d || (q[2] & 0xf0) != 0x30) {
 			break;
 		}
+		if (!first) {
+			printf(",\n");
+		}
+
 		q += 3;
 		if (*q == 0x1f) {
 			// empty
 			continue;
 		}
+		first = false;
 		printf("\t\"%c", q[0]);
 		if (q[1] != ' ') {
 			printf("%c", q[1]);
@@ -85,9 +91,8 @@ print_links(uint8_t *p)
 		while (*q != 0x1f) {
 			printf("%c", *q++);
 		}
-		printf("\",\n");
 	}
-	printf("},\n");
+	printf("\n},\n");
 	return q;
 }
 
@@ -144,6 +149,7 @@ main(int argc, char **argv)
 	FILE *file_globals;
 	if (create_files) {
 		file_globals = fopen(filename_globals, "w");
+		fprintf(file_globals, "{\n");
 	}
 
 	FILE *f = fopen(argv[1], "r");
@@ -226,8 +232,9 @@ again:
 
 		if (create_files) {
 			f = fopen(filename_palette, "w");
-			fprintf(f, "\"palette\": ");
+			fprintf(f, "{\n\"palette\": ");
 			print_palette(f, p_old, p - p_old);
+			fprintf(f, "}\n");
 			fclose(f);
 		} else {
 			printf("\"palette\": ");
@@ -433,7 +440,7 @@ again:
 	}
 	fprintf(f, "\"publisher_name\": ");
 	print_text(f, p, i);
-	fprintf(f, ",\n");
+	fprintf(f, "\n");
 	p += i;
 
 	const uint8_t data7[] = {
@@ -681,6 +688,10 @@ again:
 	}
 
 	if (debug) printf("OK!\n");
+
+	if (create_files) {
+		fprintf(file_globals, "}\n");
+	}
 
 	return 0;
 }
