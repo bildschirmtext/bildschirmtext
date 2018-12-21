@@ -6,6 +6,7 @@
 
 int debug = 0;
 int verbose = 0;
+int create_files = 1;
 
 void
 print_hex(uint8_t *q, int c)
@@ -58,12 +59,13 @@ print_text(uint8_t *p, int c)
 			printf("%c", *q++);
 		}
 	}
-	printf("\"\n");
+	printf("\"");
 }
 
 uint8_t *
 print_links(uint8_t *p)
 {
+	printf("{\n");
 	uint8_t *q = p;
 	for (;;) {
 		if (q[0] != 0x1f || q[1] != 0x3d || (q[2] & 0xf0) != 0x30) {
@@ -74,24 +76,25 @@ print_links(uint8_t *p)
 			// empty
 			continue;
 		}
-		printf("%c", q[0]);
+		printf("\t\"%c", q[0]);
 		if (q[1] != ' ') {
 			printf("%c", q[1]);
 		}
 		q += 2;
-		printf(": ");
+		printf("\": \"");
 		while (*q != 0x1f) {
 			printf("%c", *q++);
 		}
-		printf("; ");
+		printf("\",\n");
 	}
-	printf("\n");
+	printf("},\n");
 	return q;
 }
 
 void
-print_palette(uint8_t *p, int c)
+print_palette(FILE *f, uint8_t *p, int c)
 {
+	fprintf(f, "[\n");
 	uint8_t *q = p;
 	for (; q < p + c;) {
 		int r3 = (q[0] >> 5) & 1;
@@ -109,10 +112,10 @@ print_palette(uint8_t *p, int c)
 		int r = (r0 | (r1 << 1) | (r2 << 2) | (r3 << 3)) << 4;
 		int g = (g0 | (g1 << 1) | (g2 << 2) | (g3 << 3)) << 4;
 		int b = (b0 | (b1 << 1) | (b2 << 2) | (b3 << 3)) << 4;
-		printf("#%02x%02x%02x ", r, g, b);
+		fprintf(f, "\t\"#%02x%02x%02x\",\n", r, g, b);
 		q += 2;
 	}
-	printf("\n");
+	fprintf(f, "],\n");
 }
 
 int
@@ -125,10 +128,21 @@ main(int argc, char **argv)
 		verbose = 1;
 	}
 
+	char filename_palette[256];
+	char filename_include[256];
+	char filename_payload[256];
+	strcpy(filename_palette, argv[1]);
+	strcpy(filename_palette + strlen(argv[1]), ".pal");
+	strcpy(filename_include, argv[1]);
+	strcpy(filename_include + strlen(argv[1]), ".inc");
+	strcpy(filename_payload, argv[1]);
+	strcpy(filename_payload + strlen(argv[1]), ".cept");
+
 	FILE *f = fopen(argv[1], "r");
 	uint8_t buffer[10*1024];
 	memset(buffer, 255, sizeof(buffer));
 	int total_length = fread(buffer, 1, sizeof(buffer), f);
+	fclose(f);
 
 	uint8_t *p = buffer;
 
@@ -155,10 +169,10 @@ main(int argc, char **argv)
 	};
 
 	if (!memcmp(p, data2, sizeof(data2))) {
-		printf("clear_screen: yes\n");
+		printf("\"clear_screen\": true,\n");
 		p += sizeof(data2);
 	} else {
-		printf("clear_screen: no\n");
+		printf("\"clear_screen\": false,\n");
 	}
 
 	const uint8_t data2b[] = {
@@ -178,10 +192,10 @@ main(int argc, char **argv)
 again:
 
 	if (!memcmp(p, data2b, sizeof(data2b))) {
-		printf("sh291: yes\n");
+		printf("\"sh291\": true,\n");
 		p += sizeof(data2b);
 	} else {
-		printf("sh291: no\n");
+		printf("\"sh291\": false,\n");
 	}
 
 	const uint8_t data2c[] = {
@@ -198,18 +212,25 @@ again:
 			p++;
 		}
 
-		printf("palette: ");
-		print_palette(p_old, p - p_old);
+		if (create_files) {
+			f = fopen(filename_include, "w");
+			fprintf(f, "\"palette\": ");
+			print_palette(f, p_old, p - p_old);
+			fclose(f);
+		} else {
+			printf("\"palette\": ");
+			print_palette(stdout, p_old, p - p_old);
+		}
 
 		const uint8_t data3[] = {
 			0x1f,0x41,0x41,                           // set cursor to x=1 y=1
 		};
 
 		if (!memcmp(p, data3, sizeof(data3))) {
-			printf("set_cursor: yes\n");
+			printf("\"set_cursor\": true,\n");
 			p += sizeof(data3);
 		} else {
-			printf("set_cursor: no\n");
+			printf("\"set_cursor\": false,\n");
 		}
 	} else {
 		if (debug) printf("INCLUDE1 not detected.\n");
@@ -265,6 +286,11 @@ again:
 			printf("include: ");
 			print_hex(p_old, p - p_old);
 		}
+		if (create_files) {
+			f = fopen(filename_include, "w");
+			fwrite(p_old, 1, p - p_old, f);
+			fclose(f);
+		}
 	}
 	if (found == 1) {
 		if (debug) printf("CLS detected.\n");
@@ -303,7 +329,7 @@ again:
 	} while(p <= buffer + total_length - sizeof(data5b));
 
 	if (found) {
-		printf("publisher_color: ");
+		printf("\"publisher_color\": ");
 		if (debug) {
 			print_hex(p_old, p - p_old);
 		} else {
@@ -311,7 +337,7 @@ again:
 				p_old += 3;
 			}
 			uint8_t color = p_old[0] & 0xf;
-			printf("%d\n", color);
+			printf("%d,\n", color);
 		}
 
 		if (debug) printf("HEADERX detected.\n");
@@ -322,9 +348,10 @@ again:
 		return 1;
 	}
 
-	printf("page_number: ");
+	printf("\"page_number\": ");
 	print_text(p, 22);
 	p += 22;
+	printf(",\n");
 
 	const uint8_t data6[] = {
 		0x1e,                                     // cursor home
@@ -380,8 +407,9 @@ again:
 		}
 	}
 
-	printf("publisher_name: ");
+	printf("\"publisher_name\": ");
 	print_text(p, i);
+	printf(",\n");
 	p += i;
 
 	const uint8_t data7[] = {
@@ -395,8 +423,11 @@ again:
 		if (debug) printf("HEADER3 not detected.\n");
 	}
 
-	printf("price: ");
-	print_text(p, 10);
+	if (verbose || memcmp(p, "   0,00 DM", 7)) {
+		printf("\"price\": ");
+		print_text(p, 10);
+		printf(",\n");
+	}
 	p += 10;
 
 	const uint8_t data8[] = {
@@ -415,7 +446,7 @@ again:
 		return 1;
 	}
 
-	printf("links: ");
+	printf("\"links\": ");
 	p = print_links(p);
 
 	const uint8_t data10[] = {
@@ -466,6 +497,11 @@ again:
 		if (verbose) {
 			printf("payload: ");
 			print_hex(p_old, p - p_old);
+		}
+		if (create_files) {
+			f = fopen(filename_payload, "w");
+			fwrite(p_old, 1, p - p_old, f);
+			fclose(f);
 		}
 
 		if (debug) printf("FOOTER1 detected.\n");
