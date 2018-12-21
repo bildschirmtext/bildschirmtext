@@ -161,21 +161,25 @@ again:
 //		printf("INCLUDE1 detected.\n");
 		p += sizeof(data2c);
 
-		printf("palette definitions: ");
-		print_hex(p, 32);
-		p += 32;
+		uint8_t *p_old = p;
+		while (*p != 0x1f) {
+			p++;
+		}
+
+		printf("palette definitions (%ld): ", p - p_old);
+		print_hex(p_old, p - p_old);
 
 		const uint8_t data3[] = {
 			0x1f,0x41,0x41,                           // set cursor to x=1 y=1
 		};
 
 		if (!memcmp(p, data3, sizeof(data3))) {
-//			printf("INCLUDE2 detected.\n");
+			printf("set_cursor: yes\n");
 			p += sizeof(data3);
 		} else {
-			printf("ERROR: INCLUDE2 not detected.\n");
-			print_hex(p, 32);
-			return 1;
+			printf("set_cursor: no\n");
+//			print_hex(p, 32);
+//			return 1;
 		}
 	} else {
 //		printf("INCLUDE1 not detected.\n");
@@ -371,39 +375,6 @@ again:
 
 	printf("links: ");
 	p = print_links(p);
-
-//	const uint8_t data9[] = {
-//		0x1f,0x2f,0x44,                           // parallel limited mode
-//		0x1f,                                     // set cursor to line X, column X
-//	};
-//
-//	found = 0;
-//	p_old = p;
-//	do {
-//
-//		if (!memcmp(p, data9, sizeof(data9))) {
-//			found = 1;
-//			break;
-//		}
-//		p++;
-//	} while(p <= buffer + total_length - sizeof(data9));
-//
-//	if (found) {
-//		if (p != p_old) {
-//			printf("include2: ");
-//			print_hex(p_old, p - p_old);
-//		}
-//
-////		printf("HEADER5 detected.\n");
-//		p += sizeof(data9);
-//	} else {
-//		printf("ERROR: HEADER5 not detected.\n");
-//		print_hex(p, 32);
-//		return 1;
-//	}
-//
-//	printf("cursor position: %d, %d\n", p[1] - 0x40, p[0] - 0x40);
-//	p += 2;
 
 	const uint8_t data10[] = {
 //		0x39,                                     // "9"
