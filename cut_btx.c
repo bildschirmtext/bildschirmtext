@@ -359,15 +359,11 @@ again:
 		}
 		uint8_t color = p_old[0] & 0xf;
 
-		if (create_files) {
-			fprintf(file_globals, "\"publisher_color\": %d,\n", color);
+		printf("\"publisher_color\": ");
+		if (debug) {
+			print_hex(p_old, p - p_old);
 		} else {
-			printf("\"publisher_color\": ");
-			if (debug) {
-				print_hex(p_old, p - p_old);
-			} else {
-				printf("%d,\n", color);
-			}
+			printf("%d,\n", color);
 		}
 
 		if (debug) printf("HEADERX detected.\n");

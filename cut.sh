@@ -1,5 +1,6 @@
 make cut_btx &&
 rm test/*.meta test/*.glob test/*.cept test/*.pal test/*.inc
+
 for i in test/*; do
 	echo $i
 	./cut_btx $i > $i.meta
@@ -11,4 +12,7 @@ for i in test/*; do
 		python -m json.tool $i.pal > /tmp/tmpcut$$$; mv /tmp/tmpcut$$$ $i.pal
 	fi
 done
-mv test/*.meta test/*.glob test/*.cept test/*.pal test/*.inc x
+
+rm -rf cut
+mkdir cut
+mv test/*.meta test/*.glob test/*.cept test/*.pal test/*.inc cut
