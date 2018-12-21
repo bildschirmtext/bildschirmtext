@@ -348,10 +348,12 @@ again:
 		return 1;
 	}
 
-	printf("\"page_number\": ");
-	print_text(p, 22);
-	p += 22;
+	if (verbose) {
+		printf("\"page_number\": ");
+		print_text(p, 22);
 	printf(",\n");
+	}
+	p += 22;
 
 	const uint8_t data6[] = {
 		0x1e,                                     // cursor home
