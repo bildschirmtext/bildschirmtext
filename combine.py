@@ -1,5 +1,6 @@
 import json
 import sys
+import os
 from pprint import pprint
 
 def hexdump(src, length=16, sep='.'):
@@ -14,31 +15,7 @@ def hexdump(src, length=16, sep='.'):
 		lines.append("%08x  %-*s  |%s|\n" % (c, length*3, hex, printable))
 	print ''.join(lines)
 
-def encode_palette(palette):
-	palette_data = ""
-	for hexcolor in palette:
-		r = int(hexcolor[1:3], 16)
-		g = int(hexcolor[3:5], 16)
-		b = int(hexcolor[5:7], 16)
-		r0 = (r >> 4) & 1
-		r1 = (r >> 5) & 1
-		r2 = (r >> 6) & 1
-		r3 = (r >> 7) & 1
-		g0 = (g >> 4) & 1
-		g1 = (g >> 5) & 1
-		g2 = (g >> 6) & 1
-		g3 = (g >> 7) & 1
-		b0 = (b >> 4) & 1
-		b1 = (b >> 5) & 1
-		b2 = (b >> 6) & 1
-		b3 = (b >> 7) & 1
-		byte0 = 0x40 | r3 << 5 | g3 << 4 | b3 << 3 | r2 << 2 | g2 << 1 | b2
-		byte1 = 0x40 | r1 << 5 | g1 << 4 | b1 << 3 | r0 << 2 | g0 << 1 | b0
-		palette_data += chr(byte0) + chr(byte1)
-	return palette_data
-
-
-def headerfooter(pagenumber, glob, meta):
+def headerfooter(pagenumber, meta):
 	hf = ""
 	hf += "\x1f\x2d"                         # set resolution to 40x24
 	hf += "\x1f\x57\x41"                     # set cursor to line 23, column 1
@@ -84,7 +61,7 @@ def headerfooter(pagenumber, glob, meta):
 	
 	# TODO: clip!
 	
-	for c in glob["publisher_name"] :
+	for c in meta["publisher_name"] :
 		if ord(c) == 0xfc:
 			hf += "\x19\x48\x75"             # &uuml;
 		else:
@@ -101,26 +78,28 @@ def headerfooter(pagenumber, glob, meta):
 	hf += "\x0a"                             # cursor down
 	return hf
 
-def sh291a():
-	sh291a = ""
-	sh291a += "\x1f\x2f\x40\x58"                 # service break to row 24
-	sh291a += "\x18"                             # clear line
-	sh291a += "\x53\x65\x69\x74\x65\x20\x77\x69" # "Seite wi"
-	sh291a += "\x72\x64\x20\x61\x75\x66\x67\x65" # "rd aufge"
-	sh291a += "\x62\x61\x75\x74\x20\x20\x20\x20" # "baut    "
-	sh291a += "\x20\x20\x20\x20\x20\x20\x20\x20" # "        "
-	sh291a += "\x20\x20\x20"                     # "   "
-	sh291a += "\x98"                             # hide
-	sh291a += "\x08"                             # cursor left
-	sh291a += "\x53\x48\x32\x39\x31"             # "SH291"
-	sh291a += "\x1f\x2f\x4f"                     # service break back
-	return sh291a
-
-def sh291b():
-	sh291b = ""
-	sh291b += "\x1f\x2f\x43"                 # serial limited mode
-	sh291b += "\x0c"                         # clear screen
-	return sh291b
+def encode_palette(palette):
+	palette_data = ""
+	for hexcolor in palette:
+		r = int(hexcolor[1:3], 16)
+		g = int(hexcolor[3:5], 16)
+		b = int(hexcolor[5:7], 16)
+		r0 = (r >> 4) & 1
+		r1 = (r >> 5) & 1
+		r2 = (r >> 6) & 1
+		r3 = (r >> 7) & 1
+		g0 = (g >> 4) & 1
+		g1 = (g >> 5) & 1
+		g2 = (g >> 6) & 1
+		g3 = (g >> 7) & 1
+		b0 = (b >> 4) & 1
+		b1 = (b >> 5) & 1
+		b2 = (b >> 6) & 1
+		b3 = (b >> 7) & 1
+		byte0 = 0x40 | r3 << 5 | g3 << 4 | b3 << 3 | r2 << 2 | g2 << 1 | b2
+		byte1 = 0x40 | r1 << 5 | g1 << 4 | b1 << 3 | r0 << 2 | g0 << 1 | b0
+		palette_data += chr(byte0) + chr(byte1)
+	return palette_data
 
 def create_preamble(basedir, meta):
 	preamble = ""
@@ -131,13 +110,13 @@ def create_preamble(basedir, meta):
 		filename_palette = basedir + meta["include"] + ".pal"
 		with open(filename_palette) as f:
 			palette = json.load(f)
-		preamble += "\x1f\x26\x20"                     # start defining colors
-		preamble += "\x1f\x26\x31\x36"                 # define colors 16+
 		palette_data = encode_palette(palette["palette"])
+		preamble += "\x1f\x26\x20"           # start defining colors
+		preamble += "\x1f\x26\x31\x36"       # define colors 16+
 		preamble += palette_data
 	
 	if "set_cursor" in meta and meta["set_cursor"]:
-		preamble += "\x1f\x41\x41"                 # set cursor to x=1 y=1
+		preamble += "\x1f\x41\x41"           # set cursor to x=1 y=1
 	
 	if "include" in meta:
 		filename_include = basedir + meta["include"] + ".inc"
@@ -145,19 +124,35 @@ def create_preamble(basedir, meta):
 			data_include = f.read()
 		preamble += data_include
 
-	if len(preamble) > 500:
-		preamble = sh291a() + preamble + sh291b()
+	sh291a  = "\x1f\x2f\x40\x58"                 # service break to row 24
+	sh291a += "\x18"                             # clear line
+	sh291a += "\x53\x65\x69\x74\x65\x20\x77\x69" # "Seite wi"
+	sh291a += "\x72\x64\x20\x61\x75\x66\x67\x65" # "rd aufge"
+	sh291a += "\x62\x61\x75\x74\x20\x20\x20\x20" # "baut    "
+	sh291a += "\x20\x20\x20\x20\x20\x20\x20\x20" # "        "
+	sh291a += "\x20\x20\x20"                     # "   "
+	sh291a += "\x98"                             # hide
+	sh291a += "\x08"                             # cursor left
+	sh291a += "\x53\x48\x32\x39\x31"             # "SH291"
+	sh291a += "\x1f\x2f\x4f"                     # service break back
+	sh291b  = "\x1f\x2f\x43"                     # serial limited mode
+	sh291b += "\x0c"                             # clear screen
+
+	if len(preamble) > 600: # > 4 seconds @ 1200 baud
+		preamble = sh291a + preamble + sh291b
 		
 	return preamble
 
-def create_page(pagenumber, basedir):
+def create_page(pagenumber, basedir, filename):
 	with open(basedir + "a.glob") as f:
 		glob = json.load(f)
 	
-	with open(basedir + "a.meta") as f:
+	with open(basedir + filename + ".meta") as f:
 		meta = json.load(f)
 		
-	filename_cept = basedir + "a.cept"
+	meta.update(glob) # combine dicts, glob overrides meta
+		
+	filename_cept = basedir + filename + ".cept"
 	with open(filename_cept, mode='rb') as f:
 		data_cept = f.read()
 		
@@ -172,7 +167,7 @@ def create_page(pagenumber, basedir):
 	all_data += create_preamble(basedir, meta)
 	
 	# header + footer
-	all_data += headerfooter(pagenumber, glob, meta)
+	all_data += headerfooter(pagenumber, meta)
 	
 	# links
 	all_data += "\x1f\x3d\x30"
@@ -190,7 +185,7 @@ def create_page(pagenumber, basedir):
 	all_data += "\x1f\x2f\x43" # serial limited mode
 	
 	# header + footer
-	all_data += headerfooter(pagenumber, glob, meta)
+	all_data += headerfooter(pagenumber, meta)
 	
 	all_data += "\x1f\x58\x41"                           # set cursor to x=24 y=1
 	all_data += "\x11"                                   # show cursor
@@ -198,8 +193,18 @@ def create_page(pagenumber, basedir):
 	
 	return all_data	
 	
-	
-cept_data = create_page("20095a", "data/20095/")
+
+basepath = "data/"
+pagenumber = "2009590a"
+for i in range(0, len(pagenumber)):
+	testdir = basepath + pagenumber[0:i+1]
+	if os.path.isdir(testdir):
+		path = testdir + "/"
+		filename = pagenumber[i+1:]
+		print(path, filename)
+		break
+
+cept_data = create_page(pagenumber, path, filename)
 hexdump(cept_data)
 	
 	
