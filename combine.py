@@ -130,39 +130,40 @@ def create_page(pagenumber, basedir):
 	
 	# combine everything
 	
-	sh291 = len(data_include) > 500
-	
 	all_data = chr(0x14) # hide cursor
 	
 	if "clear_screen" in meta and meta["clear_screen"]:
 		all_data += "\x1f\x2f\x43"                 # serial limited mode
 		all_data += "\x0c"                         # clear screen
-	
-	if sh291:
-		all_data += "\x1f\x2f\x40\x58"                 # service break to row 24
-		all_data += "\x18"                             # clear line
-		all_data += "\x53\x65\x69\x74\x65\x20\x77\x69" # "Seite wi"
-		all_data += "\x72\x64\x20\x61\x75\x66\x67\x65" # "rd aufge"
-		all_data += "\x62\x61\x75\x74\x20\x20\x20\x20" # "baut    "
-		all_data += "\x20\x20\x20\x20\x20\x20\x20\x20" # "        "
-		all_data += "\x20\x20\x20"                     # "   "
-		all_data += "\x98"                             # hide
-		all_data += "\x08"                             # cursor left
-		all_data += "\x53\x48\x32\x39\x31"             # "SH291"
-		all_data += "\x1f\x2f\x4f"                     # service break back
+
+	preamble = ""
 	
 	# define palette
 	if palette:
-		all_data += "\x1f\x26\x20"                     # start defining colors
-		all_data += "\x1f\x26\x31\x36"                 # define colors 16+
+		preamble += "\x1f\x26\x20"                     # start defining colors
+		preamble += "\x1f\x26\x31\x36"                 # define colors 16+
 		palette_data = encode_palette(palette["palette"])
-		all_data += palette_data
+		preamble += palette_data
 	
 	if "set_cursor" in meta and meta["set_cursor"]:
-		all_data += "\x1f\x41\x41"                 # set cursor to x=1 y=1
+		preamble += "\x1f\x41\x41"                 # set cursor to x=1 y=1
 	
 	if data_include:
-		all_data += data_include
+		preamble += data_include
+
+	if len(preamble) > 500:
+		preamble = "\x1f\x2f\x40\x58"+                 # service break to row 24
+		"\x18"                             # clear line
+		"\x53\x65\x69\x74\x65\x20\x77\x69" # "Seite wi"
+		"\x72\x64\x20\x61\x75\x66\x67\x65" # "rd aufge"
+		"\x62\x61\x75\x74\x20\x20\x20\x20" # "baut    "
+		"\x20\x20\x20\x20\x20\x20\x20\x20" # "        "
+		"\x20\x20\x20"                     # "   "
+		"\x98"                             # hide
+		"\x08"                             # cursor left
+		"\x53\x48\x32\x39\x31"             # "SH291"
+		"\x1f\x2f\x4f"                     # service break back
+
 	
 	if sh291:
 		all_data += "\x1f\x2f\x43"                 # serial limited mode
