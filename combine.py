@@ -14,6 +14,70 @@ def hexdump(src, length=16, sep='.'):
 		lines.append("%08x  %-*s  |%s|\n" % (c, length*3, hex, printable))
 	print ''.join(lines)
 
+def headerfooter():
+	hf = ""
+	hf += "\x1f\x2d"                         # set resolution to 40x24
+	hf += "\x1f\x57\x41"                     # set cursor to line 23, column 1
+	hf += "\x9b\x31\x51"                     # unprotect line
+	hf += "\x1b\x23\x21\x4c"                 # set fg color of line to 12
+	hf += "\x1f\x2f\x44"                     # parallel limited mode
+	hf += "\x1f\x58\x41"                     # set cursor to line 24, column 1
+	hf += "\x9b\x31\x51"                     # unprotect line
+	hf += "\x20"                             # " "
+	hf += "\x08"                             # cursor left
+	hf += "\x18"                             # clear line
+	hf += "\x1e"                             # cursor home
+	hf += "\x9b\x31\x51"                     # unprotect line
+	hf += "\x20"                             # " "
+	hf += "\x08"                             # cursor left
+	hf += "\x18"                             # clear line
+	hf += "\x1f\x2f\x43"                     # serial limited mode
+	hf += "\x1f\x58\x41"                     # set cursor to line 24, column 1
+	hf += "\x9b\x31\x40"                     # select palette #1
+	hf += "\x80"                             # set fg color to #0
+	hf += "\x08"                             # cursor left
+	hf += "\x9d"                             # ???
+	hf += "\x08"                             # cursor left
+	
+	
+	publisher_color = meta["publisher_color"]
+	
+	hf += chr(0x80 + publisher_color)
+	
+	hf += "\x1f\x58\x53"                     # set cursor to line 24, column 19
+	
+	hf += pagenumber.rjust(22)
+	
+	hf += "\x1e"                             # cursor home
+	hf += "\x9b\x31\x40"                     # select palette #1
+	hf += "\x80"                             # set fg color to #0
+	hf += "\x08"                             # cursor left
+	hf += "\x9d"                             # ???
+	hf += "\x08"                             # cursor left
+	
+	hf += chr(0x80 + publisher_color)
+	
+	hf += "\x0d"                             # cursor to beginning of line
+	
+	# TODO: clip!
+	
+	for c in glob["publisher_name"] :
+		if ord(c) == 0xfc:
+			hf += "\x19\x48\x75"             # &uuml;
+		else:
+			hf += chr(ord(c))
+	
+	hf += "\x1f\x41\x5f"                     # set cursor to line 1, column 31
+	
+	hf += "   0,00 DM"
+	
+	hf += "\x1e"                             # cursor home
+	hf += "\x9b\x30\x40"                     # select palette #0
+	hf += "\x9b\x31\x50"                     # protect line
+	hf += "\x0a"                             # cursor down
+	return hf
+
+
 basedir = "data/20095/"
 pagenumber = "20095a"
 
@@ -35,7 +99,7 @@ if "palette" in meta:
 filename_cept = basedir + "a.cept"
 with open(filename_cept, mode='rb') as f:
 	data_cept = f.read()
-	hexdump(data_cept)
+#	hexdump(data_cept)
 
 
 # combine everything
@@ -105,64 +169,43 @@ all_data += "\x1f\x2f\x43"                     # serial limited mode
 all_data += "\x0c"                             # clear screen
 
 # obligatory
-all_data += "\x1f\x2d"                         # set resolution to 40x24
-all_data += "\x1f\x57\x41"                     # set cursor to line 23, column 1
-all_data += "\x9b\x31\x51"                     # unprotect line
-all_data += "\x1b\x23\x21\x4c"                 # set fg color of line to 12
-all_data += "\x1f\x2f\x44"                     # parallel limited mode
-all_data += "\x1f\x58\x41"                     # set cursor to line 24, column 1
-all_data += "\x9b\x31\x51"                     # unprotect line
-all_data += "\x20"                             # " "
-all_data += "\x08"                             # cursor left
-all_data += "\x18"                             # clear line
-all_data += "\x1e"                             # cursor home
-all_data += "\x9b\x31\x51"                     # unprotect line
-all_data += "\x20"                             # " "
-all_data += "\x08"                             # cursor left
-all_data += "\x18"                             # clear line
-all_data += "\x1f\x2f\x43"                     # serial limited mode
-all_data += "\x1f\x58\x41"                     # set cursor to line 24, column 1
-all_data += "\x9b\x31\x40"                     # select palette #1
-all_data += "\x80"                             # set fg color to #0
-all_data += "\x08"                             # cursor left
-all_data += "\x9d"                             # ???
-all_data += "\x08"                             # cursor left
+all_data += headerfooter()
+
+# links
+
+all_data += "\x1f\x3d\x30"
+i = 0x31
+for key, value in meta["links"].iteritems():
+	all_data +=	"\x1f\x3d"
+	all_data += chr(i)
+	all_data += key.encode('utf-8').ljust(2)
+	all_data += value.encode('utf-8')
+	i += 1
+	
+# payload
+
+all_data += data_cept
 
 
-publisher_color = meta["publisher_color"]
+all_data += "\x1f\x2f\x43" # serial limited mode
 
-all_data += chr(0x80 + publisher_color)
+all_data += headerfooter()
 
-all_data += "\x1f\x58\x53"                     # set cursor to line 24, column 19
-
-all_data += pagenumber.rjust(22)
-
-all_data += "\x1e"                             # cursor home
-all_data += "\x9b\x31\x40"                     # select palette #1
-all_data += "\x80"                             # set fg color to #0
-all_data += "\x08"                             # cursor left
-all_data += "\x9d"                             # ???
-all_data += "\x08"                             # cursor left
-
-all_data += chr(0x80 + publisher_color)
-
-all_data += "\x0d"                             # cursor to beginning of line
-
-# TODO: clip!
-
-for c in glob["publisher_name"] :
-	if ord(c) == 0xfc:
-		all_data += "\x19\x48\x75"             # &uuml;
-	else:
-		all_data += chr(ord(c))
-
-all_data += "\x1f\x41\x5f"                     # set cursor to line 1, column 31
-
-all_data += "   0,00 DM"
-
-all_data += "\x1e"                             # cursor home
-all_data += "\x9b\x30\x40"                     # select palette #0
-all_data += "\x9b\x31\x50"                     # protect line
-all_data += "\x0a"                             # cursor down
+all_data += "\x1f\x58\x41"                           # set cursor to x=24 y=1
+all_data += "\x11"                                   # show cursor
+all_data += "\x1a"                                   # end of page
 
 hexdump(all_data)
+
+
+
+
+
+
+
+
+
+
+
+
+
