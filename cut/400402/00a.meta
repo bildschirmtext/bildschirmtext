@@ -1,4 +1,6 @@
 {
+    "include": "00a",
+    "palette": "00a",
     "clear_screen": true,
     "links": {
         "0": "20096141a",
