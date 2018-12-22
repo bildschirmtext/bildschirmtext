@@ -122,11 +122,15 @@ def sh291b():
 	sh291b += "\x0c"                         # clear screen
 	return sh291b
 
-def create_preamble(basedir, meta, palette):
+def create_preamble(basedir, meta):
 	preamble = ""
 	
 	# define palette
-	if palette:
+	if "palette" in meta:
+		palette = meta["palette"]
+		filename_palette = basedir + meta["include"] + ".pal"
+		with open(filename_palette) as f:
+			palette = json.load(f)
 		preamble += "\x1f\x26\x20"                     # start defining colors
 		preamble += "\x1f\x26\x31\x36"                 # define colors 16+
 		palette_data = encode_palette(palette["palette"])
@@ -152,13 +156,7 @@ def create_page(pagenumber, basedir):
 	
 	with open(basedir + "a.meta") as f:
 		meta = json.load(f)
-	
-	if "palette" in meta:
-		palette = meta["palette"]
-		filename_palette = basedir + meta["include"] + ".pal"
-		with open(filename_palette) as f:
-			palette = json.load(f)
-	
+		
 	filename_cept = basedir + "a.cept"
 	with open(filename_cept, mode='rb') as f:
 		data_cept = f.read()
@@ -171,7 +169,7 @@ def create_page(pagenumber, basedir):
 		all_data += "\x1f\x2f\x43"                 # serial limited mode
 		all_data += "\x0c"                         # clear screen
 
-	all_data += create_preamble(basedir, meta, palette)
+	all_data += create_preamble(basedir, meta)
 	
 	# header + footer
 	all_data += headerfooter(pagenumber, glob, meta)
