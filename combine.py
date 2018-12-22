@@ -113,13 +113,14 @@ def create_preamble(basedir, meta):
 		preamble += "\x1f\x26\x31\x36"       # define colors 16+
 		preamble += palette_data
 
-	if "set_cursor" in meta and meta["set_cursor"]:
-		preamble += "\x1f\x41\x41"           # set cursor to x=1 y=1
-
 	if "include" in meta:
 		filename_include = basedir + meta["include"] + ".inc"
 		with open(filename_include, mode='rb') as f:
 			data_include = f.read()
+		# palette definition has to end with 0x1f; add one if
+		# the include data doesn't start with one
+		if ord(data_include[0]) != 0x1f:
+			preamble += "\x1f\x41\x41"           # set cursor to x=1 y=1
 		preamble += data_include
 
 	sh291a  = "\x1f\x2f\x40\x58"                 # service break to row 24
@@ -198,7 +199,7 @@ def create_page(basepath, pagenumber):
 	return all_data
 
 
-cept_data = create_page("data/", "2009590a")
+cept_data = create_page("data/", "20095a")
 hexdump(cept_data)
 
 
