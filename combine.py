@@ -43,6 +43,53 @@ with open(filename_cept, mode='rb') as f:
 	hexdump(data_cept)
 
 
+# palette
 
+palette_data = ""
+for hexcolor in palette["palette"]:
+	r = int(hexcolor[1:3], 16)
+	g = int(hexcolor[3:5], 16)
+	b = int(hexcolor[5:7], 16)
+#	print(r, g, b)
+	r0 = (r >> 4) & 1
+	r1 = (r >> 5) & 1
+	r2 = (r >> 6) & 1
+	r3 = (r >> 7) & 1
+	g0 = (g >> 4) & 1
+	g1 = (g >> 5) & 1
+	g2 = (g >> 6) & 1
+	g3 = (g >> 7) & 1
+	b0 = (b >> 4) & 1
+	b1 = (b >> 5) & 1
+	b2 = (b >> 6) & 1
+	b3 = (b >> 7) & 1
+	byte0 = 0x40 | r3 << 5 | g3 << 4 | b3 << 3 | r2 << 2 | g2 << 1 | b2
+	byte1 = 0x40 | r1 << 5 | g1 << 4 | b1 << 3 | r0 << 2 | g0 << 1 | b0
+	print(byte0, byte1)
+	palette_data += chr(byte0) + chr(byte1)
 
+hexdump(palette_data)
 
+# combine everything
+
+all_data = chr(0x14) # hide cursor
+
+if "clear_screen" in meta:
+	all_data += "\x1f\x2f\x43" # serial limited mode
+	all_data += "\x0c"         # clear screen
+
+# always show SH291
+
+all_data += "\x1f\x2f\x40\x58"                 # service break to row 24
+all_data += "\x18"                             # clear line
+all_data += "\x53\x65\x69\x74\x65\x20\x77\x69" # "Seite wi"
+all_data += "\x72\x64\x20\x61\x75\x66\x67\x65" # "rd aufge"
+all_data += "\x62\x61\x75\x74\x20\x20\x20\x20" # "baut    "
+all_data += "\x20\x20\x20\x20\x20\x20\x20\x20" # "        "
+all_data += "\x20\x20\x20"                     # "   "
+all_data += "\x98"                             # hide
+all_data += "\x08"                             # cursor left
+all_data += "\x53\x48\x32\x39\x31"             # "SH291"
+all_data += "\x1f\x2f\x4f"                     # service break back
+
+hexdump(all_data)
