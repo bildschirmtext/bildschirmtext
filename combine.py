@@ -148,11 +148,21 @@ all_data += chr(0x80 + publisher_color)
 
 all_data += "\x0d"                             # cursor to beginning of line
 
+# TODO: clip!
+
 for c in glob["publisher_name"] :
 	if ord(c) == 0xfc:
 		all_data += "\x19\x48\x75"             # &uuml;
 	else:
 		all_data += chr(ord(c))
 
+all_data += "\x1f\x41\x5f"                     # set cursor to line 1, column 31
+
+all_data += "   0,00 DM"
+
+all_data += "\x1e"                             # cursor home
+all_data += "\x9b\x30\x40"                     # select palette #0
+all_data += "\x9b\x31\x50"                     # protect line
+all_data += "\x0a"                             # cursor down
 
 hexdump(all_data)
