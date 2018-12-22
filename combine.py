@@ -101,6 +101,27 @@ def headerfooter(pagenumber, glob, meta):
 	hf += "\x0a"                             # cursor down
 	return hf
 
+def sh291a():
+	sh291a = ""
+	sh291a += "\x1f\x2f\x40\x58"                 # service break to row 24
+	sh291a += "\x18"                             # clear line
+	sh291a += "\x53\x65\x69\x74\x65\x20\x77\x69" # "Seite wi"
+	sh291a += "\x72\x64\x20\x61\x75\x66\x67\x65" # "rd aufge"
+	sh291a += "\x62\x61\x75\x74\x20\x20\x20\x20" # "baut    "
+	sh291a += "\x20\x20\x20\x20\x20\x20\x20\x20" # "        "
+	sh291a += "\x20\x20\x20"                     # "   "
+	sh291a += "\x98"                             # hide
+	sh291a += "\x08"                             # cursor left
+	sh291a += "\x53\x48\x32\x39\x31"             # "SH291"
+	sh291a += "\x1f\x2f\x4f"                     # service break back
+	return sh291a
+
+def sh291b():
+	sh291b = ""
+	sh291b += "\x1f\x2f\x43"                 # serial limited mode
+	sh291b += "\x0c"                         # clear screen
+	return sh291b
+
 def create_page(pagenumber, basedir):
 	with open(basedir + "a.glob") as f:
 		glob = json.load(f)
@@ -152,22 +173,9 @@ def create_page(pagenumber, basedir):
 		preamble += data_include
 
 	if len(preamble) > 500:
-		preamble = "\x1f\x2f\x40\x58"+                 # service break to row 24
-		"\x18"                             # clear line
-		"\x53\x65\x69\x74\x65\x20\x77\x69" # "Seite wi"
-		"\x72\x64\x20\x61\x75\x66\x67\x65" # "rd aufge"
-		"\x62\x61\x75\x74\x20\x20\x20\x20" # "baut    "
-		"\x20\x20\x20\x20\x20\x20\x20\x20" # "        "
-		"\x20\x20\x20"                     # "   "
-		"\x98"                             # hide
-		"\x08"                             # cursor left
-		"\x53\x48\x32\x39\x31"             # "SH291"
-		"\x1f\x2f\x4f"                     # service break back
+		preamble = sh291a() + preamble + sh291b()
 
-	
-	if sh291:
-		all_data += "\x1f\x2f\x43"                 # serial limited mode
-		all_data += "\x0c"                         # clear screen
+	all_data += preamble
 	
 	# header + footer
 	all_data += headerfooter(pagenumber, glob, meta)
