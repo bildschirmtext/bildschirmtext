@@ -389,7 +389,7 @@ again:
 		0x9d,                                     // Hintergrundfarbe setzen bzw. inverse Polarität
 		0x08,                                     // cursor left
 	};
-//		0x87,                                     // set fg color to #7
+
 	const uint8_t data6b[] = {
 		0x0d,                                     // cursor to beginning of line
 	};

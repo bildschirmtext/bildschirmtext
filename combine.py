@@ -15,6 +15,7 @@ def hexdump(src, length=16, sep='.'):
 	print ''.join(lines)
 
 basedir = "data/20095/"
+pagenumber = "20095a"
 
 with open(basedir + "a.glob") as f:
 	glob = json.load(f)
@@ -30,12 +31,6 @@ if "palette" in meta:
 	with open(filename_palette) as f:
 		palette = json.load(f)
 		pprint(palette)
-
-if "include" in meta:
-	filename_include = basedir + meta["include"] + ".inc"
-	with open(filename_include, mode='rb') as f:
-		data_include = f.read()
-		hexdump(data_include)
 
 filename_cept = basedir + "a.cept"
 with open(filename_cept, mode='rb') as f:
@@ -98,7 +93,66 @@ if "set_cursor" in meta and meta["set_cursor"]:
 	all_data += "\x1f\x41\x41"                 # set cursor to x=1 y=1
 
 
-#	all_data += "\x1f\x2f\x43"                 # serial limited mode
-#	all_data += "\x0c"                         # clear screen
+if "include" in meta:
+	filename_include = basedir + meta["include"] + ".inc"
+	with open(filename_include, mode='rb') as f:
+		data_include = f.read()
+
+all_data += data_include
+
+# optional
+all_data += "\x1f\x2f\x43"                     # serial limited mode
+all_data += "\x0c"                             # clear screen
+
+# obligatory
+all_data += "\x1f\x2d"                         # set resolution to 40x24
+all_data += "\x1f\x57\x41"                     # set cursor to line 23, column 1
+all_data += "\x9b\x31\x51"                     # unprotect line
+all_data += "\x1b\x23\x21\x4c"                 # set fg color of line to 12
+all_data += "\x1f\x2f\x44"                     # parallel limited mode
+all_data += "\x1f\x58\x41"                     # set cursor to line 24, column 1
+all_data += "\x9b\x31\x51"                     # unprotect line
+all_data += "\x20"                             # " "
+all_data += "\x08"                             # cursor left
+all_data += "\x18"                             # clear line
+all_data += "\x1e"                             # cursor home
+all_data += "\x9b\x31\x51"                     # unprotect line
+all_data += "\x20"                             # " "
+all_data += "\x08"                             # cursor left
+all_data += "\x18"                             # clear line
+all_data += "\x1f\x2f\x43"                     # serial limited mode
+all_data += "\x1f\x58\x41"                     # set cursor to line 24, column 1
+all_data += "\x9b\x31\x40"                     # select palette #1
+all_data += "\x80"                             # set fg color to #0
+all_data += "\x08"                             # cursor left
+all_data += "\x9d"                             # ???
+all_data += "\x08"                             # cursor left
+
+
+publisher_color = meta["publisher_color"]
+
+all_data += chr(0x80 + publisher_color)
+
+all_data += "\x1f\x58\x53"                     # set cursor to line 24, column 19
+
+all_data += pagenumber.rjust(22)
+
+all_data += "\x1e"                             # cursor home
+all_data += "\x9b\x31\x40"                     # select palette #1
+all_data += "\x80"                             # set fg color to #0
+all_data += "\x08"                             # cursor left
+all_data += "\x9d"                             # ???
+all_data += "\x08"                             # cursor left
+
+all_data += chr(0x80 + publisher_color)
+
+all_data += "\x0d"                             # cursor to beginning of line
+
+for c in glob["publisher_name"] :
+	if ord(c) == 0xfc:
+		all_data += "\x19\x48\x75"             # &uuml;
+	else:
+		all_data += chr(ord(c))
+
 
 hexdump(all_data)
