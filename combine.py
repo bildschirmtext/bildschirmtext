@@ -34,8 +34,11 @@ def hexdump(src, length=16, sep='.'):
 def encode_string(s1):
 	s2 = ""
 	for c in s1:
+		# TODO: complete conversion!
 		if ord(c) == 0xfc:
-			s2 += "\x19\x48\x75"           # &uuml;
+			s2 += "\x19\x48u"           # &uuml;
+		elif ord(c) == 0xd6:
+			s2 += "\x19\x48O"           # &uuml;
 		else:
 			s2 += chr(ord(c))
 	return s2
@@ -92,8 +95,7 @@ def headerfooter(pagenumber, meta):
 
 	hf += "\x0d"                           # cursor to beginning of line
 
-	# TODO: clip!
-	hf += encode_string(meta["publisher_name"])
+	hf += encode_string(meta["publisher_name"][:30])
 
 	hf += "\x1f\x41\x5f"                   # set cursor to line 1, column 31
 
