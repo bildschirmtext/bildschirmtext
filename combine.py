@@ -7,6 +7,9 @@ from pprint import pprint
 CEPT_INI = 19
 CEPT_TER = 28
 
+reload(sys)  
+sys.setdefaultencoding('latin-1')
+
 def hexdump(src, length=16, sep='.'):
 	FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or sep for x in range(256)])
 	lines = []
@@ -114,7 +117,7 @@ def create_preamble(basedir, meta):
 	# define palette
 	if "palette" in meta:
 		palette = meta["palette"]
-		filename_palette = basedir + meta["include"] + ".pal"
+		filename_palette = basedir + meta["palette"] + ".pal"
 		with open(filename_palette) as f:
 			palette = json.load(f)
 		palette_data = encode_palette(palette["palette"])
@@ -194,15 +197,15 @@ def create_page(basepath, pagenumber):
 	# header + footer
 	all_data += headerfooter(pagenumber, meta)
 
-	# links
-	all_data += "\x1f\x3d\x30"
-	i = 0x31
-	for key, value in meta["links"].iteritems():
-		all_data +=	"\x1f\x3d"
-		all_data += chr(i)
-		all_data += key.encode('utf-8').ljust(2)
-		all_data += value.encode('utf-8')
-		i += 1
+#	# links
+#	all_data += "\x1f\x3d\x30"
+#	i = 0x31
+#	for key, value in meta["links"].iteritems():
+#		all_data +=	"\x1f\x3d"
+#		all_data += chr(i)
+#		all_data += key.encode('utf-8').ljust(2)
+#		all_data += value.encode('utf-8')
+#		i += 1
 
 	# payload
 	all_data += data_cept
@@ -278,10 +281,13 @@ while True:
 		
 	if gotopage:
 		sys.stderr.write("showing page: '" + pagenumber + "'\n")
-		(cept_data, links) = create_page("data/", pagenumber)
+		(cept_data, new_links) = create_page("data/", pagenumber)
 		if cept_data == "":
 			sys.stderr.write("page not found\n")
-		print cept_data
+		else:
+			links = new_links
+		sys.stdout.write(cept_data)
+		sys.stdout.flush()
 		pagenumber = ""
 
 
