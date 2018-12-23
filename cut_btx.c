@@ -69,7 +69,7 @@ print_links(uint8_t *p)
 	uint8_t *q = p;
 	bool first = true;
 	for (;;) {
-		if (q[0] != 0x1f || q[1] != 0x3d || (q[2] & 0xf0) != 0x30) {
+		if (q[0] != 0x1f || q[1] != 0x3d || q[2] < 0x30) {
 			break;
 		}
 		if (!first) {
