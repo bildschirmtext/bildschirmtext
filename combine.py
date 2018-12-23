@@ -269,6 +269,7 @@ links = {}
 
 while True:
 	gotopage = False;
+	# TODO: clear line 24 before echo if an error message is showing
 	c = read_with_echo();
 	if mode == MODE_NONE:
 		lookuplink = False
@@ -316,6 +317,18 @@ while True:
 		sys.stderr.write("showing page: '" + pagenumber + "'\n")
 		(cept_data, new_links) = create_page("data/", pagenumber)
 		if cept_data == "":
+			cept_data  = "\x23"              # "#"
+			cept_data += "\x14"              # hide cursor
+			cept_data += "\x1f\x2f\x40\x58"  # service break to row 24
+			cept_data += "\x18"              # clear line
+			cept_data += "Seite nicht vorhanden              "
+			cept_data += "\x98"              # hide
+			cept_data += "\x08"              # cursor left
+			cept_data += "SH100"
+			cept_data += "\x1f\x2f\x4f"      # service break back
+			cept_data += "\x1f\x58\x41"      # set cursor to line 24, column 1
+			cept_data += "\x11"              # show cursor
+			cept_data += "\x1a"              # end of page
 			sys.stderr.write("page not found\n")
 		else:
 			links = new_links
