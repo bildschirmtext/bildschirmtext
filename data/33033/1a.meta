@@ -1,4 +1,6 @@
 {
+    "include": "a",
+    "palette": "a",
     "clear_screen": true,
     "links": {
         "#": "3303310A",

@@ -35,7 +35,7 @@ def encode_string(s1):
 	s2 = ""
 	for c in s1:
 		if ord(c) == 0xfc:
-			s2 += "\x19\x48\x75"             # &uuml;
+			s2 += "\x19\x48\x75"           # &uuml;
 		else:
 			s2 += chr(ord(c))
 	return s2
@@ -75,7 +75,7 @@ def headerfooter(pagenumber, meta):
 
 	hf += color_string
 
-	hf += "\x1f\x58\x53"                     # set cursor to line 24, column 19
+	hf += "\x1f\x58\x53"                   # set cursor to line 24, column 19
 
 	hf += pagenumber.rjust(22)
 
@@ -90,12 +90,12 @@ def headerfooter(pagenumber, meta):
 	
 	hf += color_string
 
-	hf += "\x0d"                             # cursor to beginning of line
+	hf += "\x0d"                           # cursor to beginning of line
 
 	# TODO: clip!
 	hf += encode_string(meta["publisher_name"])
 
-	hf += "\x1f\x41\x5f"                     # set cursor to line 1, column 31
+	hf += "\x1f\x41\x5f"                   # set cursor to line 1, column 31
 
 	# TODO: price
 	hf += "   0,00 DM"
