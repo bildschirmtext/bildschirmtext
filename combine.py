@@ -7,6 +7,9 @@ from pprint import pprint
 CEPT_INI = 19
 CEPT_TER = 28
 
+last_filename_include = ""
+last_filename_palette = ""
+
 reload(sys)  
 sys.setdefaultencoding('latin-1')
 
@@ -112,28 +115,45 @@ def encode_palette(palette):
 	return palette_data
 
 def create_preamble(basedir, meta):
+	global last_filename_include
+	global last_filename_palette
+
 	preamble = ""
+	sys.stderr.write("preamble...\n")
 
 	# define palette
 	if "palette" in meta:
 		palette = meta["palette"]
 		filename_palette = basedir + meta["palette"] + ".pal"
-		with open(filename_palette) as f:
-			palette = json.load(f)
-		palette_data = encode_palette(palette["palette"])
-		preamble += "\x1f\x26\x20"           # start defining colors
-		preamble += "\x1f\x26\x31\x36"       # define colors 16+
-		preamble += palette_data
+		sys.stderr.write("filename_palette = " + filename_palette + "\n")
+		sys.stderr.write("last_filename_palette = " + last_filename_palette + "\n")
+		if filename_palette != last_filename_palette:
+			sys.stderr.write("sending palette\n")
+			last_filename_palette = filename_palette
+			with open(filename_palette) as f:
+				palette = json.load(f)
+			palette_data = encode_palette(palette["palette"])
+			preamble += "\x1f\x26\x20"           # start defining colors
+			preamble += "\x1f\x26\x31\x36"       # define colors 16+
+			preamble += palette_data
+		else:
+			sys.stderr.write("skipping palette\n")
+	else:
+		last_filename_palette = ""
 
 	if "include" in meta:
 		filename_include = basedir + meta["include"] + ".inc"
-		with open(filename_include, mode='rb') as f:
-			data_include = f.read()
-		# palette definition has to end with 0x1f; add one if
-		# the include data doesn't start with one
-		if ord(data_include[0]) != 0x1f:
-			preamble += "\x1f\x41\x41"           # set cursor to x=1 y=1
-		preamble += data_include
+		if filename_include != last_filename_include:
+			last_filename_include = filename_include
+			with open(filename_include, mode='rb') as f:
+				data_include = f.read()
+			# palette definition has to end with 0x1f; add one if
+			# the include data doesn't start with one
+			if ord(data_include[0]) != 0x1f:
+				preamble += "\x1f\x41\x41"           # set cursor to x=1 y=1
+			preamble += data_include
+	else:
+		last_filename_include = ""
 
 	sh291a  = "\x1f\x2f\x40\x58"                 # service break to row 24
 	sh291a += "\x18"                             # clear line
@@ -155,7 +175,6 @@ def create_preamble(basedir, meta):
 	return preamble
 
 def create_page(basepath, pagenumber):
-	sys.stderr.write("xxx: '" + pagenumber[-1:] + "'\n")
 	if pagenumber[-1:] >= '0' and pagenumber[-1:] <= '9':
 		pagenumber += "a"
 
