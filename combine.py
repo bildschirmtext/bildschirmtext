@@ -152,12 +152,23 @@ def create_preamble(basedir, meta):
 	return preamble
 
 def create_page(basepath, pagenumber):
-	for i in range(0, len(pagenumber)):
+	if pagenumber[:-1] >= '0' and pagenumber[:-1] <= '9':
+		pagenumber += "a"
+
+	basedir = ""
+
+	for i in reversed(range(0, len(pagenumber))):
 		testdir = basepath + pagenumber[0:i+1]
 		if os.path.isdir(testdir):
-			basedir = testdir + "/"
+			sys.stderr.write("testdir: '" + testdir + "'\n")
 			filename = pagenumber[i+1:]
-			break
+			if os.path.isfile(testdir + "/" + filename + ".meta"):
+				sys.stderr.write("filename: '" + filename + "'\n")
+				basedir = testdir + "/"
+				break
+
+	if basedir == "":
+		return ""
 
 	with open(basedir + "a.glob") as f:
 		glob = json.load(f)
@@ -233,7 +244,7 @@ while True:
 		if ord(c) == CEPT_INI:
 			mode = MODE_INI
 			pagenumber = ""
-			sys.stderr.write("mode = MODE_INI'\n")
+			sys.stderr.write("mode = MODE_INI\n")
 		elif ord(c) == CEPT_TER:
 			if len(pagenumber) > 0:
 				sys.stderr.write("error: TER not expected here!\n")
@@ -248,18 +259,19 @@ while True:
 			# '**' resets mode
 			mode = MODE_NONE
 			pagenumber = ""
-			sys.stderr.write("mode = MODE_NONE'\n")
+			sys.stderr.write("mode = MODE_NONE\n")
 		elif c >= '0' and c <= '9':
 			pagenumber += c
 			sys.stderr.write("global link: '" + c + "' -> '" + pagenumber + "'\n")
 		elif ord(c) == CEPT_TER:
 			sys.stderr.write("TERM global link: '" + pagenumber + "'\n")
-			pagenumber += "a"
 			cept_data = create_page("data/", pagenumber)
+			if cept_data == "":
+				sys.stderr.write("page not found\n")
 			print cept_data
 			mode = MODE_NONE
 			pagenumber = ""
-			sys.stderr.write("mode = MODE_NONE'\n")
+			sys.stderr.write("mode = MODE_NONE\n")
 		
 
 
