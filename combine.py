@@ -15,6 +15,15 @@ def hexdump(src, length=16, sep='.'):
 		lines.append("%08x  %-*s  |%s|\n" % (c, length*3, hex, printable))
 	print ''.join(lines)
 
+def encode_string(s1):
+	s2 = ""
+	for c in s1:
+		if ord(c) == 0xfc:
+			s2 += "\x19\x48\x75"             # &uuml;
+		else:
+			s2 += chr(ord(c))
+	return s2
+
 def headerfooter(pagenumber, meta):
 	hf  = "\x1f\x2d"                         # set resolution to 40x24
 	hf += "\x1f\x57\x41"                     # set cursor to line 23, column 1
@@ -59,11 +68,7 @@ def headerfooter(pagenumber, meta):
 	hf += "\x0d"                             # cursor to beginning of line
 
 	# TODO: clip!
-	for c in meta["publisher_name"] :
-		if ord(c) == 0xfc:
-			hf += "\x19\x48\x75"             # &uuml;
-		else:
-			hf += chr(ord(c))
+	hf += encode_string(meta["publisher_name"])
 
 	hf += "\x1f\x41\x5f"                     # set cursor to line 1, column 31
 
