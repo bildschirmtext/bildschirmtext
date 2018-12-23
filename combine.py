@@ -1,7 +1,11 @@
 import json
 import sys
 import os
+import serial
 from pprint import pprint
+
+CEPT_INI = 19
+CEPT_TER = 28
 
 def hexdump(src, length=16, sep='.'):
 	FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or sep for x in range(256)])
@@ -153,7 +157,6 @@ def create_page(basepath, pagenumber):
 		if os.path.isdir(testdir):
 			basedir = testdir + "/"
 			filename = pagenumber[i+1:]
-			print(basedir, filename)
 			break
 
 	with open(basedir + "a.glob") as f:
@@ -204,8 +207,66 @@ def create_page(basepath, pagenumber):
 	return all_data
 
 
-cept_data = create_page("data/", "20095a")
-hexdump(cept_data)
+def read_with_echo():
+	c = sys.stdin.read(1)
+	if ord(c) == CEPT_INI:
+		sys.stdout.write('*')
+	elif ord(c) == CEPT_TER:
+		sys.stdout.write('#')
+	else:
+		sys.stdout.write(c)
+	sys.stdout.flush()
+	sys.stderr.write("In: " + str(ord(c)) + "\n")
+	return c
+
+# MAIN
+
+MODE_NONE = 0
+MODE_INI  = 1
+
+mode = MODE_NONE
+pagenumber = ""
+
+while True:
+	c = read_with_echo();
+	if mode == MODE_NONE:
+		if ord(c) == CEPT_INI:
+			mode = MODE_INI
+			pagenumber = ""
+			sys.stderr.write("mode = MODE_INI'\n")
+		elif ord(c) == CEPT_TER:
+			if len(pagenumber) > 0:
+				sys.stderr.write("error: TER not expected here!\n")
+			else:
+				pagenumber = '#'
+				sys.stderr.write("local link: -> '" + pagenumber + "'\n")
+		elif (c >= '0' and c <= '9'):
+			pagenumber += c
+			sys.stderr.write("local link: '" + c + "' -> '" + pagenumber + "'\n")
+	elif mode == MODE_INI:
+		if ord(c) == CEPT_INI:
+			# '**' resets mode
+			mode = MODE_NONE
+			pagenumber = ""
+			sys.stderr.write("mode = MODE_NONE'\n")
+		elif c >= '0' and c <= '9':
+			pagenumber += c
+			sys.stderr.write("global link: '" + c + "' -> '" + pagenumber + "'\n")
+		elif ord(c) == CEPT_TER:
+			sys.stderr.write("TERM global link: '" + pagenumber + "'\n")
+			pagenumber += "a"
+			cept_data = create_page("data/", pagenumber)
+			print cept_data
+			mode = MODE_NONE
+			pagenumber = ""
+			sys.stderr.write("mode = MODE_NONE'\n")
+		
 
 
+#cept_data = create_page("data/", "20095a")
+#print cept_data
+#cept_data = create_page("data/", "2009590a")
+#print cept_data
+
+#hexdump(cept_data)
 
