@@ -357,11 +357,3 @@ while True:
 		sys.stdout.flush()
 		pagenumber = ""
 
-
-#cept_data = create_page("data/", "20095a")
-#print cept_data
-#cept_data = create_page("data/", "2009590a")
-#print cept_data
-
-#hexdump(cept_data)
-
