@@ -248,8 +248,10 @@ def create_page(basepath, pagenumber):
 	return (all_data, meta["links"])
 
 
-def read_with_echo():
+def read_with_echo(clear_line):
 	c = sys.stdin.read(1)
+	if clear_line:
+		sys.stdout.write("\x18");
 	if ord(c) == CEPT_INI:
 		sys.stdout.write('*')
 	elif ord(c) == CEPT_TER:
@@ -268,11 +270,12 @@ MODE_INI  = 1
 mode = MODE_NONE
 pagenumber = ""
 links = {}
+showing_message = False
 
 while True:
 	gotopage = False;
-	# TODO: clear line 24 before echo if an error message is showing
-	c = read_with_echo();
+	c = read_with_echo(showing_message);
+	showing_message = False
 	if mode == MODE_NONE:
 		lookuplink = False
 		if ord(c) == CEPT_INI:
@@ -305,6 +308,10 @@ while True:
 			# '**' resets mode
 			mode = MODE_NONE
 			pagenumber = ""
+			cept_data  = "\x1f\x58\x41"
+			cept_data += "\x18"
+			sys.stdout.write(cept_data)
+			sys.stdout.flush()
 			sys.stderr.write("mode = MODE_NONE\n")
 		elif c >= '0' and c <= '9':
 			pagenumber += c
@@ -324,6 +331,7 @@ while True:
 			cept_data += "\x1f\x58\x41"      # set cursor to line 24, column 1
 			cept_data += "\x11"              # show cursor
 			cept_data += "\x1a"              # end of page
+			showing_message = True
 			sys.stderr.write("page not found\n")
 		else:
 			links = new_links
