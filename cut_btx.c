@@ -318,6 +318,7 @@ again:
 		}
 	}
 	if (found == 1) {
+		printf("\"cls2\": true,\n");
 		if (debug) printf("CLS detected.\n");
 		p += sizeof(data4);
 
@@ -330,6 +331,7 @@ again:
 			return 1;
 		}
 	} else if (found == 2) {
+		printf("\"cls2\": false,\n");
 		if (debug) printf("HEADER1 detected.\n");
 		p += sizeof(data5);
 	} else {

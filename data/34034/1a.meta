@@ -2,6 +2,7 @@
     "include": "1a",
     "palette": "a",
     "clear_screen": true,
+    "cls2": true,
     "links": {
         "0": "20096141a",
         "1": "3403411a"

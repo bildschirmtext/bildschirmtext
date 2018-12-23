@@ -172,13 +172,8 @@ def create_preamble(basedir, meta):
 	else:
 		last_filename_include = ""
 
-	sh291 = create_system_message(291)
-
 	if len(preamble) > 600: # > 4 seconds @ 1200 baud
-		preamble = sh291 + preamble
-		# TODO: not sure this depends on sh291
-		preamble += "\x1f\x2f\x43"             # serial limited mode
-		preamble += "\x0c"                     # clear screen
+		preamble = create_system_message(291) + preamble
 
 	return preamble
 
@@ -220,6 +215,10 @@ def create_page(basepath, pagenumber):
 		all_data += "\x0c"                         # clear screen
 
 	all_data += create_preamble(basedir, meta)
+
+	if "cls2" in meta and meta["cls2"]:
+		all_data += "\x1f\x2f\x43"                 # serial limited mode
+		all_data += "\x0c"                         # clear screen
 
 	# header + footer
 	all_data += headerfooter(pagenumber, meta)

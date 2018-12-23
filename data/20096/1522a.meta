@@ -2,6 +2,7 @@
     "include": "1522a",
     "palette": "1522a",
     "clear_screen": true,
+    "cls2": true,
     "links": {},
     "publisher_color": 7
 }

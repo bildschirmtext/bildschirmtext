@@ -1,6 +1,7 @@
 {
     "include": "0a",
     "clear_screen": true,
+    "cls2": true,
     "links": {
         "#": "2009612220a",
         "0": "20096122a",
