@@ -152,7 +152,8 @@ def create_preamble(basedir, meta):
 	return preamble
 
 def create_page(basepath, pagenumber):
-	if pagenumber[:-1] >= '0' and pagenumber[:-1] <= '9':
+	sys.stderr.write("xxx: '" + pagenumber[-1:] + "'\n")
+	if pagenumber[-1:] >= '0' and pagenumber[-1:] <= '9':
 		pagenumber += "a"
 
 	basedir = ""
@@ -168,7 +169,7 @@ def create_page(basepath, pagenumber):
 				break
 
 	if basedir == "":
-		return ""
+		return ("", {})
 
 	with open(basedir + "a.glob") as f:
 		glob = json.load(f)
@@ -215,7 +216,7 @@ def create_page(basepath, pagenumber):
 	all_data += "\x11"                                   # show cursor
 	all_data += "\x1a"                                   # end of page
 
-	return all_data
+	return (all_data, meta["links"])
 
 
 def read_with_echo():
@@ -237,8 +238,10 @@ MODE_INI  = 1
 
 mode = MODE_NONE
 pagenumber = ""
+links = {}
 
 while True:
+	gotopage = False;
 	c = read_with_echo();
 	if mode == MODE_NONE:
 		if ord(c) == CEPT_INI:
@@ -254,6 +257,10 @@ while True:
 		elif (c >= '0' and c <= '9'):
 			pagenumber += c
 			sys.stderr.write("local link: '" + c + "' -> '" + pagenumber + "'\n")
+			if pagenumber in links:
+				pagenumber = links[pagenumber]
+				sys.stderr.write("found: -> '" + pagenumber + "'\n")
+				gotopage = True;
 	elif mode == MODE_INI:
 		if ord(c) == CEPT_INI:
 			# '**' resets mode
@@ -265,14 +272,17 @@ while True:
 			sys.stderr.write("global link: '" + c + "' -> '" + pagenumber + "'\n")
 		elif ord(c) == CEPT_TER:
 			sys.stderr.write("TERM global link: '" + pagenumber + "'\n")
-			cept_data = create_page("data/", pagenumber)
-			if cept_data == "":
-				sys.stderr.write("page not found\n")
-			print cept_data
+			gotopage = True;
 			mode = MODE_NONE
-			pagenumber = ""
 			sys.stderr.write("mode = MODE_NONE\n")
 		
+	if gotopage:
+		sys.stderr.write("showing page: '" + pagenumber + "'\n")
+		(cept_data, links) = create_page("data/", pagenumber)
+		if cept_data == "":
+			sys.stderr.write("page not found\n")
+		print cept_data
+		pagenumber = ""
 
 
 #cept_data = create_page("data/", "20095a")
