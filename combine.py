@@ -7,6 +7,12 @@ from pprint import pprint
 CEPT_INI = 19
 CEPT_TER = 28
 
+CEPT_END_OF_PAGE = (
+	"\x1f\x58\x41"      # set cursor to line 24, column 1
+	"\x11"              # show cursor
+	"\x1a"              # end of page
+)
+
 last_filename_include = ""
 last_filename_palette = ""
 
@@ -35,29 +41,31 @@ def encode_string(s1):
 	return s2
 
 def headerfooter(pagenumber, meta):
-	hf  = "\x1f\x2d"                         # set resolution to 40x24
-	hf += "\x1f\x57\x41"                     # set cursor to line 23, column 1
-	hf += "\x9b\x31\x51"                     # unprotect line
-	hf += "\x1b\x23\x21\x4c"                 # set fg color of line to 12
-	hf += "\x1f\x2f\x44"                     # parallel limited mode
-	hf += "\x1f\x58\x41"                     # set cursor to line 24, column 1
-	hf += "\x9b\x31\x51"                     # unprotect line
-	hf += "\x20"                             # " "
-	hf += "\x08"                             # cursor left
-	hf += "\x18"                             # clear line
-	hf += "\x1e"                             # cursor home
-	hf += "\x9b\x31\x51"                     # unprotect line
-	hf += "\x20"                             # " "
-	hf += "\x08"                             # cursor left
-	hf += "\x18"                             # clear line
-	hf += "\x1f\x2f\x43"                     # serial limited mode
-	hf += "\x1f\x58\x41"                     # set cursor to line 24, column 1
-	hf += "\x9b\x31\x40"                     # select palette #1
-	hf += "\x80"                             # set fg color to #0
-	hf += "\x08"                             # cursor left
-	hf += "\x9d"                             # ???
-	hf += "\x08"                             # cursor left
-
+	hf = (
+		"\x1f\x2d"                         # set resolution to 40x24
+		"\x1f\x57\x41"                     # set cursor to line 23, column 1
+		"\x9b\x31\x51"                     # unprotect line
+		"\x1b\x23\x21\x4c"                 # set fg color of line to 12
+		"\x1f\x2f\x44"                     # parallel limited mode
+		"\x1f\x58\x41"                     # set cursor to line 24, column 1
+		"\x9b\x31\x51"                     # unprotect line
+		"\x20"                             # " "
+		"\x08"                             # cursor left
+		"\x18"                             # clear line
+		"\x1e"                             # cursor home
+		"\x9b\x31\x51"                     # unprotect line
+		"\x20"                             # " "
+		"\x08"                             # cursor left
+		"\x18"                             # clear line
+		"\x1f\x2f\x43"                     # serial limited mode
+		"\x1f\x58\x41"                     # set cursor to line 24, column 1
+		"\x9b\x31\x40"                     # select palette #1
+		"\x80"                             # set fg color to #0
+		"\x08"                             # cursor left
+		"\x9d"                             # ???
+		"\x08"                             # cursor left
+	)
+	
 	publisher_color = meta["publisher_color"]
 
 	if publisher_color < 8:
@@ -71,13 +79,15 @@ def headerfooter(pagenumber, meta):
 
 	hf += pagenumber.rjust(22)
 
-	hf += "\x1e"                             # cursor home
-	hf += "\x9b\x31\x40"                     # select palette #1
-	hf += "\x80"                             # set fg color to #0
-	hf += "\x08"                             # cursor left
-	hf += "\x9d"                             # ???
-	hf += "\x08"                             # cursor left
-
+	hf += (
+		"\x1e"                             # cursor home
+		"\x9b\x31\x40"                     # select palette #1
+		"\x80"                             # set fg color to #0
+		"\x08"                             # cursor left
+		"\x9d"                             # ???
+		"\x08"                             # cursor left
+	)
+	
 	hf += color_string
 
 	hf += "\x0d"                             # cursor to beginning of line
@@ -90,10 +100,12 @@ def headerfooter(pagenumber, meta):
 	# TODO: price
 	hf += "   0,00 DM"
 
-	hf += "\x1e"                             # cursor home
-	hf += "\x9b\x30\x40"                     # select palette #0
-	hf += "\x9b\x31\x50"                     # protect line
-	hf += "\x0a"                             # cursor down
+	hf += (
+		"\x1e"                             # cursor home
+		"\x9b\x30\x40"                     # select palette #0
+		"\x9b\x31\x50"                     # protect line
+		"\x0a"                             # cursor down
+	)
 	return hf
 
 def encode_palette(palette):
@@ -120,16 +132,20 @@ def encode_palette(palette):
 	return palette_data
 
 def create_system_message(code):
-	msg  = "\x1f\x2f\x40\x58"             # service break to row 24
-	msg += "\x18"                         # clear line
+	msg = (
+		"\x1f\x2f\x40\x58"             # service break to row 24
+		"\x18"                         # clear line
+	)
 	if code == 100:
 		msg += "Seite nicht vorhanden          "
 	elif code == 291:
 		msg += "Seite wird aufgebaut           "
-	msg += "\x98"                         # hide
-	msg += "\x08"                         # cursor left
+	msg += (
+		"\x98"                         # hide
+		"\x08"                         # cursor left
+	)
 	msg += "SH" + str(code).rjust(3, '0')
-	msg += "\x1f\x2f\x4f"                 # service break back
+	msg += "\x1f\x2f\x4f"              # service break back
 	return msg
 
 def create_preamble(basedir, meta):
@@ -145,13 +161,14 @@ def create_preamble(basedir, meta):
 		sys.stderr.write("filename_palette = " + filename_palette + "\n")
 		sys.stderr.write("last_filename_palette = " + last_filename_palette + "\n")
 		if filename_palette != last_filename_palette:
-			sys.stderr.write("sending palette\n")
 			last_filename_palette = filename_palette
 			with open(filename_palette) as f:
 				palette = json.load(f)
 			palette_data = encode_palette(palette["palette"])
-			preamble += "\x1f\x26\x20"           # start defining colors
-			preamble += "\x1f\x26\x31\x36"       # define colors 16+
+			preamble += (
+				"\x1f\x26\x20"           # start defining colors
+				"\x1f\x26\x31\x36"       # define colors 16+
+			)
 			preamble += palette_data
 		else:
 			sys.stderr.write("skipping palette\n")
@@ -211,14 +228,18 @@ def create_page(basepath, pagenumber):
 	all_data = chr(0x14) # hide cursor
 
 	if "clear_screen" in meta and meta["clear_screen"]:
-		all_data += "\x1f\x2f\x43"                 # serial limited mode
-		all_data += "\x0c"                         # clear screen
+		all_data += (
+			"\x1f\x2f\x43"                 # serial limited mode
+			"\x0c"                         # clear screen
+		)
 
 	all_data += create_preamble(basedir, meta)
 
 	if "cls2" in meta and meta["cls2"]:
-		all_data += "\x1f\x2f\x43"                 # serial limited mode
-		all_data += "\x0c"                         # clear screen
+		all_data += (
+			"\x1f\x2f\x43"                 # serial limited mode
+			"\x0c"                         # clear screen
+		)
 
 	# header + footer
 	all_data += headerfooter(pagenumber, meta)
@@ -241,9 +262,7 @@ def create_page(basepath, pagenumber):
 	# header + footer
 	all_data += headerfooter(pagenumber, meta)
 
-	all_data += "\x1f\x58\x41"                           # set cursor to x=24 y=1
-	all_data += "\x11"                                   # show cursor
-	all_data += "\x1a"                                   # end of page
+	all_data += CEPT_END_OF_PAGE
 
 	return (all_data, meta["links"])
 
@@ -327,10 +346,7 @@ while True:
 		(cept_data, new_links) = create_page("data/", pagenumber)
 		if cept_data == "":
 			sh100 = create_system_message(100)
-			cept_data = sh100
-			cept_data += "\x1f\x58\x41"      # set cursor to line 24, column 1
-			cept_data += "\x11"              # show cursor
-			cept_data += "\x1a"              # end of page
+			cept_data = sh100 + CEPT_END_OF_PAGE
 			showing_message = True
 			sys.stderr.write("page not found\n")
 		else:
