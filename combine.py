@@ -271,6 +271,7 @@ while True:
 	gotopage = False;
 	c = read_with_echo();
 	if mode == MODE_NONE:
+		lookuplink = False
 		if ord(c) == CEPT_INI:
 			mode = MODE_INI
 			pagenumber = ""
@@ -280,14 +281,22 @@ while True:
 				sys.stderr.write("error: TER not expected here!\n")
 			else:
 				pagenumber = '#'
+				lookuplink = True
 				sys.stderr.write("local link: -> '" + pagenumber + "'\n")
 		elif (c >= '0' and c <= '9'):
 			pagenumber += c
+			lookuplink = True
 			sys.stderr.write("local link: '" + c + "' -> '" + pagenumber + "'\n")
+
+		if lookuplink:
 			if pagenumber in links:
 				pagenumber = links[pagenumber]
 				sys.stderr.write("found: -> '" + pagenumber + "'\n")
 				gotopage = True;
+			else:
+				if pagenumber == '#' and pagenumber[-1:] >= 'a' and pagenumber[-1:] <= 'y':
+					pagenumber = pagenumber[:-1] + chr(ord(pagenumber[-1:]) + 1)
+				
 	elif mode == MODE_INI:
 		if ord(c) == CEPT_INI:
 			# '**' resets mode
