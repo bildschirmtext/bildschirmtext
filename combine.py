@@ -60,7 +60,12 @@ def headerfooter(pagenumber, meta):
 
 	publisher_color = meta["publisher_color"]
 
-	hf += chr(0x80 + publisher_color)
+	if publisher_color < 8:
+		color_string = "\x9b\x30\x40" + chr(0x80 + publisher_color)
+	else:
+		color_string = chr(0x80 + publisher_color - 8)
+
+	hf += color_string
 
 	hf += "\x1f\x58\x53"                     # set cursor to line 24, column 19
 
@@ -73,7 +78,7 @@ def headerfooter(pagenumber, meta):
 	hf += "\x9d"                             # ???
 	hf += "\x08"                             # cursor left
 
-	hf += chr(0x80 + publisher_color)
+	hf += color_string
 
 	hf += "\x0d"                             # cursor to beginning of line
 

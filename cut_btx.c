@@ -354,16 +354,17 @@ again:
 	} while(p <= buffer + total_length - sizeof(data5b));
 
 	if (found) {
-		if (p_old[0] == 0x9b && p_old[1] == 0x30 && p_old[2] == 0x40) {
-			p_old += 3;
-		}
-		uint8_t color = p_old[0] & 0xf;
-
 		printf("\"publisher_color\": ");
 		if (debug) {
 			print_hex(p_old, p - p_old);
 		} else {
-			printf("%d,\n", color);
+			int palette_add = 8;
+			if (p_old[0] == 0x9b && p_old[1] == 0x30 && p_old[2] == 0x40) {
+				palette_add = 0;
+				p_old += 3;
+			}
+			uint8_t color = p_old[0] & 0xf;
+			printf("%d,\n", color + palette_add);
 		}
 
 		if (debug) printf("HEADERX detected.\n");
