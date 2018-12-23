@@ -119,12 +119,24 @@ def encode_palette(palette):
 		palette_data += chr(byte0) + chr(byte1)
 	return palette_data
 
+def create_system_message(code):
+	msg  = "\x1f\x2f\x40\x58"             # service break to row 24
+	msg += "\x18"                         # clear line
+	if code == 100:
+		msg += "Seite nicht vorhanden          "
+	elif code == 291:
+		msg += "Seite wird aufgebaut           "
+	msg += "\x98"                         # hide
+	msg += "\x08"                         # cursor left
+	msg += "SH" + str(code).rjust(3, '0')
+	msg += "\x1f\x2f\x4f"                 # service break back
+	return msg
+
 def create_preamble(basedir, meta):
 	global last_filename_include
 	global last_filename_palette
 
 	preamble = ""
-	sys.stderr.write("preamble...\n")
 
 	# define palette
 	if "palette" in meta:
@@ -160,22 +172,13 @@ def create_preamble(basedir, meta):
 	else:
 		last_filename_include = ""
 
-	sh291a  = "\x1f\x2f\x40\x58"                 # service break to row 24
-	sh291a += "\x18"                             # clear line
-	sh291a += "\x53\x65\x69\x74\x65\x20\x77\x69" # "Seite wi"
-	sh291a += "\x72\x64\x20\x61\x75\x66\x67\x65" # "rd aufge"
-	sh291a += "\x62\x61\x75\x74\x20\x20\x20\x20" # "baut    "
-	sh291a += "\x20\x20\x20\x20\x20\x20\x20\x20" # "        "
-	sh291a += "\x20\x20\x20"                     # "   "
-	sh291a += "\x98"                             # hide
-	sh291a += "\x08"                             # cursor left
-	sh291a += "\x53\x48\x32\x39\x31"             # "SH291"
-	sh291a += "\x1f\x2f\x4f"                     # service break back
-	sh291b  = "\x1f\x2f\x43"                     # serial limited mode
-	sh291b += "\x0c"                             # clear screen
+	sh291 = create_system_message(291)
 
 	if len(preamble) > 600: # > 4 seconds @ 1200 baud
-		preamble = sh291a + preamble + sh291b
+		preamble = sh291 + preamble
+		# TODO: not sure this depends on sh291
+		preamble += "\x1f\x2f\x43"             # serial limited mode
+		preamble += "\x0c"                     # clear screen
 
 	return preamble
 
@@ -317,15 +320,8 @@ while True:
 		sys.stderr.write("showing page: '" + pagenumber + "'\n")
 		(cept_data, new_links) = create_page("data/", pagenumber)
 		if cept_data == "":
-			cept_data  = "\x23"              # "#"
-			cept_data += "\x14"              # hide cursor
-			cept_data += "\x1f\x2f\x40\x58"  # service break to row 24
-			cept_data += "\x18"              # clear line
-			cept_data += "Seite nicht vorhanden              "
-			cept_data += "\x98"              # hide
-			cept_data += "\x08"              # cursor left
-			cept_data += "SH100"
-			cept_data += "\x1f\x2f\x4f"      # service break back
+			sh100 = create_system_message(100)
+			cept_data = sh100
 			cept_data += "\x1f\x58\x41"      # set cursor to line 24, column 1
 			cept_data += "\x11"              # show cursor
 			cept_data += "\x1a"              # end of page
