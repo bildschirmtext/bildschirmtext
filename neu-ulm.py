@@ -4,6 +4,8 @@ import os
 import datetime
 from pprint import pprint
 
+# constants
+
 CEPT_INI = 19
 CEPT_TER = 28
 
@@ -12,6 +14,16 @@ CEPT_END_OF_PAGE = (
 	"\x11"              # show cursor
 	"\x1a"              # end of page
 )
+
+# session info
+session_salutation = "Herr"
+session_first_name = "Eric"
+session_last_name = "Danke"
+session_last_date = "01.01.1970"
+session_last_time = "0:00"
+
+
+# globals
 
 last_filename_include = ""
 last_filename_palette = ""
@@ -213,12 +225,13 @@ def create_preamble(basedir, meta):
 	return preamble
 
 def replace_placeholders(cept):
+	global session_salutation
+	global session_first_name
+	global session_last_name
+	global session_last_date
+	global session_last_time
+
 	current_date = datetime.datetime.now().strftime("%d.%m.%Y  %H:%M")
-	salutation = "Herr"
-	first_name = "Eric"
-	last_name = "Danke"
-	last_date = "01.01.1970"
-	last_time = "0:00"
 
 	pos = cept.find("\x1f\x40\x41")
 	if pos > 0:
@@ -226,23 +239,23 @@ def replace_placeholders(cept):
 
 	pos = cept.find("\x1f\x40\x42")
 	if pos > 0:
-		cept = cept[:pos] + salutation + cept[pos+3:]
+		cept = cept[:pos] + session_salutation + cept[pos+3:]
 
 	pos = cept.find("\x1f\x40\x43")
 	if pos > 0:
-		cept = cept[:pos] + first_name + cept[pos+3:]
+		cept = cept[:pos] + session_first_name + cept[pos+3:]
 
 	pos = cept.find("\x1f\x40\x44")
 	if pos > 0:
-		cept = cept[:pos] + last_name + cept[pos+3:]
+		cept = cept[:pos] + session_last_name + cept[pos+3:]
 
 	pos = cept.find("\x1f\x40\x45")
 	if pos > 0:
-		cept = cept[:pos] + last_date + cept[pos+3:]
+		cept = cept[:pos] + session_last_date + cept[pos+3:]
 
 	pos = cept.find("\x1f\x40\x46")
 	if pos > 0:
-		cept = cept[:pos] + last_time + cept[pos+3:]
+		cept = cept[:pos] + session_last_time + cept[pos+3:]
 
 	return cept
 
