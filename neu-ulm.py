@@ -263,7 +263,7 @@ def create_page(basepath, pagenumber):
 				break
 
 	if basedir == "":
-		return ("", {})
+		return ("", {}, [])
 
 	with open(basedir + "a.glob") as f:
 		glob = json.load(f)
