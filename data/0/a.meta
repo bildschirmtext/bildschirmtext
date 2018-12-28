@@ -1,0 +1,16 @@
+{
+    "clear_screen": true,
+    "links": {
+        "#": "20000"
+    },
+    "publisher_color": 7,
+    "inputs": [
+		{
+			"name": "user",
+			"line": 20,
+			"column": 1,
+			"height": 1,
+			"width": 30
+		}
+    ]
+}

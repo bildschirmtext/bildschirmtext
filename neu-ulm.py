@@ -1,7 +1,6 @@
 import json
 import sys
 import os
-import serial
 from pprint import pprint
 
 CEPT_INI = 19
@@ -15,6 +14,7 @@ CEPT_END_OF_PAGE = (
 
 last_filename_include = ""
 last_filename_palette = ""
+links = {}
 
 reload(sys)  
 sys.setdefaultencoding('latin-1')
@@ -142,6 +142,8 @@ def create_system_message(code):
 		msg += "Seite nicht vorhanden          "
 	elif code == 291:
 		msg += "Seite wird aufgebaut           "
+	elif code == 999:
+		msg += "Absenden? Ja: 19 Nein: 2       "
 	msg += (
 		"\x98"                         # hide
 		"\x08"                         # cursor left
@@ -266,7 +268,7 @@ def create_page(basepath, pagenumber):
 
 	all_data += CEPT_END_OF_PAGE
 
-	return (all_data, meta["links"])
+	return (all_data, meta["links"], meta["inputs"])
 
 
 def read_with_echo(clear_line):
@@ -283,14 +285,85 @@ def read_with_echo(clear_line):
 	sys.stderr.write("In: " + str(ord(c)) + "\n")
 	return c
 
+def show_page(pagenumber):
+	global links
+	sys.stderr.write("showing page: '" + pagenumber + "'\n")
+	(cept_data, new_links, inputs) = create_page("data/", pagenumber)
+	if cept_data == "":
+		sh100 = create_system_message(100)
+		cept_data = sh100 + CEPT_END_OF_PAGE
+		showing_message = True
+		sys.stderr.write("page not found\n")
+	else:
+		links = new_links
+	sys.stdout.write(cept_data)
+	sys.stdout.flush()
+	
+	for input in inputs:
+		l = input["line"]
+		c = input["column"]
+		h = input["height"]
+		w = input["width"]
+
+	cept_data = (
+		"\x1f\x2f\x44"                     # parallel limited mode
+		"\x90" # black background
+	)
+	for i in range(1, h):
+		cept_data += "\x1f" + chr(0x40 + l + i) + chr(0x40 + c)      # set cursor
+		cept_data += " \x12" + chr(0x40 + w)
+		sys.stdout.write(cept_data)
+		sys.stdout.flush()
+
+	cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
+	sys.stdout.write(cept_data)
+	sys.stdout.flush()
+
+	s = ""
+	while True:
+		c = sys.stdin.read(1)
+		sys.stderr.write("Input In: " + str(ord(c)) + "\n")
+		if ord(c) == CEPT_TER:
+			break
+		if ord(c) == 8:
+			if len(s) == 0:
+				continue
+			sys.stdout.write("\x08 \x08")
+			sys.stdout.flush()
+			s = s[:-1]
+		elif ord(c) < 0x20 and ord(c) != 0x19:
+			continue
+		elif len(s) < w:
+			s += c
+			sys.stdout.write(c)
+			sys.stdout.flush()
+		sys.stderr.write("String: '" + s + "'\n")
+			
+	cept_data = create_system_message(999)
+	sys.stdout.write(cept_data)
+	sys.stdout.flush()
+
+
 # MAIN
+
+sys.stderr.write("running!!\n")
+
+num_crs = 0
+while True:
+	c = read_with_echo(False);
+	if ord(c) == 13:
+		num_crs += 1
+#		sys.stderr.write("num_crs: " + num_crs + "\n")
+		if num_crs == 4:
+			break
+			
+show_page("0")
 
 MODE_NONE = 0
 MODE_INI  = 1
 
 mode = MODE_NONE
 pagenumber = ""
-links = {}
 showing_message = False
 
 while True:
@@ -344,16 +417,6 @@ while True:
 			sys.stderr.write("mode = MODE_NONE\n")
 		
 	if gotopage:
-		sys.stderr.write("showing page: '" + pagenumber + "'\n")
-		(cept_data, new_links) = create_page("data/", pagenumber)
-		if cept_data == "":
-			sh100 = create_system_message(100)
-			cept_data = sh100 + CEPT_END_OF_PAGE
-			showing_message = True
-			sys.stderr.write("page not found\n")
-		else:
-			links = new_links
-		sys.stdout.write(cept_data)
-		sys.stdout.flush()
+		show_page(pagenumber)
 		pagenumber = ""
 
