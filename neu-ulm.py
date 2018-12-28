@@ -138,7 +138,11 @@ def create_system_message(code):
 		"\x1f\x2f\x40\x58"             # service break to row 24
 		"\x18"                         # clear line
 	)
-	if code == 100:
+	if code == 0:
+		msg += ""
+	elif code == 55:
+		msg += "Eingabe wird bearbeitet        "
+	elif code == 100:
 		msg += "Seite nicht vorhanden          "
 	elif code == 291:
 		msg += "Seite wird aufgebaut           "
@@ -359,9 +363,13 @@ def handle_inputs(inputs):
 			sys.stdout.write("\x08 \x08")
 			sys.stdout.flush()
 		
-	cept_data  = "\x0d"                      # cursor to beginning of line
-	cept_data += "\x18"                      # clear line
-	cept_data += "\x1f\x2f\x4f"              # service break back
+	cept_data = create_system_message(55)
+	sys.stdout.write(cept_data)
+	sys.stdout.flush()
+		
+#	cept_data  = "\x0d"                      # cursor to beginning of line
+#	cept_data += "\x18"                      # clear line
+	cept_data = create_system_message(0)
 	cept_data += CEPT_END_OF_PAGE
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
