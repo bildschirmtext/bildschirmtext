@@ -359,7 +359,9 @@ def handle_inputs(inputs):
 			sys.stdout.write("\x08 \x08")
 			sys.stdout.flush()
 		
-	cept_data = "\x1f\x2f\x4f"              # service break back
+	cept_data  = "\x0d"                      # cursor to beginning of line
+	cept_data += "\x18"                      # clear line
+	cept_data += "\x1f\x2f\x4f"              # service break back
 	cept_data += CEPT_END_OF_PAGE
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
