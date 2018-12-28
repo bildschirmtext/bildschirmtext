@@ -268,7 +268,11 @@ def create_page(basepath, pagenumber):
 
 	all_data += CEPT_END_OF_PAGE
 
-	return (all_data, meta["links"], meta["inputs"])
+	if "inputs" in meta:
+		inputs = meta["inputs"]
+	else:
+		inputs = []
+	return (all_data, meta["links"], inputs)
 
 
 def read_with_echo(clear_line):
@@ -305,39 +309,39 @@ def show_page(pagenumber):
 		h = input["height"]
 		w = input["width"]
 
-	cept_data = (
-		"\x1f\x2f\x44"                     # parallel limited mode
-		"\x90" # black background
-	)
-	for i in range(1, h):
-		cept_data += "\x1f" + chr(0x40 + l + i) + chr(0x40 + c)      # set cursor
-		cept_data += " \x12" + chr(0x40 + w)
+		cept_data = (
+			"\x1f\x2f\x44"                     # parallel limited mode
+			"\x90" # black background
+		)
+		for i in range(1, h):
+			cept_data += "\x1f" + chr(0x40 + l + i) + chr(0x40 + c)      # set cursor
+			cept_data += " \x12" + chr(0x40 + w)
+			sys.stdout.write(cept_data)
+			sys.stdout.flush()
+	
+		cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
 		sys.stdout.write(cept_data)
 		sys.stdout.flush()
-
-	cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
-	sys.stdout.write(cept_data)
-	sys.stdout.flush()
-
-	s = ""
-	while True:
-		c = sys.stdin.read(1)
-		sys.stderr.write("Input In: " + str(ord(c)) + "\n")
-		if ord(c) == CEPT_TER:
-			break
-		if ord(c) == 8:
-			if len(s) == 0:
+	
+		s = ""
+		while True:
+			c = sys.stdin.read(1)
+			sys.stderr.write("Input In: " + str(ord(c)) + "\n")
+			if ord(c) == CEPT_TER:
+				break
+			if ord(c) == 8:
+				if len(s) == 0:
+					continue
+				sys.stdout.write("\x08 \x08")
+				sys.stdout.flush()
+				s = s[:-1]
+			elif ord(c) < 0x20 and ord(c) != 0x19:
 				continue
-			sys.stdout.write("\x08 \x08")
-			sys.stdout.flush()
-			s = s[:-1]
-		elif ord(c) < 0x20 and ord(c) != 0x19:
-			continue
-		elif len(s) < w:
-			s += c
-			sys.stdout.write(c)
-			sys.stdout.flush()
-		sys.stderr.write("String: '" + s + "'\n")
+			elif len(s) < w:
+				s += c
+				sys.stdout.write(c)
+				sys.stdout.flush()
+			sys.stderr.write("String: '" + s + "'\n")
 			
 	cept_data = create_system_message(999)
 	sys.stdout.write(cept_data)
