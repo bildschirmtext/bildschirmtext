@@ -150,6 +150,8 @@ def create_system_message(code):
 		msg += "Seite nicht vorhanden          "
 	elif code == 291:
 		msg += "Seite wird aufgebaut           "
+	elif code == 999:
+		msg += "# eingeben um fortzufahren     "
 	msg += (
 		"\x98"                         # hide
 		"\x08"                         # cursor left
@@ -318,7 +320,8 @@ def handle_inputs(inputs):
 		h = input["height"]
 		w = input["width"]
 	
-		cept_data  = "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
+		cept_data  = create_system_message(999)
+		cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
 		cept_data += "\x90" # bg color black
 		sys.stdout.write(cept_data)
 		sys.stdout.flush()
@@ -343,11 +346,8 @@ def handle_inputs(inputs):
 				sys.stdout.flush()
 			sys.stderr.write("String: '" + s + "'\n")
 			
-	cept_data = (
-		"\x1f\x2f\x40\x58"             # service break to row 24
-		"\x18"                         # clear line
-	)
-	cept_data += create_system_message(44)
+	cept_data  = create_system_message(44)
+	cept_data += "\x1f" + chr(0x40 + 24) + chr(0x40 + 24)      # set cursor
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
 
