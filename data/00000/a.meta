@@ -1,7 +1,7 @@
 {
     "clear_screen": true,
     "links": {
-        "#": "20000"
+        "#": "+1a"
     },
     "publisher_color": 7,
     "inputs": {
@@ -35,6 +35,6 @@
 			}
 		],
 		"confirm": false,
-		"target": "localhost:1234"
+		"target": "page:000001a"
     }
 }

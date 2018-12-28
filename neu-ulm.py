@@ -410,24 +410,36 @@ def handle_inputs(inputs):
 	cept_data += CEPT_END_OF_PAGE
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
+	
+	if inputs["target"][:5] == "page:":
+		return inputs["target"][5:]
+	else:
+		return ""
 
 
 def show_page(pagenumber):
 	global links
-	sys.stderr.write("showing page: '" + pagenumber + "'\n")
-	(cept_data, new_links, inputs) = create_page("data/", pagenumber)
-	if cept_data == "":
-		sh100 = create_system_message(100)
-		cept_data = sh100 + CEPT_END_OF_PAGE
-		showing_message = True
-		sys.stderr.write("page not found\n")
-	else:
-		links = new_links
-	sys.stdout.write(cept_data)
-	sys.stdout.flush()
-
-	if len(inputs):
-		handle_inputs(inputs)
+	
+	while True:
+		sys.stderr.write("showing page: '" + pagenumber + "'\n")
+		(cept_data, new_links, inputs) = create_page("data/", pagenumber)
+		if cept_data == "":
+			sh100 = create_system_message(100)
+			cept_data = sh100 + CEPT_END_OF_PAGE
+			showing_message = True
+			sys.stderr.write("page not found\n")
+		else:
+			links = new_links
+		sys.stdout.write(cept_data)
+		sys.stdout.flush()
+		
+		if len(inputs):
+			pagenumber = handle_inputs(inputs)
+		else:
+			pagenumber = ""
+			
+		if len(pagenumber) == 0:
+			break
 		
 
 # MAIN
@@ -439,11 +451,10 @@ while True:
 	c = read_with_echo(False);
 	if ord(c) == 13:
 		num_crs += 1
-#		sys.stderr.write("num_crs: " + num_crs + "\n")
 		if num_crs == 4:
 			break
 			
-show_page("0")
+show_page("00000")
 
 MODE_NONE = 0
 MODE_INI  = 1
