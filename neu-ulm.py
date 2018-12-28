@@ -305,6 +305,7 @@ def read_with_echo(clear_line):
 def set_fg_color(c):
 	if c > 7:
 		pal = 1
+		c -= 8
 	else:
 		pal = 0
 	return "\x9b" + chr(0x30 + pal) + "\x40" + chr(0x80 + c)
@@ -312,6 +313,7 @@ def set_fg_color(c):
 def set_bg_color(c):
 	if c > 7:
 		pal = 1
+		c -= 8
 	else:
 		pal = 0
 	return "\x9b" + chr(0x30 + pal) + "\x40" + chr(0x90 + c)
