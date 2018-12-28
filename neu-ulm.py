@@ -44,6 +44,8 @@ def encode_string(s1):
 	return s2
 
 def headerfooter(pagenumber, meta):
+	hide_header_footer = len(meta["publisher_name"]) == 0
+
 	hf = (
 		"\x1f\x2d"                         # set resolution to 40x24
 		"\x1f\x57\x41"                     # set cursor to line 23, column 1
@@ -80,7 +82,8 @@ def headerfooter(pagenumber, meta):
 
 	hf += "\x1f\x58\x53"                   # set cursor to line 24, column 19
 
-	hf += pagenumber.rjust(22)
+	if not hide_header_footer:
+		hf += pagenumber.rjust(22)
 
 	hf += (
 		"\x1e"                             # cursor home
@@ -100,7 +103,8 @@ def headerfooter(pagenumber, meta):
 	hf += "\x1f\x41\x5f"                   # set cursor to line 1, column 31
 
 	# TODO: price
-	hf += "   0,00 DM"
+	if not hide_header_footer:
+		hf += "   0,00 DM"
 
 	hf += (
 		"\x1e"                             # cursor home
@@ -349,38 +353,39 @@ def handle_inputs(inputs):
 			sys.stderr.write("String: '" + s + "'\n")
 			
 		input_data[input["name"]] = s
-			
-	cept_data  = create_system_message(44)
-	cept_data += "\x1f" + chr(0x40 + 24) + chr(0x40 + 24)      # set cursor
-	sys.stdout.write(cept_data)
-	sys.stdout.flush()
 
-	seen_a_one = False
-	while True:
-		c = sys.stdin.read(1)
-		if c == "2":
-			doit = False
-			sys.stdout.write(c)
-			sys.stdout.flush()
-			break
-		elif c == "1" and not seen_a_one:
-			seen_a_one = True
-			sys.stdout.write(c)
-			sys.stdout.flush()
-		elif c == "9" and seen_a_one:
-			doit = True
-			sys.stdout.write(c)
-			sys.stdout.flush()
-			break
-		elif ord(c) == 8 and seen_a_one:
-			seen_a_one = False
-			sys.stdout.write("\x08 \x08")
-			sys.stdout.flush()
-		
+	if not "confirm" in inputs or inputs["confirm"]:
+		cept_data  = create_system_message(44)
+		cept_data += "\x1f" + chr(0x40 + 24) + chr(0x40 + 24)      # set cursor
+		sys.stdout.write(cept_data)
+		sys.stdout.flush()
+	
+		seen_a_one = False
+		while True:
+			c = sys.stdin.read(1)
+			if c == "2":
+				doit = False
+				sys.stdout.write(c)
+				sys.stdout.flush()
+				break
+			elif c == "1" and not seen_a_one:
+				seen_a_one = True
+				sys.stdout.write(c)
+				sys.stdout.flush()
+			elif c == "9" and seen_a_one:
+				doit = True
+				sys.stdout.write(c)
+				sys.stdout.flush()
+				break
+			elif ord(c) == 8 and seen_a_one:
+				seen_a_one = False
+				sys.stdout.write("\x08 \x08")
+				sys.stdout.flush()
+			
 	cept_data = create_system_message(55)
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
-
+	
 	# send "input_data" to "inputs["target"]"
 		
 	cept_data = create_system_message(0)
