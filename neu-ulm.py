@@ -311,15 +311,16 @@ def show_page(pagenumber):
 
 		cept_data = (
 			"\x1f\x2f\x44"                     # parallel limited mode
-			"\x90" # black background
 		)
-		for i in range(1, h):
+		for i in range(0, h):
 			cept_data += "\x1f" + chr(0x40 + l + i) + chr(0x40 + c)      # set cursor
-			cept_data += " \x12" + chr(0x40 + w)
+			cept_data += "\x90"
+			cept_data += " \x12" + chr(0x40 + w - 1)
 			sys.stdout.write(cept_data)
 			sys.stdout.flush()
 	
 		cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
+		cept_data += "\x90"
 		sys.stdout.write(cept_data)
 		sys.stdout.flush()
 	
