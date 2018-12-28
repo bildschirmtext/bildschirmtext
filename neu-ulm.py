@@ -297,24 +297,29 @@ def read_with_echo(clear_line):
 	return c
 
 def handle_inputs(inputs):
+	cept_data = (
+		"\x1f\x2f\x44"                     # parallel limited mode
+	)
 	for input in inputs:
 		l = input["line"]
 		c = input["column"]
 		h = input["height"]
 		w = input["width"]
-
-		cept_data = (
-			"\x1f\x2f\x44"                     # parallel limited mode
-		)
 		for i in range(0, h):
 			cept_data += "\x1f" + chr(0x40 + l + i) + chr(0x40 + c)      # set cursor
-			cept_data += "\x90"
+			cept_data += "\x90" # bg color black
 			cept_data += " \x12" + chr(0x40 + w - 1)
-			sys.stdout.write(cept_data)
-			sys.stdout.flush()
+	sys.stdout.write(cept_data)
+	sys.stdout.flush()
+
+	for input in inputs:
+		l = input["line"]
+		c = input["column"]
+		h = input["height"]
+		w = input["width"]
 	
-		cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
-		cept_data += "\x90"
+		cept_data  = "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
+		cept_data += "\x90" # bg color black
 		sys.stdout.write(cept_data)
 		sys.stdout.flush()
 	

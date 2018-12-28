@@ -11,6 +11,13 @@
 			"column": 1,
 			"height": 1,
 			"width": 30
+		},
+		{
+			"name": "user",
+			"line": 22,
+			"column": 1,
+			"height": 1,
+			"width": 20
 		}
     ]
 }
