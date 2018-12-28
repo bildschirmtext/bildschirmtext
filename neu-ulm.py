@@ -265,9 +265,11 @@ def create_page(basepath, pagenumber):
 	if basedir == "":
 		return ("", {}, [])
 
+	sys.stderr.write("reading: '" + basedir + "'.glob\n")
 	with open(basedir + "a.glob") as f:
 		glob = json.load(f)
 
+	sys.stderr.write("reading: '" + basedir + filename + "'.meta\n")
 	with open(basedir + filename + ".meta") as f:
 		meta = json.load(f)
 
@@ -483,7 +485,7 @@ def show_page(pagenumber):
 
 sys.stderr.write("running!!\n")
 
-if sys.argv[1] == "c64":
+if len(sys.argv) > 1 and sys.argv[1] == "c64":
 	num_crs = 0
 	while True:
 		c = read_with_echo(False);
