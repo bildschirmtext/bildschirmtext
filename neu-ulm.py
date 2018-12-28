@@ -1,6 +1,7 @@
 import json
 import sys
 import os
+import datetime
 from pprint import pprint
 
 CEPT_INI = 19
@@ -211,6 +212,12 @@ def create_preamble(basedir, meta):
 
 	return preamble
 
+def replace_placeholders(cept):
+	pos = cept.find("\x1f\x40\x41")
+	if pos > 0:
+		cept = cept[:pos] + datetime.datetime.now().strftime("%d.%m.%Y  %H:%M") + cept[pos+3:]
+	return cept
+
 def create_page(basepath, pagenumber):
 	if pagenumber[-1:] >= '0' and pagenumber[-1:] <= '9':
 		pagenumber += "a"
@@ -241,6 +248,8 @@ def create_page(basepath, pagenumber):
 	filename_cept = basedir + filename + ".cept"
 	with open(filename_cept, mode='rb') as f:
 		data_cept = f.read()
+
+	data_cept = replace_placeholders(data_cept)
 
 	all_data = chr(0x14) # hide cursor
 
