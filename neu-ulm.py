@@ -142,8 +142,6 @@ def create_system_message(code):
 		msg += "Seite nicht vorhanden          "
 	elif code == 291:
 		msg += "Seite wird aufgebaut           "
-	elif code == 999:
-		msg += "Absenden? Ja: 19 Nein: 2       "
 	msg += (
 		"\x98"                         # hide
 		"\x08"                         # cursor left
@@ -289,20 +287,7 @@ def read_with_echo(clear_line):
 	sys.stderr.write("In: " + str(ord(c)) + "\n")
 	return c
 
-def show_page(pagenumber):
-	global links
-	sys.stderr.write("showing page: '" + pagenumber + "'\n")
-	(cept_data, new_links, inputs) = create_page("data/", pagenumber)
-	if cept_data == "":
-		sh100 = create_system_message(100)
-		cept_data = sh100 + CEPT_END_OF_PAGE
-		showing_message = True
-		sys.stderr.write("page not found\n")
-	else:
-		links = new_links
-	sys.stdout.write(cept_data)
-	sys.stdout.flush()
-	
+def handle_inputs(inputs):
 	for input in inputs:
 		l = input["line"]
 		c = input["column"]
@@ -344,10 +329,59 @@ def show_page(pagenumber):
 				sys.stdout.flush()
 			sys.stderr.write("String: '" + s + "'\n")
 			
-	cept_data = create_system_message(999)
+	cept_data = (
+		"\x1f\x2f\x40\x58"             # service break to row 24
+		"\x18"                         # clear line
+	)
+	cept_data += "Absenden DM  0,00? Ja:19 Nein:2 "
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
 
+	seen_a_one = False
+	while True:
+		c = sys.stdin.read(1)
+		if c == "2":
+			doit = False
+			sys.stdout.write(c)
+			sys.stdout.flush()
+			break
+		elif c == "1" and not seen_a_one:
+			seen_a_one = True
+			sys.stdout.write(c)
+			sys.stdout.flush()
+		elif c == "9" and seen_a_one:
+			doit = True
+			sys.stdout.write(c)
+			sys.stdout.flush()
+			break
+		elif ord(c) == 8 and seen_a_one:
+			seen_a_one = False
+			sys.stdout.write("\x08 \x08")
+			sys.stdout.flush()
+		
+	cept_data = "\x1f\x2f\x4f"              # service break back
+	cept_data += CEPT_END_OF_PAGE
+	sys.stdout.write(cept_data)
+	sys.stdout.flush()
+
+
+def show_page(pagenumber):
+	global links
+	sys.stderr.write("showing page: '" + pagenumber + "'\n")
+	(cept_data, new_links, inputs) = create_page("data/", pagenumber)
+	if cept_data == "":
+		sh100 = create_system_message(100)
+		cept_data = sh100 + CEPT_END_OF_PAGE
+		showing_message = True
+		sys.stderr.write("page not found\n")
+	else:
+		links = new_links
+	sys.stdout.write(cept_data)
+	sys.stdout.flush()
+
+	if len(inputs):
+		handle_inputs(inputs)
+		
 
 # MAIN
 
