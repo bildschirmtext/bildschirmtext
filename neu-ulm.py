@@ -139,7 +139,11 @@ def create_system_message(code):
 		"\x18"                         # clear line
 	)
 	if code == 0:
-		msg += ""
+		msg += "                               "
+	elif code == 44:
+		msg += "Absenden? Ja:19 Nein:2         "
+	elif code == 47:
+		msg += "Absenden f\0x19Hur DM  0,00? Ja:19 Nein:2"
 	elif code == 55:
 		msg += "Eingabe wird bearbeitet        "
 	elif code == 100:
@@ -150,7 +154,8 @@ def create_system_message(code):
 		"\x98"                         # hide
 		"\x08"                         # cursor left
 	)
-	msg += "SH" + str(code).rjust(3, '0')
+	msg += "SH"
+	msg += str(code).rjust(3, '0')
 	msg += "\x1f\x2f\x4f"              # service break back
 	return msg
 
@@ -337,7 +342,7 @@ def handle_inputs(inputs):
 		"\x1f\x2f\x40\x58"             # service break to row 24
 		"\x18"                         # clear line
 	)
-	cept_data += "Absenden DM  0,00? Ja:19 Nein:2 "
+	cept_data += create_system_message(44)
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
 
@@ -366,9 +371,9 @@ def handle_inputs(inputs):
 	cept_data = create_system_message(55)
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
+
+	# do something with the input
 		
-#	cept_data  = "\x0d"                      # cursor to beginning of line
-#	cept_data += "\x18"                      # clear line
 	cept_data = create_system_message(0)
 	cept_data += CEPT_END_OF_PAGE
 	sys.stdout.write(cept_data)
