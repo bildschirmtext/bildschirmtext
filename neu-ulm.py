@@ -314,6 +314,8 @@ def handle_inputs(inputs):
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
 
+	input_data = {}
+
 	for input in inputs:
 		l = input["line"]
 		c = input["column"]
@@ -346,6 +348,8 @@ def handle_inputs(inputs):
 				sys.stdout.flush()
 			sys.stderr.write("String: '" + s + "'\n")
 			
+		input_data[input["name"]] = s
+			
 	cept_data  = create_system_message(44)
 	cept_data += "\x1f" + chr(0x40 + 24) + chr(0x40 + 24)      # set cursor
 	sys.stdout.write(cept_data)
@@ -377,7 +381,7 @@ def handle_inputs(inputs):
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
 
-	# do something with the input
+	# do something with "input_data"
 		
 	cept_data = create_system_message(0)
 	cept_data += CEPT_END_OF_PAGE
