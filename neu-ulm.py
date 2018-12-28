@@ -302,6 +302,20 @@ def read_with_echo(clear_line):
 	sys.stderr.write("In: " + str(ord(c)) + "\n")
 	return c
 
+def set_fg_color(c):
+	if c > 7:
+		pal = 1
+	else:
+		pal = 0
+	return "\x9b" + chr(0x30 + pal) + "\x40" + chr(0x80 + c)
+
+def set_bg_color(c):
+	if c > 7:
+		pal = 1
+	else:
+		pal = 0
+	return "\x9b" + chr(0x30 + pal) + "\x40" + chr(0x90 + c)
+
 def handle_inputs(inputs):
 	cept_data = (
 		"\x1f\x2f\x44"                     # parallel limited mode
@@ -313,7 +327,8 @@ def handle_inputs(inputs):
 		w = input["width"]
 		for i in range(0, h):
 			cept_data += "\x1f" + chr(0x40 + l + i) + chr(0x40 + c)      # set cursor
-			cept_data += "\x90" # bg color black
+			cept_data += set_fg_color(input["fgcolor"])
+			cept_data += set_bg_color(input["bgcolor"])
 			cept_data += " \x12" + chr(0x40 + w - 1)
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
@@ -328,7 +343,8 @@ def handle_inputs(inputs):
 	
 		cept_data  = create_system_message(999)
 		cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
-		cept_data += "\x90" # bg color black
+		cept_data += set_fg_color(input["fgcolor"])
+		cept_data += set_bg_color(input["bgcolor"])
 		sys.stdout.write(cept_data)
 		sys.stdout.flush()
 	
