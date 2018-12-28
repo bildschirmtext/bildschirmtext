@@ -302,7 +302,7 @@ def handle_inputs(inputs):
 	cept_data = (
 		"\x1f\x2f\x44"                     # parallel limited mode
 	)
-	for input in inputs:
+	for input in inputs["fields"]:
 		l = input["line"]
 		c = input["column"]
 		h = input["height"]
@@ -316,7 +316,7 @@ def handle_inputs(inputs):
 
 	input_data = {}
 
-	for input in inputs:
+	for input in inputs["fields"]:
 		l = input["line"]
 		c = input["column"]
 		h = input["height"]
@@ -381,7 +381,7 @@ def handle_inputs(inputs):
 	sys.stdout.write(cept_data)
 	sys.stdout.flush()
 
-	# do something with "input_data"
+	# send "input_data" to "inputs["target"]"
 		
 	cept_data = create_system_message(0)
 	cept_data += CEPT_END_OF_PAGE

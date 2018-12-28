@@ -4,20 +4,23 @@
         "#": "20000"
     },
     "publisher_color": 7,
-    "inputs": [
-		{
-			"name": "user",
-			"line": 20,
-			"column": 1,
-			"height": 1,
-			"width": 30
-		},
-		{
-			"name": "user",
-			"line": 22,
-			"column": 1,
-			"height": 1,
-			"width": 20
-		}
-    ]
+    "inputs": {
+    	"fields": [
+			{
+				"name": "user",
+				"line": 20,
+				"column": 1,
+				"height": 1,
+				"width": 30
+			},
+			{
+				"name": "user",
+				"line": 22,
+				"column": 1,
+				"height": 1,
+				"width": 20
+			}
+		],
+		"target": "localhost:1234"
+    }
 }
