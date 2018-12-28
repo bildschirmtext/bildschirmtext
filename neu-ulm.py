@@ -455,13 +455,14 @@ def show_page(pagenumber):
 
 sys.stderr.write("running!!\n")
 
-num_crs = 0
-while True:
-	c = read_with_echo(False);
-	if ord(c) == 13:
-		num_crs += 1
-		if num_crs == 4:
-			break
+if sys.argv[1] == "c64":
+	num_crs = 0
+	while True:
+		c = read_with_echo(False);
+		if ord(c) == 13:
+			num_crs += 1
+			if num_crs == 4:
+				break
 			
 show_page("00000")
 
