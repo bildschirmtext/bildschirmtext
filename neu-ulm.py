@@ -213,9 +213,37 @@ def create_preamble(basedir, meta):
 	return preamble
 
 def replace_placeholders(cept):
+	current_date = datetime.datetime.now().strftime("%d.%m.%Y  %H:%M")
+	salutation = "Herr"
+	first_name = "Eric"
+	last_name = "Danke"
+	last_date = "01.01.1970"
+	last_time = "0:00"
+
 	pos = cept.find("\x1f\x40\x41")
 	if pos > 0:
-		cept = cept[:pos] + datetime.datetime.now().strftime("%d.%m.%Y  %H:%M") + cept[pos+3:]
+		cept = cept[:pos] + current_date + cept[pos+3:]
+
+	pos = cept.find("\x1f\x40\x42")
+	if pos > 0:
+		cept = cept[:pos] + salutation + cept[pos+3:]
+
+	pos = cept.find("\x1f\x40\x43")
+	if pos > 0:
+		cept = cept[:pos] + first_name + cept[pos+3:]
+
+	pos = cept.find("\x1f\x40\x44")
+	if pos > 0:
+		cept = cept[:pos] + last_name + cept[pos+3:]
+
+	pos = cept.find("\x1f\x40\x45")
+	if pos > 0:
+		cept = cept[:pos] + last_date + cept[pos+3:]
+
+	pos = cept.find("\x1f\x40\x46")
+	if pos > 0:
+		cept = cept[:pos] + last_time + cept[pos+3:]
+
 	return cept
 
 def create_page(basepath, pagenumber):
