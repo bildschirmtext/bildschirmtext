@@ -472,6 +472,7 @@ def handle_inputs(inputs):
 def show_page(pagenumber):
 	global links
 	
+	success = True
 	while True:
 		sys.stderr.write("showing page: '" + pagenumber + "'\n")
 		(cept_data, new_links, inputs) = create_page("data/", pagenumber)
@@ -479,6 +480,7 @@ def show_page(pagenumber):
 			sh100 = create_system_message(100)
 			cept_data = sh100 + CEPT_END_OF_PAGE
 			showing_message = True
+			success = False
 			sys.stderr.write("page not found\n")
 		else:
 			links = new_links
@@ -492,6 +494,8 @@ def show_page(pagenumber):
 			
 		if len(pagenumber) == 0:
 			break
+
+	return success
 		
 
 # MAIN
@@ -548,9 +552,13 @@ while True:
 				new_pagenumber = links[new_pagenumber]
 				sys.stderr.write("found: -> '" + new_pagenumber + "'\n")
 				gotopage = True;
-			else:
-				if new_pagenumber == '#' and new_pagenumber[-1:] >= 'a' and new_pagenumber[-1:] <= 'y':
-					new_pagenumber = new_pagenumber[:-1] + chr(ord(new_pagenumber[-1:]) + 1)
+			elif new_pagenumber == '#':
+				if current_pagenumber[-1:] >= 'a' and current_pagenumber[-1:] <= 'y':
+					new_pagenumber = current_pagenumber[:-1] + chr(ord(current_pagenumber[-1:]) + 1)
+				elif current_pagenumber[-1:] >= '0' and current_pagenumber[-1:] <= '9':
+					new_pagenumber = current_pagenumber + "b"
+				gotopage = True;
+			sys.stderr.write("new_pagenumber: '" + new_pagenumber + "'\n")
 				
 	elif mode == MODE_INI:
 		if ord(c) == CEPT_INI:
@@ -580,8 +588,9 @@ while True:
 			sys.stderr.write("mode = MODE_NONE\n")
 		
 	if gotopage:
-		show_page(new_pagenumber)
-		previous_pagenumber = current_pagenumber
-		current_pagenumber = new_pagenumber
+		if show_page(new_pagenumber):
+			previous_pagenumber = current_pagenumber
+			current_pagenumber = new_pagenumber
 		new_pagenumber = ""
+			
 
