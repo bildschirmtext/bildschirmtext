@@ -507,8 +507,12 @@ if len(sys.argv) > 1 and sys.argv[1] == "c64":
 			if num_crs == 4:
 				break
 			
-show_page("00000")
-#show_page("0")
+pagenumber = "00000"
+#pagenumber = "0"
+
+show_page(pagenumber)
+
+old_pagenumber = pagenumber
 
 MODE_NONE = 0
 MODE_INI  = 1
@@ -561,6 +565,11 @@ while True:
 		elif c >= '0' and c <= '9':
 			pagenumber += c
 			sys.stderr.write("global link: '" + c + "' -> '" + pagenumber + "'\n")
+			if pagenumber == "00":
+				pagenumber = old_pagenumber
+				gotopage = True;
+				mode = MODE_NONE
+			sys.stderr.write("mode = MODE_NONE\n")
 		elif ord(c) == CEPT_TER:
 			sys.stderr.write("TERM global link: '" + pagenumber + "'\n")
 			gotopage = True;
@@ -569,5 +578,6 @@ while True:
 		
 	if gotopage:
 		show_page(pagenumber)
+		old_pagenumber = pagenumber
 		pagenumber = ""
 
