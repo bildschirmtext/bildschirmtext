@@ -57,7 +57,15 @@ def encode_string(s1):
 	return s2
 
 def headerfooter(pagenumber, meta):
+	publisher_name = meta["publisher_name"]
 	hide_header_footer = len(meta["publisher_name"]) == 0
+	hide_price = False
+	if publisher_name == "!BTX":
+		publisher_name = "\x1b\x22\x41\x9b\x30\x40\x9e\x87\x1B\x28\x20\x40\x0F\x21\x22\x23\x0A\x0D\x24\x25\x26\x0B\x09\x1B\x28\x40\x0F\x0a\x8DBildschirmtext"
+		hide_price = True
+	else:
+		publisher_name = publisher_name[:30]
+
 
 	hf = (
 		"\x1f\x2d"                         # set resolution to 40x24
@@ -111,12 +119,12 @@ def headerfooter(pagenumber, meta):
 
 	hf += "\x0d"                           # cursor to beginning of line
 
-	hf += encode_string(meta["publisher_name"][:30])
+	hf += encode_string(publisher_name)
 
 	hf += "\x1f\x41\x5f"                   # set cursor to line 1, column 31
 
 	# TODO: price
-	if not hide_header_footer:
+	if not hide_header_footer and not hide_price:
 		hf += "   0,00 DM"
 
 	hf += (
