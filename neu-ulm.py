@@ -508,6 +508,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "c64":
 				break
 			
 show_page("00000")
+#show_page("0")
 
 MODE_NONE = 0
 MODE_INI  = 1
