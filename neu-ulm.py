@@ -507,18 +507,18 @@ if len(sys.argv) > 1 and sys.argv[1] == "c64":
 			if num_crs == 4:
 				break
 			
-pagenumber = "00000"
-#pagenumber = "0"
+new_pagenumber = "00000"
+#new_pagenumber = "0"
 
-show_page(pagenumber)
+show_page(new_pagenumber)
 
-old_pagenumber = pagenumber
+current_pagenumber = new_pagenumber
 
 MODE_NONE = 0
 MODE_INI  = 1
 
 mode = MODE_NONE
-pagenumber = ""
+new_pagenumber = ""
 showing_message = False
 
 while True:
@@ -529,55 +529,58 @@ while True:
 		lookuplink = False
 		if ord(c) == CEPT_INI:
 			mode = MODE_INI
-			pagenumber = ""
+			new_pagenumber = ""
 			sys.stderr.write("mode = MODE_INI\n")
 		elif ord(c) == CEPT_TER:
-			if len(pagenumber) > 0:
+			if len(new_pagenumber) > 0:
 				sys.stderr.write("error: TER not expected here!\n")
 			else:
-				pagenumber = '#'
+				new_pagenumber = '#'
 				lookuplink = True
-				sys.stderr.write("local link: -> '" + pagenumber + "'\n")
+				sys.stderr.write("local link: -> '" + new_pagenumber + "'\n")
 		elif (c >= '0' and c <= '9'):
-			pagenumber += c
+			new_pagenumber += c
 			lookuplink = True
-			sys.stderr.write("local link: '" + c + "' -> '" + pagenumber + "'\n")
+			sys.stderr.write("local link: '" + c + "' -> '" + new_pagenumber + "'\n")
 
 		if lookuplink:
-			if pagenumber in links:
-				pagenumber = links[pagenumber]
-				sys.stderr.write("found: -> '" + pagenumber + "'\n")
+			if new_pagenumber in links:
+				new_pagenumber = links[new_pagenumber]
+				sys.stderr.write("found: -> '" + new_pagenumber + "'\n")
 				gotopage = True;
 			else:
-				if pagenumber == '#' and pagenumber[-1:] >= 'a' and pagenumber[-1:] <= 'y':
-					pagenumber = pagenumber[:-1] + chr(ord(pagenumber[-1:]) + 1)
+				if new_pagenumber == '#' and new_pagenumber[-1:] >= 'a' and new_pagenumber[-1:] <= 'y':
+					new_pagenumber = new_pagenumber[:-1] + chr(ord(new_pagenumber[-1:]) + 1)
 				
 	elif mode == MODE_INI:
 		if ord(c) == CEPT_INI:
 			# '**' resets mode
 			mode = MODE_NONE
-			pagenumber = ""
+			new_pagenumber = ""
 			cept_data  = "\x1f\x58\x41"
 			cept_data += "\x18"
 			sys.stdout.write(cept_data)
 			sys.stdout.flush()
 			sys.stderr.write("mode = MODE_NONE\n")
 		elif c >= '0' and c <= '9':
-			pagenumber += c
-			sys.stderr.write("global link: '" + c + "' -> '" + pagenumber + "'\n")
-			if pagenumber == "00":
-				pagenumber = old_pagenumber
+			new_pagenumber += c
+			sys.stderr.write("global link: '" + c + "' -> '" + new_pagenumber + "'\n")
+			if new_pagenumber == "00":
+				new_pagenumber = current_pagenumber
 				gotopage = True;
 				mode = MODE_NONE
 			sys.stderr.write("mode = MODE_NONE\n")
 		elif ord(c) == CEPT_TER:
-			sys.stderr.write("TERM global link: '" + pagenumber + "'\n")
+			if new_pagenumber == "":
+				new_pagenumber = previous_pagenumber
+			sys.stderr.write("TERM global link: '" + new_pagenumber + "'\n")
 			gotopage = True;
 			mode = MODE_NONE
 			sys.stderr.write("mode = MODE_NONE\n")
 		
 	if gotopage:
-		show_page(pagenumber)
-		old_pagenumber = pagenumber
-		pagenumber = ""
+		show_page(new_pagenumber)
+		previous_pagenumber = current_pagenumber
+		current_pagenumber = new_pagenumber
+		new_pagenumber = ""
 

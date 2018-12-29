@@ -2,7 +2,8 @@
 	"include": "a",
     "clear_screen": true,
     "links": {
-    	"6": "10401131"
+    	"0": "0",
+    	"1": "2"
     },
     "publisher_color": 7
 }
