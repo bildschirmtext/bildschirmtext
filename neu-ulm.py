@@ -565,7 +565,8 @@ while True:
 		elif c >= '0' and c <= '9':
 			new_pagenumber += c
 			sys.stderr.write("global link: '" + c + "' -> '" + new_pagenumber + "'\n")
-			if new_pagenumber == "00":
+			if new_pagenumber == "00" or new_pagenumber == "09":
+				# TODO: 09 is a *hard* refresh
 				new_pagenumber = current_pagenumber
 				gotopage = True;
 				mode = MODE_NONE
