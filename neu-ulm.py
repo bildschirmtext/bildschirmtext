@@ -61,7 +61,26 @@ def headerfooter(pagenumber, meta):
 	hide_header_footer = len(meta["publisher_name"]) == 0
 	hide_price = False
 	if publisher_name == "!BTX":
-		publisher_name = "\x1b\x22\x41\x9b\x30\x40\x9e\x87\x1B\x28\x20\x40\x0F\x21\x22\x23\x0A\x0D\x24\x25\x26\x0B\x09\x1B\x28\x40\x0F\x0a\x8DBildschirmtext"
+		publisher_name = (
+			"\x1b\x22\x41"                 # parallel mode
+			"\x9b\x30\x40"                 # select palette #0
+			"\x9e"                         # ???
+			"\x87"                         # set fg color to #7
+			"\x1b\x28\x20\x40"             # load DRCs into G0
+			"\x0f"                         # G0 into left charset
+			"\x21\x22\x23"                 # "!"#"
+			"\x0a"                         # cursor down
+			"\x0d"                         # cursor to beginning of line
+			"\x24\x25\x26"                 # "$%&"
+			"\x0b"                         # cursor up
+			"\x09"                         # cursor right
+			"\x1b\x28\x40"                 # load G0 into G0
+			"\x0f"                         # G0 into left charset
+			"\x0a"                         # cursor down
+			"\x8d"                         # double height
+			# TODO: this does not draw!! :(
+			"Bildschirmtext"
+		)
 		hide_price = True
 	else:
 		publisher_name = publisher_name[:30]
@@ -121,10 +140,9 @@ def headerfooter(pagenumber, meta):
 
 	hf += encode_string(publisher_name)
 
-	hf += "\x1f\x41\x5f"                   # set cursor to line 1, column 31
-
 	# TODO: price
 	if not hide_header_footer and not hide_price:
+		hf += "\x1f\x41\x5f"                   # set cursor to line 1, column 31
 		hf += "   0,00 DM"
 
 	hf += (
