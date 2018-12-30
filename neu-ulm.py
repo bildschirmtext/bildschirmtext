@@ -1,6 +1,7 @@
 import json
 import sys
 import os
+import time
 import datetime
 from pprint import pprint
 
@@ -398,19 +399,29 @@ def set_bg_color(c):
 		pal = 0
 	return "\x9b" + chr(0x30 + pal) + "\x40" + chr(0x90 + c)
 
+def update_stats():
+	filename = "stats/" + session_user + "-" + session_ext + ".stats"
+	stats = { "last_login": time.time() }
+	with open(filename, 'w') as f:
+		json.dump(stats, f)
+
 def login(input_data):
+	global session_user
+	global session_ext
 	global session_salutation
 	global session_first_name
 	global session_last_name
+	global session_last_date
+	global session_last_time
 
-	user = input_data["user"]
-	ext = input_data["ext"]
+	session_user = input_data["user"]
+	session_ext = input_data["ext"]
 	password = input_data["password"]
-	if user == "":
-		user = "0"
-	if ext == "":
-		ext = "1"
-	filename = "users/" + user + "-" + ext + ".user"
+	if session_user == "":
+		session_user = "0"
+	if session_ext == "":
+		session_ext = "1"
+	filename = "users/" + session_user + "-" + session_ext + ".user"
 	if not os.path.isfile(filename):
 		return False
 	with open(filename) as f:
@@ -418,7 +429,17 @@ def login(input_data):
 	session_salutation = user_data["salutation"]
 	session_first_name = user_data["first_name"]
 	session_last_name = user_data["last_name"]
-	return password == user_data["password"]
+	success = password == user_data["password"]
+	if success:
+		filename = "stats/" + session_user + "-" + session_ext + ".stats"
+		if os.path.isfile(filename):
+			with open(filename) as f:
+				stats = json.load(f)	
+			t = datetime.datetime.fromtimestamp(stats["last_login"])
+			session_last_date = t.strftime("%d.%m.%Y")
+			session_last_time = t.strftime("%H:%M")
+		
+	return success
 
 def handle_inputs(inputs):
 	while True:
@@ -656,5 +677,5 @@ while True:
 			previous_pagenumber = current_pagenumber
 			current_pagenumber = new_pagenumber
 		new_pagenumber = ""
-			
+		update_stats()
 
