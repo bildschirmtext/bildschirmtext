@@ -49,9 +49,9 @@ def encode_string(s1):
 	for c in s1:
 		# TODO: complete conversion!
 		if ord(c) == 0xfc:
-			s2 += "\x19\x48u"           # &uuml;
+			s2 += "\x19Hu"           # &uuml;
 		elif ord(c) == 0xd6:
-			s2 += "\x19\x48O"           # &uuml;
+			s2 += "\x19HO"           # &Ouml;
 		else:
 			s2 += chr(ord(c))
 	return s2
@@ -186,7 +186,7 @@ def create_system_message(code):
 	elif code == 44:
 		msg += "Absenden? Ja:19 Nein:2         "
 	elif code == 47:
-		msg += "Absenden f\0x19Hur DM  0,00? Ja:19 Nein:2"
+		msg += "Absenden f\x19Hur DM  0,00? Ja:19 Nein:2"
 	elif code == 55:
 		msg += "Eingabe wird bearbeitet        "
 	elif code == 100:
@@ -403,12 +403,14 @@ def login(input_data):
 	global session_first_name
 	global session_last_name
 
-	connection = input_data["connection"]
 	user = input_data["user"]
+	ext = input_data["ext"]
 	password = input_data["password"]
 	if user == "":
-		user = "1"
-	filename = "users/" + connection + "-" + user + ".user"
+		user = "0"
+	if ext == "":
+		ext = "1"
+	filename = "users/" + user + "-" + ext + ".user"
 	if not os.path.isfile(filename):
 		return False
 	with open(filename) as f:
