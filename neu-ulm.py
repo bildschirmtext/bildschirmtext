@@ -17,6 +17,8 @@ CEPT_END_OF_PAGE = (
 )
 
 # session info
+session_user = ""
+session_ext = ""
 session_salutation = ""
 session_first_name = ""
 session_last_name = ""
@@ -177,7 +179,10 @@ def encode_palette(palette):
 		palette_data += chr(byte0) + chr(byte1)
 	return palette_data
 
-def create_system_message(code):
+def format_currency(price):
+	return "DM  %d" % int(price / 100) + ".%02d" % int(price % 100)
+
+def create_system_message(code, price = 0):
 	msg = (
 		"\x1f\x2f\x40\x58"             # service break to row 24
 		"\x18"                         # clear line
@@ -187,7 +192,7 @@ def create_system_message(code):
 	elif code == 44:
 		msg += "Absenden? Ja:19 Nein:2         "
 	elif code == 47:
-		msg += "Absenden f\x19Hur DM  0,00? Ja:19 Nein:2"
+		msg += "Absenden f\x19Hur " + format_currency(price) + "? Ja:19 Nein:2"
 	elif code == 55:
 		msg += "Eingabe wird bearbeitet        "
 	elif code == 100:
@@ -260,7 +265,8 @@ def replace_placeholders(cept):
 	global session_last_date
 	global session_last_time
 
-	current_date = datetime.datetime.now().strftime("%d.%m.%Y  %H:%M")
+	current_date = datetime.datetime.now().strftime("%d.%m.%Y")
+	current_time = datetime.datetime.now().strftime("%H:%M")
 
 	pos = cept.find("\x1f\x40\x41")
 	if pos > 0:
@@ -285,6 +291,18 @@ def replace_placeholders(cept):
 	pos = cept.find("\x1f\x40\x46")
 	if pos > 0:
 		cept = cept[:pos] + session_last_time + cept[pos+3:]
+
+	pos = cept.find("\x1f\x40\x47")
+	if pos > 0:
+		cept = cept[:pos] + session_user + cept[pos+3:]
+
+	pos = cept.find("\x1f\x40\x48")
+	if pos > 0:
+		cept = cept[:pos] + session_ext + cept[pos+3:]
+
+	pos = cept.find("\x1f\x40\x49")
+	if pos > 0:
+		cept = cept[:pos] + current_time + cept[pos+3:]
 
 	return cept
 
@@ -400,6 +418,8 @@ def set_bg_color(c):
 	return "\x9b" + chr(0x30 + pal) + "\x40" + chr(0x90 + c)
 
 def update_stats():
+	global session_user
+	global session_ext
 	filename = "stats/" + session_user + "-" + session_ext + ".stats"
 	stats = { "last_login": time.time() }
 	with open(filename, 'w') as f:
@@ -497,7 +517,12 @@ def handle_inputs(inputs):
 			input_data[input["name"]] = s
 	
 		if not "confirm" in inputs or inputs["confirm"]:
-			cept_data  = create_system_message(44)
+			if "price" in inputs:
+				price = inputs["price"]
+				cept_data  = create_system_message(47, price)
+			else:
+				price = 0
+				cept_data  = create_system_message(44)
 			cept_data += "\x1f" + chr(0x40 + 24) + chr(0x40 + 24)      # set cursor
 			sys.stdout.write(cept_data)
 			sys.stdout.flush()
