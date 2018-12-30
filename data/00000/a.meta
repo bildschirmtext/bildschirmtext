@@ -6,25 +6,27 @@
     "inputs": {
     	"fields": [
 			{
-				"name": "user1",
+				"name": "connection",
 				"line": 17,
 				"column": 26,
 				"height": 1,
 				"width": 10,
 				"bgcolor": 4,
-				"fgcolor": 3
+				"fgcolor": 3,
+				"default": "64"
 			},
 			{
-				"name": "user2",
+				"name": "user",
 				"line": 17,
 				"column": 37,
 				"height": 1,
 				"width": 1,
 				"bgcolor": 4,
-				"fgcolor": 3
+				"fgcolor": 3,
+				"default": "1"
 			},
 			{
-				"name": "pass",
+				"name": "password",
 				"line": 19,
 				"column": 26,
 				"height": 1,
@@ -34,6 +36,7 @@
 			}
 		],
 		"confirm": false,
-		"target": "page:000001a"
+		"target": "page:000001a",
+		"is_login": true
     }
 }

@@ -16,9 +16,9 @@ CEPT_END_OF_PAGE = (
 )
 
 # session info
-session_salutation = "Herr"
-session_first_name = "Eric"
-session_last_name = "Danke"
+session_salutation = ""
+session_first_name = ""
+session_last_name = ""
 session_last_date = "01.01.1970"
 session_last_time = "0:00"
 
@@ -193,6 +193,8 @@ def create_system_message(code):
 		msg += "Seite nicht vorhanden          "
 	elif code == 291:
 		msg += "Seite wird aufgebaut           "
+	elif code == 998:
+		msg += "Ung\x19Hultiger Teilnehmer oder Kennwort"
 	elif code == 999:
 		msg += "# eingeben um fortzufahren     "
 	msg += (
@@ -396,103 +398,135 @@ def set_bg_color(c):
 		pal = 0
 	return "\x9b" + chr(0x30 + pal) + "\x40" + chr(0x90 + c)
 
+def login(input_data):
+	global session_salutation
+	global session_first_name
+	global session_last_name
+
+	connection = input_data["connection"]
+	user = input_data["user"]
+	password = input_data["password"]
+	if user == "":
+		user = "1"
+	filename = "users/" + connection + "-" + user + ".user"
+	if not os.path.isfile(filename):
+		return False
+	with open(filename) as f:
+		user_data = json.load(f)
+	session_salutation = user_data["salutation"]
+	session_first_name = user_data["first_name"]
+	session_last_name = user_data["last_name"]
+	return password == user_data["password"]
+
 def handle_inputs(inputs):
-	cept_data = (
-		"\x1f\x2f\x44"                     # parallel limited mode
-	)
-	for input in inputs["fields"]:
-		l = input["line"]
-		c = input["column"]
-		h = input["height"]
-		w = input["width"]
-		for i in range(0, h):
-			cept_data += "\x1f" + chr(0x40 + l + i) + chr(0x40 + c)      # set cursor
+	while True:
+		cept_data = (
+			"\x1f\x2f\x44"                     # parallel limited mode
+		)
+		for input in inputs["fields"]:
+			l = input["line"]
+			c = input["column"]
+			h = input["height"]
+			w = input["width"]
+			for i in range(0, h):
+				cept_data += "\x1f" + chr(0x40 + l + i) + chr(0x40 + c)      # set cursor
+				cept_data += set_fg_color(input["fgcolor"])
+				cept_data += set_bg_color(input["bgcolor"])
+				cept_data += " \x12" + chr(0x40 + w - 1)
+		sys.stdout.write(cept_data)
+		sys.stdout.flush()
+	
+		input_data = {}
+	
+		for input in inputs["fields"]:
+			l = input["line"]
+			c = input["column"]
+			h = input["height"]
+			w = input["width"]
+		
+			cept_data  = create_system_message(999)
+			cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
 			cept_data += set_fg_color(input["fgcolor"])
 			cept_data += set_bg_color(input["bgcolor"])
-			cept_data += " \x12" + chr(0x40 + w - 1)
-	sys.stdout.write(cept_data)
-	sys.stdout.flush()
-
-	input_data = {}
-
-	for input in inputs["fields"]:
-		l = input["line"]
-		c = input["column"]
-		h = input["height"]
-		w = input["width"]
-	
-		cept_data  = create_system_message(999)
-		cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
-		cept_data += set_fg_color(input["fgcolor"])
-		cept_data += set_bg_color(input["bgcolor"])
-		sys.stdout.write(cept_data)
-		sys.stdout.flush()
-	
-		s = ""
-		while True:
-			c = sys.stdin.read(1)
-			sys.stderr.write("Input In: " + str(ord(c)) + "\n")
-			if ord(c) == CEPT_TER:
-				break
-			if ord(c) == 8:
-				if len(s) == 0:
-					continue
-				sys.stdout.write("\x08 \x08")
-				sys.stdout.flush()
-				s = s[:-1]
-			elif ord(c) < 0x20 and ord(c) != 0x19:
-				continue
-			elif len(s) < w:
-				s += c
-				sys.stdout.write(c)
-				sys.stdout.flush()
-			sys.stderr.write("String: '" + s + "'\n")
-			
-		input_data[input["name"]] = s
-
-	if not "confirm" in inputs or inputs["confirm"]:
-		cept_data  = create_system_message(44)
-		cept_data += "\x1f" + chr(0x40 + 24) + chr(0x40 + 24)      # set cursor
-		sys.stdout.write(cept_data)
-		sys.stdout.flush()
-	
-		seen_a_one = False
-		while True:
-			c = sys.stdin.read(1)
-			if c == "2":
-				doit = False
-				sys.stdout.write(c)
-				sys.stdout.flush()
-				break
-			elif c == "1" and not seen_a_one:
-				seen_a_one = True
-				sys.stdout.write(c)
-				sys.stdout.flush()
-			elif c == "9" and seen_a_one:
-				doit = True
-				sys.stdout.write(c)
-				sys.stdout.flush()
-				break
-			elif ord(c) == 8 and seen_a_one:
-				seen_a_one = False
-				sys.stdout.write("\x08 \x08")
-				sys.stdout.flush()
-			
-	cept_data = create_system_message(55)
-	sys.stdout.write(cept_data)
-	sys.stdout.flush()
-	
-	# send "input_data" to "inputs["target"]"
+			sys.stdout.write(cept_data)
+			sys.stdout.flush()
 		
-	cept_data = create_system_message(0)
-	cept_data += CEPT_END_OF_PAGE
-	sys.stdout.write(cept_data)
-	sys.stdout.flush()
+			s = ""
+			while True:
+				c = sys.stdin.read(1)
+				sys.stderr.write("Input In: " + str(ord(c)) + "\n")
+				if ord(c) == CEPT_TER:
+					break
+				if ord(c) == 8:
+					if len(s) == 0:
+						continue
+					sys.stdout.write("\x08 \x08")
+					sys.stdout.flush()
+					s = s[:-1]
+				elif ord(c) < 0x20 and ord(c) != 0x19:
+					continue
+				elif len(s) < w:
+					s += c
+					sys.stdout.write(c)
+					sys.stdout.flush()
+				sys.stderr.write("String: '" + s + "'\n")
+				
+			input_data[input["name"]] = s
 	
-	if inputs["target"][:5] == "page:":
-		return inputs["target"][5:]
-	else:
-		return ""
+		if not "confirm" in inputs or inputs["confirm"]:
+			cept_data  = create_system_message(44)
+			cept_data += "\x1f" + chr(0x40 + 24) + chr(0x40 + 24)      # set cursor
+			sys.stdout.write(cept_data)
+			sys.stdout.flush()
+		
+			seen_a_one = False
+			while True:
+				c = sys.stdin.read(1)
+				if c == "2":
+					doit = False
+					sys.stdout.write(c)
+					sys.stdout.flush()
+					break
+				elif c == "1" and not seen_a_one:
+					seen_a_one = True
+					sys.stdout.write(c)
+					sys.stdout.flush()
+				elif c == "9" and seen_a_one:
+					doit = True
+					sys.stdout.write(c)
+					sys.stdout.flush()
+					break
+				elif ord(c) == 8 and seen_a_one:
+					seen_a_one = False
+					sys.stdout.write("\x08 \x08")
+					sys.stdout.flush()
+				
+		cept_data = create_system_message(55)
+		sys.stdout.write(cept_data)
+		sys.stdout.flush()
+	
+		# login page
+		if "is_login" in inputs and inputs["is_login"]:
+			if not login(input_data):
+				sys.stderr.write("login incorrect\n")
+				cept_data = create_system_message(998)
+				sys.stdout.write(cept_data)
+				sys.stdout.flush()
+				continue
+			else:
+				sys.stderr.write("login ok\n")
+		#else:
+			# send "input_data" to "inputs["target"]"
+			
+		cept_data = create_system_message(0)
+		cept_data += CEPT_END_OF_PAGE
+		sys.stdout.write(cept_data)
+		sys.stdout.flush()
+		
+		if inputs["target"][:5] == "page:":
+			return inputs["target"][5:]
+		else:
+			return ""
 
 
 def show_page(pagenumber):
@@ -514,7 +548,9 @@ def show_page(pagenumber):
 		sys.stdout.flush()
 		
 		if len(inputs):
-			pagenumber = handle_inputs(inputs)
+			new_pagenumber = handle_inputs(inputs)
+			if new_pagenumber != "*00":
+				pagenumber = new_pagenumber
 		else:
 			pagenumber = ""
 			
