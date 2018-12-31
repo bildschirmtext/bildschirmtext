@@ -24,7 +24,7 @@ session_first_name = ""
 session_last_name = ""
 session_last_date = "01.01.1970"
 session_last_time = "0:00"
-
+session_messages = []
 
 # globals
 
@@ -258,6 +258,18 @@ def create_preamble(basedir, meta):
 
 	return preamble
 
+def get_messages():
+	global session_messages
+	
+	filename = "messages/" + session_user + "-" + session_ext + ".messages"
+	if not os.path.isfile(filename):
+		messages = []
+		sys.stderr.write("messages file not found\n")
+	else:
+		with open(filename) as f:
+			session_messages = json.load(f)["messages"]
+	
+
 def replace_placeholders(cept):
 	global session_salutation
 	global session_first_name
@@ -268,41 +280,81 @@ def replace_placeholders(cept):
 	current_date = datetime.datetime.now().strftime("%d.%m.%Y")
 	current_time = datetime.datetime.now().strftime("%H:%M")
 
-	pos = cept.find("\x1f\x40\x41")
-	if pos > 0:
-		cept = cept[:pos] + current_date + cept[pos+3:]
-
-	pos = cept.find("\x1f\x40\x42")
-	if pos > 0:
-		cept = cept[:pos] + session_salutation + cept[pos+3:]
-
-	pos = cept.find("\x1f\x40\x43")
-	if pos > 0:
-		cept = cept[:pos] + session_first_name + cept[pos+3:]
-
-	pos = cept.find("\x1f\x40\x44")
-	if pos > 0:
-		cept = cept[:pos] + session_last_name + cept[pos+3:]
-
-	pos = cept.find("\x1f\x40\x45")
-	if pos > 0:
-		cept = cept[:pos] + session_last_date + cept[pos+3:]
-
-	pos = cept.find("\x1f\x40\x46")
-	if pos > 0:
-		cept = cept[:pos] + session_last_time + cept[pos+3:]
-
-	pos = cept.find("\x1f\x40\x47")
-	if pos > 0:
-		cept = cept[:pos] + session_user + cept[pos+3:]
-
-	pos = cept.find("\x1f\x40\x48")
-	if pos > 0:
-		cept = cept[:pos] + session_ext + cept[pos+3:]
-
-	pos = cept.find("\x1f\x40\x49")
-	if pos > 0:
-		cept = cept[:pos] + current_time + cept[pos+3:]
+	while True:
+		found = False
+		# TODO: convert into lookup table
+		pos = cept.find("\x1f\x40\x41")
+		if pos > 0:
+			cept = cept[:pos] + current_date + cept[pos+3:]
+			found = True
+	
+		pos = cept.find("\x1f\x40\x42")
+		if pos > 0:
+			cept = cept[:pos] + session_salutation + cept[pos+3:]
+			found = True
+	
+		pos = cept.find("\x1f\x40\x43")
+		if pos > 0:
+			cept = cept[:pos] + session_first_name + cept[pos+3:]
+			found = True
+	
+		pos = cept.find("\x1f\x40\x44")
+		if pos > 0:
+			cept = cept[:pos] + session_last_name + cept[pos+3:]
+			found = True
+	
+		pos = cept.find("\x1f\x40\x45")
+		if pos > 0:
+			cept = cept[:pos] + session_last_date + cept[pos+3:]
+			found = True
+	
+		pos = cept.find("\x1f\x40\x46")
+		if pos > 0:
+			cept = cept[:pos] + session_last_time + cept[pos+3:]
+			found = True
+	
+		pos = cept.find("\x1f\x40\x47")
+		if pos > 0:
+			cept = cept[:pos] + session_user + cept[pos+3:]
+			found = True
+	
+		pos = cept.find("\x1f\x40\x48")
+		if pos > 0:
+			cept = cept[:pos] + session_ext + cept[pos+3:]
+			found = True
+	
+		pos = cept.find("\x1f\x40\x49")
+		if pos > 0:
+			cept = cept[:pos] + current_time + cept[pos+3:]
+			found = True
+	
+		# messages
+		pos = cept.find("\x1f\x40\x4A")
+		if pos > 0:
+			get_messages() # make sure messages are loaded
+			field = cept[pos+3:pos+4]
+			index = int(cept[pos+4:pos+7]) - 1
+			sys.stderr.write("message #" + str(index) + "/" + str(len(session_messages)) + "\n")
+			data = "---"
+			if field == "F":
+				if len(session_messages) > index:
+					data = session_messages[index]["from"]
+			elif field == "D":
+				if len(session_messages) > index:
+					data = str(session_messages[index]["date"])
+			elif field == "T":
+				if len(session_messages) > index:
+					data = str(session_messages[index]["date"])
+			elif field == "B":
+				if len(session_messages) > index:
+					data = session_messages[index]["body"]
+			else:
+				data = "???"
+			cept = cept[:pos] + data + cept[pos+7:]
+			found = True
+			
+		if not found:
+			break
 
 	return cept
 

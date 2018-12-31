@@ -2,7 +2,8 @@
 	"include": "a",
     "clear_screen": true,
     "links": {
-        "#": "0"
+        "#": "0",
+        "8": "8"
     },
     "publisher_color": 7
 }
