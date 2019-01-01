@@ -1,6 +1,6 @@
 {
-    "include": "00a",
-    "palette": "00a",
+    "include": "200a",
+    "palette": "200a",
     "clear_screen": true,
     "cls2": true,
     "links": {
