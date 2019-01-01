@@ -1,0 +1,9 @@
+{
+    "include": "a",
+    "clear_screen": true,
+    "cls2": true,
+    "links": {
+        "0": "200961a"
+    },
+    "publisher_color": 0
+}

@@ -334,17 +334,19 @@ def replace_placeholders(cept):
 			get_messages() # make sure messages are loaded
 			field = cept[pos+3:pos+4]
 			index = int(cept[pos+4:pos+7]) - 1
-			sys.stderr.write("message #" + str(index) + "/" + str(len(session_messages)) + "\n")
-			data = "---"
+			#sys.stderr.write("message #" + str(index) + "/" + str(len(session_messages)) + "\n")
+			data = ""
 			if field == "F":
 				if len(session_messages) > index:
 					data = session_messages[index]["from"]
 			elif field == "D":
 				if len(session_messages) > index:
-					data = str(session_messages[index]["date"])
+					t = datetime.datetime.fromtimestamp(session_messages[index]["date"])
+					data = t.strftime("%d.%m.%Y")
 			elif field == "T":
 				if len(session_messages) > index:
-					data = str(session_messages[index]["date"])
+					t = datetime.datetime.fromtimestamp(session_messages[index]["date"])
+					data = t.strftime("%H:%M")
 			elif field == "B":
 				if len(session_messages) > index:
 					data = session_messages[index]["body"]
