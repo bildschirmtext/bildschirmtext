@@ -360,6 +360,54 @@ def replace_placeholders(cept):
 
 	return cept
 
+def create_message_page(pagenumber):
+	meta = {
+		"publisher_name": "!BTX",
+		"include": "a",
+		"clear_screen": True,
+		"links": {
+			"0": "0",
+			"1": "88",
+			"5": "810"
+		},
+		"publisher_color": 7
+	}
+	
+	data_cept = (
+		"\x1f\x42\x41"           # set cursor to line 2, column 1
+		"\x9b\x31\x40"           # select palette #1
+		"\x1b\x23\x20\x54"       # set bg color of screen to 4
+		"\x1b\x28\x40"           # load G0 into G0
+		"\x0f"                   # G0 into left charset
+		"\x1b\x22\x41"           # parallel mode
+		"\x9b\x30\x40"           # select palette #0
+		"\x9e"                   # Mosaikzeichenwiederholung bzw. Hintergrund transparent
+		"\x0a"                   # cursor down
+		"\x0d"                   # cursor to beginning of line
+		"\x1b\x23\x21\x54"       # set bg color of line to 4
+		"\x0a"                   # cursor down
+		"\x1b\x23\x21\x54"       # set bg color of line to 4
+		"\x9b\x31\x40"           # select palette #1
+		"\x8d"                   # double height
+		"\x0d"                   # cursor to beginning of line
+		"Mitteilungsdienst\n\r"
+		"\x9b\x30\x40"           # select palette #0
+		"\x8c"                   # normal size
+		"\x9e"                   # Mosaikzeichenwiederholung bzw. Hintergrund transparent
+		"\x87"                   # set fg color to #7
+		"\n\r\n\r"
+		"1  Neue Mitteilungen\r\n\r\n"
+		"2  Zur\x19Huckgelegte Mitteilungen\r\n\r\n"
+		"3  Abruf Antwortseiten\r\n\r\n"
+		"4  \x19HAndern Mitteilungsempfang\r\n\r\n"
+		"5  Mitteilungen mit Alphatastatur\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+		"\x1b\x23\x21\x54"                                     # set bg color of line to 4
+		"0\x19\x2b  Gesamt\x19Hubersicht"
+	)
+	
+	return (meta, data_cept)
+
+
 def create_page(basepath, pagenumber):
 	if pagenumber[-1:] >= '0' and pagenumber[-1:] <= '9':
 		pagenumber += "a"
@@ -379,21 +427,25 @@ def create_page(basepath, pagenumber):
 	if basedir == "":
 		return ("", {}, [])
 
-	sys.stderr.write("reading: '" + basedir + "'.glob\n")
-	with open(basedir + "a.glob") as f:
-		glob = json.load(f)
-
-	sys.stderr.write("reading: '" + basedir + filename + "'.meta\n")
-	with open(basedir + filename + ".meta") as f:
-		meta = json.load(f)
-
-	meta.update(glob) # combine dicts, glob overrides meta
-
-	filename_cept = basedir + filename + ".cept"
-	with open(filename_cept, mode='rb') as f:
-		data_cept = f.read()
-
-	data_cept = replace_placeholders(data_cept)
+	# generated pages
+	if pagenumber[0] == '8':
+		(meta, data_cept) = create_message_page(pagenumber)
+	else:
+		sys.stderr.write("reading: '" + basedir + "'.glob\n")
+		with open(basedir + "a.glob") as f:
+			glob = json.load(f)
+	
+		sys.stderr.write("reading: '" + basedir + filename + "'.meta\n")
+		with open(basedir + filename + ".meta") as f:
+			meta = json.load(f)
+	
+		meta.update(glob) # combine dicts, glob overrides meta
+	
+		filename_cept = basedir + filename + ".cept"
+		with open(filename_cept, mode='rb') as f:
+			data_cept = f.read()
+	
+		data_cept = replace_placeholders(data_cept)
 
 	all_data = chr(0x14) # hide cursor
 
@@ -675,8 +727,8 @@ if len(sys.argv) > 1 and sys.argv[1] == "c64":
 			if num_crs == 4:
 				break
 			
-new_pagenumber = "00000"
-#new_pagenumber = "0"
+#new_pagenumber = "00000"
+new_pagenumber = "8"
 
 show_page(new_pagenumber)
 
