@@ -360,19 +360,7 @@ def replace_placeholders(cept):
 
 	return cept
 
-def create_message_page(pagenumber):
-	meta = {
-		"publisher_name": "!BTX",
-		"include": "a",
-		"clear_screen": True,
-		"links": {
-			"0": "0",
-			"1": "88",
-			"5": "810"
-		},
-		"publisher_color": 7
-	}
-	
+def messaging_create_menu(title, items):
 	data_cept = (
 		"\x1f\x42\x41"           # set cursor to line 2, column 1
 		"\x9b\x31\x40"           # select palette #1
@@ -390,19 +378,53 @@ def create_message_page(pagenumber):
 		"\x9b\x31\x40"           # select palette #1
 		"\x8d"                   # double height
 		"\x0d"                   # cursor to beginning of line
-		"Mitteilungsdienst\n\r"
+	)
+	data_cept += title
+	data_cept += (
+		"\n\r"
 		"\x9b\x30\x40"           # select palette #0
 		"\x8c"                   # normal size
 		"\x9e"                   # Mosaikzeichenwiederholung bzw. Hintergrund transparent
 		"\x87"                   # set fg color to #7
 		"\n\r\n\r"
-		"1  Neue Mitteilungen\r\n\r\n"
-		"2  Zur\x19Huckgelegte Mitteilungen\r\n\r\n"
-		"3  Abruf Antwortseiten\r\n\r\n"
-		"4  \x19HAndern Mitteilungsempfang\r\n\r\n"
-		"5  Mitteilungen mit Alphatastatur\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+	)
+	i = 1
+	for item in items:
+		data_cept += str(i) + "  " + item
+		data_cept += "\r\n\r\n"
+		i +=1
+
+	data_cept += (
+		"\r\n\r\n\r\n\r\n\r\n\r\n"
 		"\x1b\x23\x21\x54"                                     # set bg color of line to 4
 		"0\x19\x2b  Gesamt\x19Hubersicht"
+	)
+
+	return data_cept
+
+
+def messaging_create_page(pagenumber):
+	meta = {
+		"publisher_name": "!BTX",
+		"include": "a",
+		"clear_screen": True,
+		"links": {
+			"0": "0",
+			"1": "88",
+			"5": "810"
+		},
+		"publisher_color": 7
+	}
+	
+	data_cept = messaging_create_menu(
+		"Mitteilungsdienst",
+		[
+			"Neue Mitteilungen",
+			"Zur\x19Huckgelegte Mitteilungen",
+			"Abruf Antwortseiten",
+			"\x19HAndern Mitteilungsempfang",
+			"Mitteilungen mit Alphatastatur"
+		]
 	)
 	
 	return (meta, data_cept)
@@ -429,7 +451,7 @@ def create_page(basepath, pagenumber):
 
 	# generated pages
 	if pagenumber[0] == '8':
-		(meta, data_cept) = create_message_page(pagenumber)
+		(meta, data_cept) = messaging_create_page(pagenumber)
 	else:
 		sys.stderr.write("reading: '" + basedir + "'.glob\n")
 		with open(basedir + "a.glob") as f:
