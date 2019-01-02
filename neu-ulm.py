@@ -258,18 +258,6 @@ def create_preamble(basedir, meta):
 
 	return preamble
 
-def get_messages():
-	global session_messages
-	
-	filename = "messages/" + session_user + "-" + session_ext + ".messages"
-	if not os.path.isfile(filename):
-		messages = []
-		sys.stderr.write("messages file not found\n")
-	else:
-		with open(filename) as f:
-			session_messages = json.load(f)["messages"]
-	
-
 def replace_placeholders(cept):
 	global session_salutation
 	global session_first_name
@@ -382,7 +370,24 @@ def messaging_create_menu(title, items):
 	return data_cept
 
 
+def messages_load():
+	global session_messages
+	
+	filename = "messages/" + session_user + "-" + session_ext + ".messages"
+	if not os.path.isfile(filename):
+		messages = []
+		sys.stderr.write("messages file not found\n")
+	else:
+		with open(filename) as f:
+			session_messages = json.load(f)["messages"]
+
+def messages_get_user(index):
+	messages_load()
+	message = session_messages[index]
+	return message["from"]
+
 def messaging_create_page(pagenumber):
+	sys.stderr.write("pagenumber[:2] " + pagenumber[:2] + "\n")
 	if pagenumber == "8a":
 		meta = {
 			"publisher_name": "!BTX",
@@ -415,9 +420,9 @@ def messaging_create_page(pagenumber):
 		}
 		data_cept = messaging_create_title("Neue Mitteilungen")
 
-		get_messages()
-
 		links = {}
+		
+		messages_load()
 		
 		for index in range(0, 9):
 			#sys.stderr.write("message #" + str(index) + "/" + str(len(session_messages)) + "\n")
@@ -428,13 +433,16 @@ def messaging_create_page(pagenumber):
 				t = datetime.datetime.fromtimestamp(session_messages[index]["date"])
 				data_cept += t.strftime("%d.%m.%Y   %H:%M")
 				data_cept += "\r\n"
-				links[str(index + 1)] = "81" + str(index + 1)
+				links[str(index + 1)] = "88" + str(index + 1)
 			else:
 				data_cept += "\r\n\r\n"
 
 		meta["links"] = links
 	
-	elif pagenumber == "811a":
+	elif pagenumber[:2] == "88":
+		index = int(pagenumber[2:-1])
+		sys.stderr.write("pagenumber " + pagenumber + "\n")
+		sys.stderr.write("index " + str(index) + "\n")
 		meta = {
 			"publisher_name": "Bildschirmtext",
 			"include": "11a",
@@ -450,17 +458,17 @@ def messaging_create_page(pagenumber):
 		from_ext = "1"
 		from_date = "28.10.88"
 		from_time = "12:58"
-		from_org = "AMIGA-Club Duesseldorf"
+		from_org = messages_get_user(index) #"AMIGA-Club Duesseldorf"
 		from_first = "Fritz"
 		from_last = "Meier"
 		from_street = "AMIGA-Str. 104"
-		from_city = "4000 D.usseldorf"
+		from_city = "4000 D.usseldorf 28"
 		to_user = "02151735418"
 		to_ext = "0001"
-		to_first = "J.urgen"
+		to_first = "Juergen"
 		to_last = "Baums"
 		message_body = (
-			" Lieber Amigo,\r\n"
+			"Lieber Amigo,\r\n"
 			"die naechste Versammlung findet am 3.04. im Haus Bierschaum um 20.00 Uhr statt.\r\n"
 			"Tagesordnung:\r\n"
 			"1. Clubreise zur Nordsee\r\n"
@@ -474,53 +482,52 @@ def messaging_create_page(pagenumber):
 			"\x1f\x2f\x44"                                        # parallel limited mode
 			"\x1f\x42\x41"                                        # set cursor to line 2, column 1
 			"\x9b\x30\x40"                                        # select palette #0
-			"\x83"                                              # set fg color to #3
+			"\x83"                                                # set fg color to #3
 		)
 		data_cept += "von " + from_user.ljust(12) + " " + from_ext.rjust(5, '0')
-		data_cept += (
-			"\x20\x12\x4a"                                        # repeat ' ' 10 times
-		)
+
+		data_cept += "\x1f\x42" + chr(0x40 + 41 - len(from_date))
 		data_cept += from_date
+
 		data_cept += (
-			"\x20\x12\x43"                                        # repeat ' ' 3 times
+			" \x12\x43"
 		)
 		data_cept += from_org
-		data_cept += (
-			"\x20\x12\x49"                                        # repeat ' ' 9 times
-		)
+
+		data_cept += "\x1f\x43" + chr(0x40 + 41 - len(from_time))
 		data_cept += from_time
+
 		data_cept += (
-			"\x20\x12\x43"                                        # repeat ' ' 3 times
-			"\x80"                                              # set fg color to #0
+			" \x12\x43"
+			"\x80"                                                # set fg color to #0
 		)
 		data_cept += from_first + " " + from_last
 		data_cept += (
-			"\x20\x12\x5c"                                        # repeat ' ' 28 times
+			"\r\n \x12\x43"
 		)
 		data_cept += from_street
 		data_cept += (
-			"\x20\x12\x59"                                        # repeat ' ' 25 times
+			"\r\n \x12\x43"
 		)
 		data_cept += from_city
 		data_cept += (
-			"\x20\x32\x38"                                        # " 28"
-			"\x20\x12\x51"                                        # repeat ' ' 17 times
+			"\r\n"
 		)
 		data_cept += "an  " + to_user.ljust(12) + " " + to_ext.rjust(5, '0')
 		data_cept += (
-			"\x20\x12\x56"                                        # repeat ' ' 22 times
+			"\r\n \x12\x43"
 		)
 		data_cept += to_first + " " + to_last
 		data_cept += (
-			"\x20\x12\x7e"                                        # repeat ' ' 62 times
+			"\r\n\n"
 		)
 		data_cept += message_body
 		data_cept += (
-			"\r\n\n\n"
+			"\x1f\x57\x41"
 			"0"
-			"\x1b\x29\x20\x40"                                     # load DRCs into G1
-			"\x1b\x7e"                                           # G1 into right charset
-			".Gesamt\x19Hubersicht"
+			"\x1b\x29\x20\x40"                                    # load DRCs into G1
+			"\x1b\x7e"                                            # G1 into right charset
+			" Gesamt\x19Hubersicht"
 			"\x20\x12\x56"                                        # repeat ' ' 22 times
 		)
 
@@ -541,35 +548,37 @@ def create_page(basepath, pagenumber):
 		if os.path.isdir(testdir):
 			sys.stderr.write("testdir: '" + testdir + "'\n")
 			filename = pagenumber[i+1:]
-			if os.path.isfile(testdir + "/" + filename + ".meta"):
-				sys.stderr.write("filename: '" + filename + "'\n")
-				basedir = testdir + "/"
-				break
+			sys.stderr.write("filename: '" + filename + "'\n")
+			basedir = testdir + "/"
+			break
 
 	if basedir == "":
 		return ("", {}, [])
 
 	# generated pages
+	sys.stderr.write("pagenumber[0]: '" + pagenumber[0] + "'\n")
 	if pagenumber[0] == '8':
 		(meta, data_cept) = messaging_create_page(pagenumber)
 		if data_cept == "":
 			return ("", {}, [])
 	else:
-		sys.stderr.write("reading: '" + basedir + "'.glob\n")
-		with open(basedir + "a.glob") as f:
-			glob = json.load(f)
-	
+		if not os.path.isfile(testdir + "/" + filename + ".meta"):
+			return ("", {}, [])
+
 		sys.stderr.write("reading: '" + basedir + filename + "'.meta\n")
 		with open(basedir + filename + ".meta") as f:
 			meta = json.load(f)
-	
-		meta.update(glob) # combine dicts, glob overrides meta
-	
+		
 		filename_cept = basedir + filename + ".cept"
 		with open(filename_cept, mode='rb') as f:
 			data_cept = f.read()
 	
 		data_cept = replace_placeholders(data_cept)
+
+	sys.stderr.write("reading: '" + basedir + "'.glob\n")
+	with open(basedir + "a.glob") as f:
+		glob = json.load(f)
+	meta.update(glob) # combine dicts, glob overrides meta
 
 	all_data = chr(0x14) # hide cursor
 
