@@ -399,16 +399,7 @@ def message_get(index):
 	to_ext = "0001"
 	to_first = "Juergen"
 	to_last = "Baums"
-	message_body = (
-		"Lieber Amigo,\r\n"
-		"die naechste Versammlung findet am 3.04. im Haus Bierschaum um 20.00 Uhr statt.\r\n"
-		"Tagesordnung:\r\n"
-		"1. Clubreise zur Nordsee\r\n"
-		"2. Software-Tauschboerse\r\n"
-		"3. Naechste Ausgabe unserer Club-Zeitung 4. Vorstellung neuer Btx-Programme\r\n"
-		"5. AMIGA-Schulung\r\n"
-		"Viele Gruessee, Fritz\r\n"
-	)
+	message_body = message["body"]
 	return (
 		from_user,
 		from_ext,
@@ -483,7 +474,7 @@ def messaging_create_page(pagenumber):
 		meta["links"] = links
 	
 	elif pagenumber[:2] == "88":
-		index = int(pagenumber[2:-1])
+		index = int(pagenumber[2:-1]) - 1
 		sys.stderr.write("pagenumber " + pagenumber + "\n")
 		sys.stderr.write("index " + str(index) + "\n")
 		meta = {
