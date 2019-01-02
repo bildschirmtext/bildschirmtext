@@ -17,8 +17,8 @@ CEPT_END_OF_PAGE = (
 )
 
 # session info
-session_user = ""
-session_ext = ""
+session_user = "0"
+session_ext = "1"
 session_salutation = ""
 session_first_name = ""
 session_last_name = ""
@@ -327,40 +327,13 @@ def replace_placeholders(cept):
 		if pos > 0:
 			cept = cept[:pos] + current_time + cept[pos+3:]
 			found = True
-	
-		# messages
-		pos = cept.find("\x1f\x40\x4A")
-		if pos > 0:
-			get_messages() # make sure messages are loaded
-			field = cept[pos+3:pos+4]
-			index = int(cept[pos+4:pos+7]) - 1
-			#sys.stderr.write("message #" + str(index) + "/" + str(len(session_messages)) + "\n")
-			data = ""
-			if field == "F":
-				if len(session_messages) > index:
-					data = session_messages[index]["from"]
-			elif field == "D":
-				if len(session_messages) > index:
-					t = datetime.datetime.fromtimestamp(session_messages[index]["date"])
-					data = t.strftime("%d.%m.%Y")
-			elif field == "T":
-				if len(session_messages) > index:
-					t = datetime.datetime.fromtimestamp(session_messages[index]["date"])
-					data = t.strftime("%H:%M")
-			elif field == "B":
-				if len(session_messages) > index:
-					data = session_messages[index]["body"]
-			else:
-				data = "???"
-			cept = cept[:pos] + data + cept[pos+7:]
-			found = True
-			
+				
 		if not found:
 			break
 
 	return cept
 
-def messaging_create_menu(title, items):
+def messaging_create_title(title):
 	data_cept = (
 		"\x1f\x42\x41"           # set cursor to line 2, column 1
 		"\x9b\x31\x40"           # select palette #1
@@ -369,7 +342,7 @@ def messaging_create_menu(title, items):
 		"\x0f"                   # G0 into left charset
 		"\x1b\x22\x41"           # parallel mode
 		"\x9b\x30\x40"           # select palette #0
-		"\x9e"                   # Mosaikzeichenwiederholung bzw. Hintergrund transparent
+		"\x9e"                   # ???
 		"\x0a"                   # cursor down
 		"\x0d"                   # cursor to beginning of line
 		"\x1b\x23\x21\x54"       # set bg color of line to 4
@@ -384,8 +357,14 @@ def messaging_create_menu(title, items):
 		"\n\r"
 		"\x9b\x30\x40"           # select palette #0
 		"\x8c"                   # normal size
-		"\x9e"                   # Mosaikzeichenwiederholung bzw. Hintergrund transparent
+		"\x9e"                   # ???
 		"\x87"                   # set fg color to #7
+	)
+	return data_cept
+
+def messaging_create_menu(title, items):
+	data_cept = messaging_create_title(title)
+	data_cept += (
 		"\n\r\n\r"
 	)
 	i = 1
@@ -404,28 +383,149 @@ def messaging_create_menu(title, items):
 
 
 def messaging_create_page(pagenumber):
-	meta = {
-		"publisher_name": "!BTX",
-		"include": "a",
-		"clear_screen": True,
-		"links": {
-			"0": "0",
-			"1": "88",
-			"5": "810"
-		},
-		"publisher_color": 7
-	}
+	if pagenumber == "8a":
+		meta = {
+			"publisher_name": "!BTX",
+			"include": "a",
+			"clear_screen": True,
+			"links": {
+				"0": "0",
+				"1": "88",
+				"5": "810"
+			},
+			"publisher_color": 7
+		}
+		
+		data_cept = messaging_create_menu(
+			"Mitteilungsdienst",
+			[
+				"Neue Mitteilungen",
+				"Zur\x19Huckgelegte Mitteilungen",
+				"Abruf Antwortseiten",
+				"\x19HAndern Mitteilungsempfang",
+				"Mitteilungen mit Alphatastatur"
+			]
+		)
+	elif pagenumber == "88a":
+		meta = {
+			"publisher_name": "!BTX",
+			"include": "a",
+			"clear_screen": True,
+			"publisher_color": 7
+		}
+		data_cept = messaging_create_title("Neue Mitteilungen")
+
+		get_messages()
+
+		links = {}
+		
+		for index in range(0, 9):
+			#sys.stderr.write("message #" + str(index) + "/" + str(len(session_messages)) + "\n")
+			data_cept += str(index + 1) + "  "
+			if len(session_messages) > index:
+				data_cept += session_messages[index]["from"]
+				data_cept += "\r\n   "
+				t = datetime.datetime.fromtimestamp(session_messages[index]["date"])
+				data_cept += t.strftime("%d.%m.%Y   %H:%M")
+				data_cept += "\r\n"
+				links[str(index + 1)] = "81" + str(index + 1)
+			else:
+				data_cept += "\r\n\r\n"
+
+		meta["links"] = links
 	
-	data_cept = messaging_create_menu(
-		"Mitteilungsdienst",
-		[
-			"Neue Mitteilungen",
-			"Zur\x19Huckgelegte Mitteilungen",
-			"Abruf Antwortseiten",
-			"\x19HAndern Mitteilungsempfang",
-			"Mitteilungen mit Alphatastatur"
-		]
-	)
+	elif pagenumber == "811a":
+		meta = {
+			"publisher_name": "Bildschirmtext",
+			"include": "11a",
+			"palette": "11a",
+			"clear_screen": True,
+			"links": {
+				"0": "88",
+			},
+			"publisher_color": 7
+		}
+
+		from_user = "02114793123"
+		from_ext = "1"
+		from_date = "28.10.88"
+		from_time = "12:58"
+		from_org = "AMIGA-Club Duesseldorf"
+		from_first = "Fritz"
+		from_last = "Meier"
+		from_street = "AMIGA-Str. 104"
+		from_city = "4000 D.usseldorf"
+		to_user = "02151735418"
+		to_ext = "0001"
+		to_first = "J.urgen"
+		to_last = "Baums"
+		message_body = (
+			" Lieber Amigo,\r\n"
+			"die naechste Versammlung findet am 3.04. im Haus Bierschaum um 20.00 Uhr statt.\r\n"
+			"Tagesordnung:\r\n"
+			"1. Clubreise zur Nordsee\r\n"
+			"2. Software-Tauschboerse\r\n"
+			"3. Naechste Ausgabe unserer Club-Zeitung 4. Vorstellung neuer Btx-Programme\r\n"
+			"5. AMIGA-Schulung\r\n"
+			"Viele Gruessee, Fritz\r\n"
+		)
+
+		data_cept = (
+			"\x1f\x2f\x44"                                        # parallel limited mode
+			"\x1f\x42\x41"                                        # set cursor to line 2, column 1
+			"\x9b\x30\x40"                                        # select palette #0
+			"\x83"                                              # set fg color to #3
+		)
+		data_cept += "von " + from_user.ljust(12) + " " + from_ext.rjust(5, '0')
+		data_cept += (
+			"\x20\x12\x4a"                                        # repeat ' ' 10 times
+		)
+		data_cept += from_date
+		data_cept += (
+			"\x20\x12\x43"                                        # repeat ' ' 3 times
+		)
+		data_cept += from_org
+		data_cept += (
+			"\x20\x12\x49"                                        # repeat ' ' 9 times
+		)
+		data_cept += from_time
+		data_cept += (
+			"\x20\x12\x43"                                        # repeat ' ' 3 times
+			"\x80"                                              # set fg color to #0
+		)
+		data_cept += from_first + " " + from_last
+		data_cept += (
+			"\x20\x12\x5c"                                        # repeat ' ' 28 times
+		)
+		data_cept += from_street
+		data_cept += (
+			"\x20\x12\x59"                                        # repeat ' ' 25 times
+		)
+		data_cept += from_city
+		data_cept += (
+			"\x20\x32\x38"                                        # " 28"
+			"\x20\x12\x51"                                        # repeat ' ' 17 times
+		)
+		data_cept += "an  " + to_user.ljust(12) + " " + to_ext.rjust(5, '0')
+		data_cept += (
+			"\x20\x12\x56"                                        # repeat ' ' 22 times
+		)
+		data_cept += to_first + " " + to_last
+		data_cept += (
+			"\x20\x12\x7e"                                        # repeat ' ' 62 times
+		)
+		data_cept += message_body
+		data_cept += (
+			"\r\n\n\n"
+			"0"
+			"\x1b\x29\x20\x40"                                     # load DRCs into G1
+			"\x1b\x7e"                                           # G1 into right charset
+			".Gesamt\x19Hubersicht"
+			"\x20\x12\x56"                                        # repeat ' ' 22 times
+		)
+
+	else:
+		return ({}, "")
 	
 	return (meta, data_cept)
 
@@ -452,6 +552,8 @@ def create_page(basepath, pagenumber):
 	# generated pages
 	if pagenumber[0] == '8':
 		(meta, data_cept) = messaging_create_page(pagenumber)
+		if data_cept == "":
+			return ("", {}, [])
 	else:
 		sys.stderr.write("reading: '" + basedir + "'.glob\n")
 		with open(basedir + "a.glob") as f:
