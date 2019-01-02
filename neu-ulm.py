@@ -380,11 +380,53 @@ def messages_load():
 	else:
 		with open(filename) as f:
 			session_messages = json.load(f)["messages"]
-
-def messages_get_user(index):
+	
+def message_get(index):
 	messages_load()
 	message = session_messages[index]
-	return message["from"]
+
+	t = datetime.datetime.fromtimestamp(message["timestamp"])
+	from_date = t.strftime("%d.%m.%Y")
+	from_time = t.strftime("%H:%M")
+	from_user = message["from_user"]
+	from_ext = message["from_ext"]
+	from_org = message["from_org"]
+	from_first = message["from_first"]
+	from_last = message["from_last"]
+	from_street = message["from_street"]
+	from_city = message["from_city"]
+	to_user = "02151735418"
+	to_ext = "0001"
+	to_first = "Juergen"
+	to_last = "Baums"
+	message_body = (
+		"Lieber Amigo,\r\n"
+		"die naechste Versammlung findet am 3.04. im Haus Bierschaum um 20.00 Uhr statt.\r\n"
+		"Tagesordnung:\r\n"
+		"1. Clubreise zur Nordsee\r\n"
+		"2. Software-Tauschboerse\r\n"
+		"3. Naechste Ausgabe unserer Club-Zeitung 4. Vorstellung neuer Btx-Programme\r\n"
+		"5. AMIGA-Schulung\r\n"
+		"Viele Gruessee, Fritz\r\n"
+	)
+	return (
+		from_user,
+		from_ext,
+		from_date,
+		from_time,
+		from_org,
+		from_first,
+		from_last,
+		from_street,
+		from_city,
+		to_user,
+		to_ext,
+		to_first,
+		to_last,
+		message_body
+	)
+
+
 
 def messaging_create_page(pagenumber):
 	sys.stderr.write("pagenumber[:2] " + pagenumber[:2] + "\n")
@@ -428,9 +470,10 @@ def messaging_create_page(pagenumber):
 			#sys.stderr.write("message #" + str(index) + "/" + str(len(session_messages)) + "\n")
 			data_cept += str(index + 1) + "  "
 			if len(session_messages) > index:
-				data_cept += session_messages[index]["from"]
+				message = session_messages[index]
+				data_cept += message["from_first"] + " " + message["from_last"]
 				data_cept += "\r\n   "
-				t = datetime.datetime.fromtimestamp(session_messages[index]["date"])
+				t = datetime.datetime.fromtimestamp(message["timestamp"])
 				data_cept += t.strftime("%d.%m.%Y   %H:%M")
 				data_cept += "\r\n"
 				links[str(index + 1)] = "88" + str(index + 1)
@@ -454,29 +497,22 @@ def messaging_create_page(pagenumber):
 			"publisher_color": 7
 		}
 
-		from_user = "02114793123"
-		from_ext = "1"
-		from_date = "28.10.88"
-		from_time = "12:58"
-		from_org = messages_get_user(index) #"AMIGA-Club Duesseldorf"
-		from_first = "Fritz"
-		from_last = "Meier"
-		from_street = "AMIGA-Str. 104"
-		from_city = "4000 D.usseldorf 28"
-		to_user = "02151735418"
-		to_ext = "0001"
-		to_first = "Juergen"
-		to_last = "Baums"
-		message_body = (
-			"Lieber Amigo,\r\n"
-			"die naechste Versammlung findet am 3.04. im Haus Bierschaum um 20.00 Uhr statt.\r\n"
-			"Tagesordnung:\r\n"
-			"1. Clubreise zur Nordsee\r\n"
-			"2. Software-Tauschboerse\r\n"
-			"3. Naechste Ausgabe unserer Club-Zeitung 4. Vorstellung neuer Btx-Programme\r\n"
-			"5. AMIGA-Schulung\r\n"
-			"Viele Gruessee, Fritz\r\n"
-		)
+		(
+			from_user,
+			from_ext,
+			from_date,
+			from_time,
+			from_org,
+			from_first,
+			from_last,
+			from_street,
+			from_city,
+			to_user,
+			to_ext,
+			to_first,
+			to_last,
+			message_body
+		) = message_get(index)
 
 		data_cept = (
 			"\x1f\x2f\x44"                                        # parallel limited mode

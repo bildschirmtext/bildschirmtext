@@ -1,13 +1,27 @@
 {
 	"messages": [
 		{
-			"from": "Christian Schwarz-Schilling",
-			"date": 402583000,
+			"from_user": "02114793123",
+			"from_ext": "1",
+			"from_org": "AMIGA-Club Duesseldorf",
+			"from_salutation": "Herr",
+			"from_first": "Fritz",
+			"from_last": "Meier",
+			"from_street": "AMIGA-Str. 104",
+			"from_city": "4000 Duesseldorf 28",
+			"timestamp": 402583000,
 			"body": "Hallo!"
 		},
 		{
-			"from": "Christian Schwarz-Schilling",
-			"date": 402584000,
+			"from_user": "02114793123",
+			"from_ext": "1",
+			"from_org": "AMIGA-Club Duesseldorf",
+			"from_salutation": "Herr",
+			"from_first": "Fritz",
+			"from_last": "Meier",
+			"from_street": "AMIGA-Str. 104",
+			"from_city": "4000 Duesseldorf 28",
+			"timestamp": 402584000,
 			"body": "Kriegst Du diese Nachrichten??"
 		}
 	]
