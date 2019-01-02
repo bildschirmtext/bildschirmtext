@@ -395,10 +395,6 @@ def message_get(index):
 	from_last = message["from_last"]
 	from_street = message["from_street"]
 	from_city = message["from_city"]
-	to_user = "02151735418"
-	to_ext = "0001"
-	to_first = "Juergen"
-	to_last = "Baums"
 	message_body = message["body"]
 	return (
 		from_user,
@@ -410,14 +406,8 @@ def message_get(index):
 		from_last,
 		from_street,
 		from_city,
-		to_user,
-		to_ext,
-		to_first,
-		to_last,
 		message_body
 	)
-
-
 
 def messaging_create_page(pagenumber):
 	sys.stderr.write("pagenumber[:2] " + pagenumber[:2] + "\n")
@@ -453,7 +443,9 @@ def messaging_create_page(pagenumber):
 		}
 		data_cept = messaging_create_title("Neue Mitteilungen")
 
-		links = {}
+		links = {
+			"0": "8"
+		}
 		
 		messages_load()
 		
@@ -498,10 +490,6 @@ def messaging_create_page(pagenumber):
 			from_last,
 			from_street,
 			from_city,
-			to_user,
-			to_ext,
-			to_first,
-			to_last,
 			message_body
 		) = message_get(index)
 
@@ -540,11 +528,11 @@ def messaging_create_page(pagenumber):
 		data_cept += (
 			"\r\n"
 		)
-		data_cept += "an  " + to_user.ljust(12) + " " + to_ext.rjust(5, '0')
+		data_cept += "an  " + session_user.ljust(12) + " " + session_ext.rjust(5, '0')
 		data_cept += (
 			"\r\n \x12\x43"
 		)
-		data_cept += to_first + " " + to_last
+		data_cept += session_first_name + " " + session_last_name
 		data_cept += (
 			"\r\n\n"
 		)
@@ -556,6 +544,116 @@ def messaging_create_page(pagenumber):
 			"\x1b\x7e"                                            # G1 into right charset
 			" Gesamt\x19Hubersicht"
 			"\x20\x12\x56"                                        # repeat ' ' 22 times
+		)
+
+	elif pagenumber == "810a":
+		meta = {
+			"include": "a",
+			"clear_screen": True,
+			"links": {
+				"0": "8"
+			},
+			"publisher_color": 7,
+			"inputs": {
+				"fields": [
+					{
+						"name": "user",
+						"line": 8,
+						"column": 20,
+						"height": 1,
+						"width": 16,
+						"bgcolor": 4,
+						"fgcolor": 3
+					},
+					{
+						"name": "ext",
+						"line": 8,
+						"column": 37,
+						"height": 1,
+						"width": 1,
+						"bgcolor": 4,
+						"fgcolor": 3
+					},
+					{
+						"name": "body",
+						"line": 12,
+						"column": 1,
+						"height": 10,
+						"width": 40,
+						"bgcolor": 4,
+						"fgcolor": 3
+					}
+				],
+				"price": 30,
+				"target": "page:8"
+			}
+		}
+
+		current_date = datetime.datetime.now().strftime("%d.%m.%Y")
+		current_time = datetime.datetime.now().strftime("%H:%M")
+
+		data_cept = (
+			"\x1f\x42\x41"                                    # set cursor to line 2, column 1
+			"\x9b\x31\x40"                                    # select palette #1
+			"\x1b\x23\x20\x54"                                # set bg color of screen to 4
+			"\x1b\x28\x40"                                    # load G0 into G0
+			"\x0f"                                            # G0 into left charset
+			"\x1b\x22\x41"                                    # parallel mode
+			"\x9b\x30\x40"                                    # select palette #0
+			"\x9e"                                            # ???
+			"\n"                                              # cursor down
+			"\r"                                              # cursor to beginning of line
+			"\x1b\x23\x21\x54"                                # set bg color of line to 4
+			"\n"                                              # cursor down
+			"\x1b\x23\x21\x54"                                # set bg color of line to 4
+			"\x9b\x31\x40"                                    # select palette #1
+			"\x8d"                                            # double height
+			"\r"                                              # cursor to beginning of line
+			"Mitteilungsdienst"
+			"\n"                                              # cursor down
+			"\r"                                              # cursor to beginning of line
+			"\x9b\x30\x40"                                    # select palette #0
+			"\x8c"                                            # normal size
+			"\x9e"                                            # ???
+			"\x87"                                            # set fg color to #7
+			"Absender:"
+		)
+		data_cept += session_user
+		data_cept += (
+			"\x1f\x45\x59"                                    # set cursor to line 5, column 25
+		)
+		data_cept += session_ext
+		data_cept += (
+			"\x1f\x46\x4a"                                    # set cursor to line 6, column 10
+		)
+		data_cept += session_first_name
+		data_cept += (
+			"\x1f\x47\x4a"                                    # set cursor to line 7, column 10
+		)
+		data_cept += session_last_name
+		data_cept += (
+			"\x1f\x45\x5f"                                    # set cursor to line 5, column 31
+		)
+		data_cept += current_date
+		data_cept += (
+			"\x1f\x46\x5f"                                    # set cursor to line 6, column 31
+		)
+		data_cept += current_time
+		data_cept += (
+			"\r"                                              # cursor to beginning of line
+			"\n"                                              # cursor down
+			"\n"                                              # cursor down
+			"Tln.-Nr. Empf\x19Hanger:"
+			"\x1f\x48\x64"                                    # set cursor to line 8, column 36
+			"\x2d"                                            # "-"
+			"\r"                                              # cursor to beginning of line
+			"\n\n\n"
+			"Text:"
+			"\r\n\n\n\n\n\n\n\n\n\n\n\n"
+			"\x1b\x23\x21\x54"                                # set bg color of line to 4
+			"0"
+			"\x19"                                            # switch to G2 for one character
+			"\x2b\xfe\x7f"                                    # "+."
 		)
 
 	else:
@@ -887,8 +985,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "c64":
 			if num_crs == 4:
 				break
 			
-#new_pagenumber = "00000"
-new_pagenumber = "8"
+new_pagenumber = "00000" # login page
 
 show_page(new_pagenumber)
 
