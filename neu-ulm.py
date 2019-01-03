@@ -12,9 +12,9 @@ CEPT_INI = 19
 CEPT_TER = 28
 
 CEPT_END_OF_PAGE = (
-	"\x1f\x58\x41"      # set cursor to line 24, column 1
-	"\x11"              # show cursor
-	"\x1a"              # end of page
+	b'\x1f\x58\x41'      # set cursor to line 24, column 1
+	b'\x11'              # show cursor
+	b'\x1a'              # end of page
 )
 
 # session info
@@ -33,149 +33,137 @@ last_filename_include = ""
 last_filename_palette = ""
 links = {}
 
-reload(sys)  
-sys.setdefaultencoding('latin-1')
-
-def hexdump(src, length=16, sep='.'):
-	FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or sep for x in range(256)])
-	lines = []
-	for c in xrange(0, len(src), length):
-		chars = src[c:c+length]
-		hex = ' '.join(["%02x" % ord(x) for x in chars])
-		if len(hex) > 24:
-			hex = "%s %s" % (hex[:24], hex[24:])
-		printable = ''.join(["%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or sep) for x in chars])
-		lines.append("%08x  %-*s  |%s|\n" % (c, length*3, hex, printable))
-	print ''.join(lines)
-
+#reload(sys)  
+#sys.setdefaultencoding('latin-1')
 
 def g2code(c, mode):
 	if mode == 0:
-		return "\x19" + c
+		return b'\x19' + c
 	else:
-		return chr(ord(c) + 0x80)
+		return bytearray(ord(c) + 0x80)
 
-def cept_from_unicode(s1, mode):
-	s2 = ""
+def cept_from_unicode(s1, mode = 0):
+	s2 = bytearray()
 	for c in s1:
 		# TODO: complete conversion!
 		if ord(c) == 0xe4:
-			s2 += g2code('H', mode) + "a"           # &auml;
+			s2.extend(g2code('H', mode) + b'a')           # &auml;
 		elif ord(c) == 0xf6:
-			s2 += g2code('H', mode) + "o"           # &ouml;
+			s2.extend(g2code('H', mode) + b'o')           # &ouml;
 		elif ord(c) == 0xfc:
-			s2 += g2code('H', mode) + "u"           # &uuml;
+			s2.extend(g2code('H', mode) + b'u')           # &uuml;
 		elif ord(c) == 0xc4:
-			s2 += g2code('H', mode) + "A"           # &Auml;
+			s2.extend(g2code('H', mode) + b'A')           # &Auml;
 		elif ord(c) == 0xd6:
-			s2 += g2code('H', mode) + "O"           # &Ouml;
+			s2.extend(g2code('H', mode) + b'O')           # &Ouml;
 		elif ord(c) == 0xdc:
-			s2 += g2code('H', mode) + "U"           # &Uuml;
+			s2.extend(g2code('H', mode) + b'U')           # &Uuml;
 		elif ord(c) == 0xdf:
-			s2 += g2code('{', mode)                 # &szlig;
+			s2.extend(g2code('{', mode))                 # &szlig;
 		else:
-			s2 += chr(ord(c))
+			s2.append(ord(c))
 	return s2
 
 def headerfooter(pagenumber, meta):
 	publisher_name = meta["publisher_name"]
 	hide_header_footer = len(meta["publisher_name"]) == 0
 	hide_price = False
-	if publisher_name == "!BTX":
-		publisher_name = (
-			"\x1b\x22\x41"                 # parallel mode
-			"\x9b\x30\x40"                 # select palette #0
-			"\x9e"                         # ???
-			"\x87"                         # set fg color to #7
-			"\x1b\x28\x20\x40"             # load DRCs into G0
-			"\x0f"                         # G0 into left charset
-			"\x21\x22\x23"                 # "!"#"
-			"\x0a"                         # cursor down
-			"\x0d"                         # cursor to beginning of line
-			"\x24\x25\x26"                 # "$%&"
-			"\x0b"                         # cursor up
-			"\x09"                         # cursor right
-			"\x1b\x28\x40"                 # load G0 into G0
-			"\x0f"                         # G0 into left charset
-			"\x0a"                         # cursor down
-			"\x8d"                         # double height
-			# TODO: this does not draw!! :(
-			"Bildschirmtext"
-		)
-		hide_price = True
-	else:
-		publisher_name = publisher_name[:30]
+#	if publisher_name == "!BTX":
+#		publisher_name = (
+#			b'\x1b\x22\x41'                 # parallel mode
+#			b'\x9b\x30\x40'                 # select palette #0
+#			b'\x9e'                         # ???
+#			b'\x87'                         # set fg color to #7
+#			b'\x1b\x28\x20\x40'             # load DRCs into G0
+#			b'\x0f'                         # G0 into left charset
+#			b'\x21\x22\x23'                 # "!"#"
+#			b'\x0a'                         # cursor down
+#			b'\x0d'                         # cursor to beginning of line
+#			b'\x24\x25\x26'                 # "$%&"
+#			b'\x0b'                         # cursor up
+#			b'\x09'                         # cursor right
+#			b'\x1b\x28\x40'                 # load G0 into G0
+#			b'\x0f'                         # G0 into left charset
+#			b'\x0a'                         # cursor down
+#			b'\x8d'                         # double height
+#			# TODO: this does not draw!! :(
+#			b'Bildschirmtext'
+#		)
+#		hide_price = True
+#	else:
+	publisher_name = publisher_name[:30]
 
 
-	hf = (
-		"\x1f\x2d"                         # set resolution to 40x24
-		"\x1f\x57\x41"                     # set cursor to line 23, column 1
-		"\x9b\x31\x51"                     # unprotect line
-		"\x1b\x23\x21\x4c"                 # set fg color of line to 12
-		"\x1f\x2f\x44"                     # parallel limited mode
-		"\x1f\x58\x41"                     # set cursor to line 24, column 1
-		"\x9b\x31\x51"                     # unprotect line
-		"\x20"                             # " "
-		"\x08"                             # cursor left
-		"\x18"                             # clear line
-		"\x1e"                             # cursor home
-		"\x9b\x31\x51"                     # unprotect line
-		"\x20"                             # " "
-		"\x08"                             # cursor left
-		"\x18"                             # clear line
-		"\x1f\x2f\x43"                     # serial limited mode
-		"\x1f\x58\x41"                     # set cursor to line 24, column 1
-		"\x9b\x31\x40"                     # select palette #1
-		"\x80"                             # set fg color to #0
-		"\x08"                             # cursor left
-		"\x9d"                             # ???
-		"\x08"                             # cursor left
+	hf = bytearray(
+		b'\x1f\x2d'                         # set resolution to 40x24
+		b'\x1f\x57\x41'                     # set cursor to line 23, column 1
+		b'\x9b\x31\x51'                     # unprotect line
+		b'\x1b\x23\x21\x4c'                 # set fg color of line to 12
+		b'\x1f\x2f\x44'                     # parallel limited mode
+		b'\x1f\x58\x41'                     # set cursor to line 24, column 1
+		b'\x9b\x31\x51'                     # unprotect line
+		b'\x20'                             # " "
+		b'\x08'                             # cursor left
+		b'\x18'                             # clear line
+		b'\x1e'                             # cursor home
+		b'\x9b\x31\x51'                     # unprotect line
+		b'\x20'                             # " "
+		b'\x08'                             # cursor left
+		b'\x18'                             # clear line
+		b'\x1f\x2f\x43'                     # serial limited mode
+		b'\x1f\x58\x41'                     # set cursor to line 24, column 1
+		b'\x9b\x31\x40'                     # select palette #1
+		b'\x80'                             # set fg color to #0
+		b'\x08'                             # cursor left
+		b'\x9d'                             # ???
+		b'\x08'                             # cursor left
 	)
 	
 	publisher_color = meta["publisher_color"]
 
 	if publisher_color < 8:
-		color_string = "\x9b\x30\x40" + chr(0x80 + publisher_color)
+		color_string = bytearray(b'\x9b\x30\x40')
+		color_string.append(0x80 + publisher_color)
 	else:
-		color_string = chr(0x80 + publisher_color - 8)
+		color_string = bytearray([0x80 + publisher_color - 8])
 
 	hf += color_string
 
-	hf += "\x1f\x58\x53"                   # set cursor to line 24, column 19
+	hf += b'\x1f\x58\x53'                   # set cursor to line 24, column 19
 
 	if not hide_header_footer:
-		hf += pagenumber.rjust(22)
+		hf += cept_from_unicode(pagenumber).rjust(22)
 
 	hf += (
-		"\x1e"                             # cursor home
-		"\x9b\x31\x40"                     # select palette #1
-		"\x80"                             # set fg color to #0
-		"\x08"                             # cursor left
-		"\x9d"                             # ???
-		"\x08"                             # cursor left
+		b'\x1e'                             # cursor home
+		b'\x9b\x31\x40'                     # select palette #1
+		b'\x80'                             # set fg color to #0
+		b'\x08'                             # cursor left
+		b'\x9d'                             # ???
+		b'\x08'                             # cursor left
 	)
 	
 	hf += color_string
 
-	hf += "\x0d"                           # cursor to beginning of line
+	hf += b'\x0d'                           # cursor to beginning of line
 
-	hf += cept_from_unicode(publisher_name, 0)
+	hf += cept_from_unicode(publisher_name)
 
 	# TODO: price
 	if not hide_header_footer and not hide_price:
-		hf += "\x1f\x41\x5f"                   # set cursor to line 1, column 31
-		hf += "   0,00 DM"
+		hf += b'\x1f\x41\x5f'                   # set cursor to line 1, column 31
+		hf += cept_from_unicode("   0,00 DM")
 
 	hf += (
-		"\x1e"                             # cursor home
-		"\x9b\x30\x40"                     # select palette #0
-		"\x9b\x31\x50"                     # protect line
-		"\x0a"                             # cursor down
+		b'\x1e'                             # cursor home
+		b'\x9b\x30\x40'                     # select palette #0
+		b'\x9b\x31\x50'                     # protect line
+		b'\x0a'                             # cursor down
 	)
 	return hf
 
 def encode_palette(palette):
-	palette_data = ""
+	palette_data = bytearray()
 	for hexcolor in palette:
 		r = int(hexcolor[1:3], 16)
 		g = int(hexcolor[3:5], 16)
@@ -194,7 +182,8 @@ def encode_palette(palette):
 		b3 = (b >> 7) & 1
 		byte0 = 0x40 | r3 << 5 | g3 << 4 | b3 << 3 | r2 << 2 | g2 << 1 | b2
 		byte1 = 0x40 | r1 << 5 | g1 << 4 | b1 << 3 | r0 << 2 | g0 << 1 | b0
-		palette_data += chr(byte0) + chr(byte1)
+		palette_data.append(byte0)
+		palette_data.append(byte1)
 	return palette_data
 
 def format_currency(price):
@@ -222,22 +211,22 @@ def create_system_message(code, price = 0, hint = ""):
 	msg = cept_from_unicode(msg, 1)
 
 	msg = (
-		"\x1f\x2f\x40\x58"             # service break to row 24
-		"\x18"                         # clear line
+		b'\x1f\x2f\x40\x58'             # service break to row 24
+		b'\x18'                         # clear line
 	) + msg + (
-		"\x98"                         # hide
-		"\x08"                         # cursor left
+		b'\x98'                         # hide
+		b'\x08'                         # cursor left
 	)
-	msg += "SH"
-	msg += str(code).rjust(3, '0')
-	msg += "\x1f\x2f\x4f"              # service break back
+	msg += b'SH'
+	msg += cept_from_unicode(str(code)).rjust(3, b'0')
+	msg += b'\x1f\x2f\x4f'              # service break back
 	return msg
 
 def create_preamble(basedir, meta):
 	global last_filename_include
 	global last_filename_palette
 
-	preamble = ""
+	preamble = b''
 
 	# define palette
 	if "palette" in meta:
@@ -251,8 +240,8 @@ def create_preamble(basedir, meta):
 				palette = json.load(f)
 			palette_data = encode_palette(palette["palette"])
 			preamble += (
-				"\x1f\x26\x20"           # start defining colors
-				"\x1f\x26\x31\x36"       # define colors 16+
+				b'\x1f\x26\x20'           # start defining colors
+				b'\x1f\x26\x31\x36'       # define colors 16+
 			)
 			preamble += palette_data
 		else:
@@ -268,8 +257,8 @@ def create_preamble(basedir, meta):
 				data_include = f.read()
 			# palette definition has to end with 0x1f; add one if
 			# the include data doesn't start with one
-			if ord(data_include[0]) != 0x1f:
-				preamble += "\x1f\x41\x41"           # set cursor to x=1 y=1
+			if data_include[0] != 0x1f:
+				preamble += b'\x1f\x41\x41'           # set cursor to x=1 y=1
 			preamble += data_include
 	else:
 		last_filename_include = ""
@@ -292,49 +281,49 @@ def replace_placeholders(cept):
 	while True:
 		found = False
 		# TODO: convert into lookup table
-		pos = cept.find("\x1f\x40\x41")
+		pos = cept.find(b'\x1f\x40\x41')
 		if pos > 0:
-			cept = cept[:pos] + current_date + cept[pos+3:]
+			cept = cept[:pos] + cept_from_unicode(current_date) + cept[pos+3:]
 			found = True
 	
-		pos = cept.find("\x1f\x40\x42")
+		pos = cept.find(b'\x1f\x40\x42')
 		if pos > 0:
-			cept = cept[:pos] + session_salutation + cept[pos+3:]
+			cept = cept[:pos] + cept_from_unicode(session_salutation) + cept[pos+3:]
 			found = True
 	
-		pos = cept.find("\x1f\x40\x43")
+		pos = cept.find(b'\x1f\x40\x43')
 		if pos > 0:
-			cept = cept[:pos] + session_first_name + cept[pos+3:]
+			cept = cept[:pos] + cept_from_unicode(session_first_name) + cept[pos+3:]
 			found = True
 	
-		pos = cept.find("\x1f\x40\x44")
+		pos = cept.find(b'\x1f\x40\x44')
 		if pos > 0:
-			cept = cept[:pos] + session_last_name + cept[pos+3:]
+			cept = cept[:pos] + cept_from_unicode(session_last_name) + cept[pos+3:]
 			found = True
 	
-		pos = cept.find("\x1f\x40\x45")
+		pos = cept.find(b'\x1f\x40\x45')
 		if pos > 0:
-			cept = cept[:pos] + session_last_date + cept[pos+3:]
+			cept = cept[:pos] + cept_from_unicode(session_last_date) + cept[pos+3:]
 			found = True
 	
-		pos = cept.find("\x1f\x40\x46")
+		pos = cept.find(b'\x1f\x40\x46')
 		if pos > 0:
-			cept = cept[:pos] + session_last_time + cept[pos+3:]
+			cept = cept[:pos] + cept_from_unicode(session_last_time) + cept[pos+3:]
 			found = True
 	
-		pos = cept.find("\x1f\x40\x47")
+		pos = cept.find(b'\x1f\x40\x47')
 		if pos > 0:
-			cept = cept[:pos] + session_user + cept[pos+3:]
+			cept = cept[:pos] + cept_from_unicode(session_user) + cept[pos+3:]
 			found = True
 	
-		pos = cept.find("\x1f\x40\x48")
+		pos = cept.find(b'\x1f\x40\x48')
 		if pos > 0:
-			cept = cept[:pos] + session_ext + cept[pos+3:]
+			cept = cept[:pos] + cept_from_unicode(session_ext) + cept[pos+3:]
 			found = True
 	
-		pos = cept.find("\x1f\x40\x49")
+		pos = cept.find(b'\x1f\x40\x49')
 		if pos > 0:
-			cept = cept[:pos] + current_time + cept[pos+3:]
+			cept = cept[:pos] + cept_from_unicode(current_time) + cept[pos+3:]
 			found = True
 				
 		if not found:
@@ -344,48 +333,48 @@ def replace_placeholders(cept):
 
 def messaging_create_title(title):
 	data_cept = (
-		"\x1f\x42\x41"           # set cursor to line 2, column 1
-		"\x9b\x31\x40"           # select palette #1
-		"\x1b\x23\x20\x54"       # set bg color of screen to 4
-		"\x1b\x28\x40"           # load G0 into G0
-		"\x0f"                   # G0 into left charset
-		"\x1b\x22\x41"           # parallel mode
-		"\x9b\x30\x40"           # select palette #0
-		"\x9e"                   # ???
-		"\x0a"                   # cursor down
-		"\x0d"                   # cursor to beginning of line
-		"\x1b\x23\x21\x54"       # set bg color of line to 4
-		"\x0a"                   # cursor down
-		"\x1b\x23\x21\x54"       # set bg color of line to 4
-		"\x9b\x31\x40"           # select palette #1
-		"\x8d"                   # double height
-		"\x0d"                   # cursor to beginning of line
+		b'\x1f\x42\x41'           # set cursor to line 2, column 1
+		b'\x9b\x31\x40'           # select palette #1
+		b'\x1b\x23\x20\x54'       # set bg color of screen to 4
+		b'\x1b\x28\x40'           # load G0 into G0
+		b'\x0f'                   # G0 into left charset
+		b'\x1b\x22\x41'           # parallel mode
+		b'\x9b\x30\x40'           # select palette #0
+		b'\x9e'                   # ???
+		b'\x0a'                   # cursor down
+		b'\x0d'                   # cursor to beginning of line
+		b'\x1b\x23\x21\x54'       # set bg color of line to 4
+		b'\x0a'                   # cursor down
+		b'\x1b\x23\x21\x54'       # set bg color of line to 4
+		b'\x9b\x31\x40'           # select palette #1
+		b'\x8d'                   # double height
+		b'\x0d'                   # cursor to beginning of line
 	)
-	data_cept += title
+	data_cept += cept_from_unicode(title)
 	data_cept += (
-		"\n\r"
-		"\x9b\x30\x40"           # select palette #0
-		"\x8c"                   # normal size
-		"\x9e"                   # ???
-		"\x87"                   # set fg color to #7
+		b'\n\r'
+		b'\x9b\x30\x40'           # select palette #0
+		b'\x8c'                   # normal size
+		b'\x9e'                   # ???
+		b'\x87'                   # set fg color to #7
 	)
 	return data_cept
 
 def messaging_create_menu(title, items):
 	data_cept = messaging_create_title(title)
 	data_cept += (
-		"\n\r\n\r"
+		b"\n\r\n\r"
 	)
 	i = 1
 	for item in items:
-		data_cept += str(i) + "  " + item
-		data_cept += "\r\n\r\n"
+		data_cept += cept_from_unicode(str(i)) + b'  ' + cept_from_unicode(item)
+		data_cept += b"\r\n\r\n"
 		i +=1
 
 	data_cept += (
-		"\r\n\r\n\r\n\r\n\r\n\r\n"
-		"\x1b\x23\x21\x54"                                     # set bg color of line to 4
-		"0\x19\x2b  Gesamt\x19Hubersicht"
+		b'\r\n\r\n\r\n\r\n\r\n\r\n'
+		b'\x1b\x23\x21\x54'                                     # set bg color of line to 4
+		b'0\x19\x2b  Gesamt\x19Hubersicht'
 	)
 
 	return data_cept
@@ -430,6 +419,12 @@ def message_get(index):
 		message_body
 	)
 
+def cept_set_cursor(y, x):
+	c = bytearray(b'\x1f')
+	c.append(0x40 + y)
+	c.append(0x40 + x)
+	return c
+
 def messaging_create_page(pagenumber):
 	sys.stderr.write("pagenumber[:2] " + pagenumber[:2] + "\n")
 	if pagenumber == "8a":
@@ -472,17 +467,17 @@ def messaging_create_page(pagenumber):
 		
 		for index in range(0, 9):
 			#sys.stderr.write("message #" + str(index) + "/" + str(len(session_messages)) + "\n")
-			data_cept += str(index + 1) + "  "
+			data_cept += cept_from_unicode(str(index + 1)) + b'  '
 			if len(session_messages) > index:
 				message = session_messages[index]
-				data_cept += message["from_first"] + " " + message["from_last"]
-				data_cept += "\r\n   "
+				data_cept += cept_from_unicode(message["from_first"]) + b' ' + cept_from_unicode(message["from_last"])
+				data_cept += b'\r\n   '
 				t = datetime.datetime.fromtimestamp(message["timestamp"])
-				data_cept += t.strftime("%d.%m.%Y   %H:%M")
-				data_cept += "\r\n"
+				data_cept += cept_from_unicode(t.strftime("%d.%m.%Y   %H:%M"))
+				data_cept += b'\r\n'
 				links[str(index + 1)] = "88" + str(index + 1)
 			else:
-				data_cept += "\r\n\r\n"
+				data_cept += b'\r\n\r\n'
 
 		meta["links"] = links
 	
@@ -515,56 +510,59 @@ def messaging_create_page(pagenumber):
 		) = message_get(index)
 
 		data_cept = (
-			"\x1f\x2f\x44"                                        # parallel limited mode
-			"\x1f\x42\x41"                                        # set cursor to line 2, column 1
-			"\x9b\x30\x40"                                        # select palette #0
-			"\x83"                                                # set fg color to #3
+			b'\x1f\x2f\x44'                                        # parallel limited mode
+			b'\x1f\x42\x41'                                        # set cursor to line 2, column 1
+			b'\x9b\x30\x40'                                        # select palette #0
+			b'\x83'                                                # set fg color to #3
 		)
-		data_cept += "von " + from_user.ljust(12) + " " + from_ext.rjust(5, '0')
+		data_cept += b'von ' + cept_from_unicode(from_user.ljust(12)) + b' ' + cept_from_unicode(from_ext.rjust(5, '0'))
 
-		data_cept += "\x1f\x42" + chr(0x40 + 41 - len(from_date))
-		data_cept += from_date
-
-		data_cept += (
-			" \x12\x43"
-		)
-		data_cept += from_org
-
-		data_cept += "\x1f\x43" + chr(0x40 + 41 - len(from_time))
-		data_cept += from_time
+		sys.stderr.write("len(from_date) " + str(len(from_date)) + "\n")
+		sys.stderr.write("from_date " + from_date + "\n")
+		sys.stderr.write("x = " + str(0x40 + 41 - len(from_date)) + "\n")
+		data_cept += cept_set_cursor(2, 41 - len(from_date))
+		data_cept += cept_from_unicode(from_date)
 
 		data_cept += (
-			" \x12\x43"
-			"\x80"                                                # set fg color to #0
+			b' \x12\x43'
 		)
-		data_cept += from_first + " " + from_last
+		data_cept += cept_from_unicode(from_org)
+
+		data_cept += cept_set_cursor(2, 41 - len(from_time))
+		data_cept += cept_from_unicode(from_time)
+
 		data_cept += (
-			"\r\n \x12\x43"
+			b' \x12\x43'
+			b'\x80'                                                # set fg color to #0
 		)
-		data_cept += from_street
+		data_cept += cept_from_unicode(from_first) + b' ' + cept_from_unicode(from_last)
 		data_cept += (
-			"\r\n \x12\x43"
+			b'\r\n \x12\x43'
 		)
-		data_cept += from_city
+		data_cept += cept_from_unicode(from_street)
 		data_cept += (
-			"\r\n"
+			b'\r\n \x12\x43'
 		)
-		data_cept += "an  " + session_user.ljust(12) + " " + session_ext.rjust(5, '0')
+		data_cept += cept_from_unicode(from_city)
 		data_cept += (
-			"\r\n \x12\x43"
+			b'\r\n'
 		)
-		data_cept += session_first_name + " " + session_last_name
+		data_cept += b'an  ' + cept_from_unicode(session_user.ljust(12)) + b' ' + cept_from_unicode(session_ext.rjust(5, '0'))
 		data_cept += (
-			"\r\n\n"
+			b'\r\n \x12\x43'
 		)
-		data_cept += message_body
+		data_cept += cept_from_unicode(session_first_name) + b' ' + cept_from_unicode(session_last_name)
 		data_cept += (
-			"\x1f\x57\x41"
-			"0"
-			"\x1b\x29\x20\x40"                                    # load DRCs into G1
-			"\x1b\x7e"                                            # G1 into right charset
-			" Gesamt\x19Hubersicht"
-			"\x20\x12\x56"                                        # repeat ' ' 22 times
+			b'\r\n\n'
+		)
+		data_cept += cept_from_unicode(message_body)
+		data_cept += (
+			b'\x1f\x57\x41'
+			b'0'
+			b'\x1b\x29\x20\x40'                                    # load DRCs into G1
+			b'\x1b\x7e'                                            # G1 into right charset
+			b' Gesamt\x19Hubersicht'
+			b'\x20\x12\x56'                                        # repeat ' ' 22 times
 		)
 
 	elif pagenumber == "810a":
@@ -614,67 +612,67 @@ def messaging_create_page(pagenumber):
 		current_time = datetime.datetime.now().strftime("%H:%M")
 
 		data_cept = (
-			"\x1f\x42\x41"                                    # set cursor to line 2, column 1
-			"\x9b\x31\x40"                                    # select palette #1
-			"\x1b\x23\x20\x54"                                # set bg color of screen to 4
-			"\x1b\x28\x40"                                    # load G0 into G0
-			"\x0f"                                            # G0 into left charset
-			"\x1b\x22\x41"                                    # parallel mode
-			"\x9b\x30\x40"                                    # select palette #0
-			"\x9e"                                            # ???
-			"\n"                                              # cursor down
-			"\r"                                              # cursor to beginning of line
-			"\x1b\x23\x21\x54"                                # set bg color of line to 4
-			"\n"                                              # cursor down
-			"\x1b\x23\x21\x54"                                # set bg color of line to 4
-			"\x9b\x31\x40"                                    # select palette #1
-			"\x8d"                                            # double height
-			"\r"                                              # cursor to beginning of line
-			"Mitteilungsdienst"
-			"\n"                                              # cursor down
-			"\r"                                              # cursor to beginning of line
-			"\x9b\x30\x40"                                    # select palette #0
-			"\x8c"                                            # normal size
-			"\x9e"                                            # ???
-			"\x87"                                            # set fg color to #7
-			"Absender:"
+			b'\x1f\x42\x41'                                    # set cursor to line 2, column 1
+			b'\x9b\x31\x40'                                    # select palette #1
+			b'\x1b\x23\x20\x54'                                # set bg color of screen to 4
+			b'\x1b\x28\x40'                                    # load G0 into G0
+			b'\x0f'                                            # G0 into left charset
+			b'\x1b\x22\x41'                                    # parallel mode
+			b'\x9b\x30\x40'                                    # select palette #0
+			b'\x9e'                                            # ???
+			b'\n'                                              # cursor down
+			b'\r'                                              # cursor to beginning of line
+			b'\x1b\x23\x21\x54'                                # set bg color of line to 4
+			b'\n'                                              # cursor down
+			b'\x1b\x23\x21\x54'                                # set bg color of line to 4
+			b'\x9b\x31\x40'                                    # select palette #1
+			b'\x8d'                                            # double height
+			b'\r'                                              # cursor to beginning of line
+			b'Mitteilungsdienst'
+			b'\n'                                              # cursor down
+			b'\r'                                              # cursor to beginning of line
+			b'\x9b\x30\x40'                                    # select palette #0
+			b'\x8c'                                            # normal size
+			b'\x9e'                                            # ???
+			b'\x87'                                            # set fg color to #7
+			b'Absender:'
 		)
-		data_cept += session_user
+		data_cept += cept_from_unicode(session_user)
 		data_cept += (
-			"\x1f\x45\x59"                                    # set cursor to line 5, column 25
+			b'\x1f\x45\x59'                                    # set cursor to line 5, column 25
 		)
-		data_cept += session_ext
+		data_cept += cept_from_unicode(session_ext)
 		data_cept += (
-			"\x1f\x46\x4a"                                    # set cursor to line 6, column 10
+			b'\x1f\x46\x4a'                                    # set cursor to line 6, column 10
 		)
-		data_cept += session_first_name
+		data_cept += cept_from_unicode(session_first_name)
 		data_cept += (
-			"\x1f\x47\x4a"                                    # set cursor to line 7, column 10
+			b'\x1f\x47\x4a'                                    # set cursor to line 7, column 10
 		)
-		data_cept += session_last_name
+		data_cept += cept_from_unicode(session_last_name)
 		data_cept += (
-			"\x1f\x45\x5f"                                    # set cursor to line 5, column 31
+			b'\x1f\x45\x5f'                                    # set cursor to line 5, column 31
 		)
-		data_cept += current_date
+		data_cept += cept_from_unicode(current_date)
 		data_cept += (
-			"\x1f\x46\x5f"                                    # set cursor to line 6, column 31
+			b'\x1f\x46\x5f'                                    # set cursor to line 6, column 31
 		)
-		data_cept += current_time
+		data_cept += cept_from_unicode(current_time)
 		data_cept += (
-			"\r"                                              # cursor to beginning of line
-			"\n"                                              # cursor down
-			"\n"                                              # cursor down
-			"Tln.-Nr. Empf\x19Hanger:"
-			"\x1f\x48\x64"                                    # set cursor to line 8, column 36
-			"\x2d"                                            # "-"
-			"\r"                                              # cursor to beginning of line
-			"\n\n\n"
-			"Text:"
-			"\r\n\n\n\n\n\n\n\n\n\n\n\n"
-			"\x1b\x23\x21\x54"                                # set bg color of line to 4
-			"0"
-			"\x19"                                            # switch to G2 for one character
-			"\x2b\xfe\x7f"                                    # "+."
+			b'\r'                                              # cursor to beginning of line
+			b'\n'                                              # cursor down
+			b'\n'                                              # cursor down
+			b'Tln.-Nr. Empf\x19Hanger:'
+			b'\x1f\x48\x64'                                    # set cursor to line 8, column 36
+			b'\x2d'                                            # "-"
+			b'\r'                                              # cursor to beginning of line
+			b'\n\n\n'
+			b'Text:'
+			b'\r\n\n\n\n\n\n\n\n\n\n\n\n'
+			b'\x1b\x23\x21\x54'                                # set bg color of line to 4
+			b'0'
+			b'\x19'                                            # switch to G2 for one character
+			b'\x2b\xfe\x7f'                                    # "+."
 		)
 
 	else:
@@ -726,20 +724,20 @@ def create_page(basepath, pagenumber):
 		glob = json.load(f)
 	meta.update(glob) # combine dicts, glob overrides meta
 
-	all_data = chr(0x14) # hide cursor
+	all_data = b'\x14' # hide cursor
 
 	if "clear_screen" in meta and meta["clear_screen"]:
 		all_data += (
-			"\x1f\x2f\x43"                 # serial limited mode
-			"\x0c"                         # clear screen
+			b'\x1f\x2f\x43'                 # serial limited mode
+			b'\x0c'                         # clear screen
 		)
 
 	all_data += create_preamble(basedir, meta)
 
 	if "cls2" in meta and meta["cls2"]:
 		all_data += (
-			"\x1f\x2f\x43"                 # serial limited mode
-			"\x0c"                         # clear screen
+			b'\x1f\x2f\x43'                 # serial limited mode
+			b'\x0c'                         # clear screen
 		)
 
 	# header + footer
@@ -758,7 +756,7 @@ def create_page(basepath, pagenumber):
 	# payload
 	all_data += data_cept
 
-	all_data += "\x1f\x2f\x43" # serial limited mode
+	all_data += b'\x1f\x2f\x43' # serial limited mode
 
 	# header + footer
 	all_data += headerfooter(pagenumber, meta)
@@ -775,7 +773,7 @@ def create_page(basepath, pagenumber):
 def read_with_echo(clear_line):
 	c = sys.stdin.read(1)
 	if clear_line:
-		sys.stdout.write("\x18");
+		sys.stdout.write('\x18');
 	if ord(c) == CEPT_INI:
 		sys.stdout.write('*')
 	elif ord(c) == CEPT_TER:
@@ -792,7 +790,11 @@ def set_fg_color(c):
 		c -= 8
 	else:
 		pal = 0
-	return "\x9b" + chr(0x30 + pal) + "\x40" + chr(0x80 + c)
+	b = bytearray([0x9b])
+	b.append(0x30 + pal)
+	b.append(0x40)
+	b.append(0x80 + c)
+	return b
 
 def set_bg_color(c):
 	if c > 7:
@@ -800,7 +802,11 @@ def set_bg_color(c):
 		c -= 8
 	else:
 		pal = 0
-	return "\x9b" + chr(0x30 + pal) + "\x40" + chr(0x90 + c)
+	b = bytearray([0x9b])
+	b.append(0x30 + pal)
+	b.append(0x40)
+	b.append(0x90 + c)
+	return b
 
 def update_stats():
 	global session_user
@@ -849,7 +855,7 @@ def login(input_data):
 def handle_inputs(inputs):
 	while True:
 		cept_data = (
-			"\x1f\x2f\x44"                     # parallel limited mode
+			b'\x1f\x2f\x44'                     # parallel limited mode
 		)
 		for input in inputs["fields"]:
 			l = input["line"]
@@ -857,11 +863,14 @@ def handle_inputs(inputs):
 			h = input["height"]
 			w = input["width"]
 			for i in range(0, h):
-				cept_data += "\x1f" + chr(0x40 + l + i) + chr(0x40 + c)      # set cursor
-				cept_data += set_fg_color(input["fgcolor"])
-				cept_data += set_bg_color(input["bgcolor"])
-				cept_data += " \x12" + chr(0x40 + w - 1)
-		sys.stdout.write(cept_data)
+				cept_data = bytearray(b'\x1f')
+				cept_data.append(0x40 + l + i)
+				cept_data.append(0x40 + c)      # set cursor
+				cept_data.extend(set_fg_color(input["fgcolor"]))
+				cept_data.extend(set_bg_color(input["bgcolor"]))
+				cept_data.append(0x12)
+				cept_data.append(0x40 + w - 1)
+		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 	
 		input_data = {}
@@ -872,13 +881,16 @@ def handle_inputs(inputs):
 			h = input["height"]
 			w = input["width"]
 
-			hint = input["hint"]
+			if "hint" in input:
+				hint = input["hint"]
+			else:
+				hint = ""
 		
 			cept_data  = create_system_message(0, 0, hint)
-			cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
+			cept_data += b'\x1f' + bytearray(0x40 + l) + bytearray(0x40 + c)      # set cursor
 			cept_data += set_fg_color(input["fgcolor"])
 			cept_data += set_bg_color(input["bgcolor"])
-			sys.stdout.write(cept_data)
+			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 		
 			s = ""
@@ -890,7 +902,7 @@ def handle_inputs(inputs):
 				if ord(c) == 8:
 					if len(s) == 0:
 						continue
-					sys.stdout.write("\x08 \x08")
+					sys.stdout.buffer.write(b'\x08 \x08')
 					sys.stdout.flush()
 					s = s[:-1]
 				elif ord(c) < 0x20 and ord(c) != 0x19:
@@ -910,8 +922,8 @@ def handle_inputs(inputs):
 			else:
 				price = 0
 				cept_data  = create_system_message(44)
-			cept_data += "\x1f" + chr(0x40 + 24) + chr(0x40 + 24)      # set cursor
-			sys.stdout.write(cept_data)
+			cept_data += b'\x1f' + bytearray(0x40 + 24) + bytearray(0x40 + 24)      # set cursor
+			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 		
 			seen_a_one = False
@@ -919,25 +931,25 @@ def handle_inputs(inputs):
 				c = sys.stdin.read(1)
 				if c == "2":
 					doit = False
-					sys.stdout.write(c)
+					sys.stdout.buffer.write(c)
 					sys.stdout.flush()
 					break
 				elif c == "1" and not seen_a_one:
 					seen_a_one = True
-					sys.stdout.write(c)
+					sys.stdout.buffer.write(c)
 					sys.stdout.flush()
 				elif c == "9" and seen_a_one:
 					doit = True
-					sys.stdout.write(c)
+					sys.stdout.buffer.write(c)
 					sys.stdout.flush()
 					break
 				elif ord(c) == 8 and seen_a_one:
 					seen_a_one = False
-					sys.stdout.write("\x08 \x08")
+					sys.stdout.buffer.write(b'\x08 \x08')
 					sys.stdout.flush()
 				
 		cept_data = create_system_message(55)
-		sys.stdout.write(cept_data)
+		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 	
 		# login page
@@ -945,7 +957,7 @@ def handle_inputs(inputs):
 			if not login(input_data):
 				sys.stderr.write("login incorrect\n")
 				cept_data = create_system_message(998)
-				sys.stdout.write(cept_data)
+				sys.stdout.buffer.write(cept_data)
 				sys.stdout.flush()
 				continue
 			else:
@@ -955,7 +967,7 @@ def handle_inputs(inputs):
 			
 		cept_data = create_system_message(0)
 		cept_data += CEPT_END_OF_PAGE
-		sys.stdout.write(cept_data)
+		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 		
 		if inputs["target"][:5] == "page:":
@@ -979,7 +991,7 @@ def show_page(pagenumber):
 			sys.stderr.write("page not found\n")
 		else:
 			links = new_links
-		sys.stdout.write(cept_data)
+		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 		
 		if len(inputs):
@@ -1061,9 +1073,9 @@ while True:
 			# '**' resets mode
 			mode = MODE_NONE
 			new_pagenumber = ""
-			cept_data  = "\x1f\x58\x41"
-			cept_data += "\x18"
-			sys.stdout.write(cept_data)
+			cept_data  = b'\x1f\x58\x41'
+			cept_data += b'\x18'
+			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 			sys.stderr.write("mode = MODE_NONE\n")
 		elif c >= '0' and c <= '9':

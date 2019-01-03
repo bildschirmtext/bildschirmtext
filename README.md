@@ -11,7 +11,7 @@ Dieses Repository besteht aus
 
 ## Bildschirmtext Server
 
-Der BTX Server `neu-ulm.py` ist in Python 2 geschrieben und hat folgende Features:
+Der BTX Server `neu-ulm.py` ist in Python 3 geschrieben und hat folgende Features:
 
 * Ausliefern von Seiten
 * Eingabe von Daten in Dialoge
@@ -42,13 +42,13 @@ Es muß sichergestellt werden, daß die Verzeichnisse `messages` und `stats` fü
 
 Manche Hardware-Decoder, wie der LOEWE MultiTel-D, erlauben den Anschluß über RS232. (Auf diesem Gerät: `F9`, `F3`, `F1`, `Shift-F1`, `9600`, `F9`.) Mit `socat` kann der Server folgendermaßen mit dem bestehenden seriellen Port verbunden werden:
 
-	socat /dev/tty.usbserial-FTXP1ANL,clocal=1,nonblock=1,ispeed=9600,ospeed=9600,raw system:"python neu-ulm.py"
+	socat /dev/tty.usbserial-FTXP1ANL,clocal=1,nonblock=1,ispeed=9600,ospeed=9600,raw system:"python3 neu-ulm.py"
 
 Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Die Optionen von `socat` beziehen sich auf macOS, auf anderen Betriebssystemen müssen sie eventuell angepaßt werden.
 
 ### C64-Software-Decoder
 
-	socat -d -d exec:"python neu-ulm.py c64" pty,raw,echo=0
+	socat -d -d exec:"python3 neu-ulm.py c64" pty,raw,echo=0
 
 `socat` erzeugt einen virtuellen seriellen Port, der mit der Server-Software verbunden ist. Die Ausgabe beinhaltet den Pfad zu diesem Port.
 
