@@ -43,7 +43,9 @@ def g2code(c, mode):
 	if mode == 0:
 		return b'\x19' + c
 	else:
-		return bytearray(ord(c) + 0x80)
+		code = bytearray()
+		code.append(ord(c) + 0x80)
+		return code
 
 def cept_from_unicode(s1, mode = 0):
 	s2 = bytearray()
@@ -67,9 +69,8 @@ def cept_from_unicode(s1, mode = 0):
 			s2.append(ord(c))
 	return s2
 
-def headerfooter(pagenumber, meta):
-	publisher_name = meta["publisher_name"]
-	hide_header_footer = len(meta["publisher_name"]) == 0
+def headerfooter(pagenumber, publisher_name, publisher_color):
+	hide_header_footer = len(publisher_name) == 0
 	hide_price = False
 #	if publisher_name == "!BTX":
 #		publisher_name = (
@@ -121,8 +122,6 @@ def headerfooter(pagenumber, meta):
 		b'\x9d'                             # ???
 		b'\x08'                             # cursor left
 	)
-	
-	publisher_color = meta["publisher_color"]
 
 	if publisher_color < 8:
 		color_string = bytearray(b'\x9b\x30\x40')
@@ -745,8 +744,8 @@ def create_page(basepath, pagenumber):
 		)
 
 	# header
-	header = headerfooter(pagenumber, meta)
-	all_data.extend(header)
+	hf = headerfooter(pagenumber, meta["publisher_name"], meta["publisher_color"])
+	all_data.extend(hf)
 
 	# payload
 	all_data.extend(data_cept)
@@ -754,7 +753,7 @@ def create_page(basepath, pagenumber):
 	all_data.extend(b'\x1f\x2f\x43') # serial limited mode
 
 	# footer
-	all_data.extend(header)
+	all_data.extend(hf)
 
 	all_data.extend(CEPT_END_OF_PAGE)
 
