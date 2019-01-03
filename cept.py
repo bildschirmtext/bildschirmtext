@@ -1,8 +1,5 @@
 class Cept(bytearray):
 
-	CEPT_INI = 19 # *
-	CEPT_TER = 28 # #
-
 	# Constructor 
 	def __init__(self): 
 		print("Hello Cept")
@@ -22,22 +19,30 @@ class Cept(bytearray):
 	# CEPT codes
 	
 	@staticmethod
-	def hide_cursor(): # hide cursor
+	def ini():
+		return 0x13 # cept init - 19 - prints *
+
+
+	@staticmethod
+	def ter():
+		return 0x1c # cept terminate - 28 - prints #
+
+
+	@staticmethod
+	def hide_cursor():
 		return b'\x14'			
 
 
 
 	@staticmethod
-	def clear_screen(): # clear screen
+	def clear_screen():
 		return b'\x0c'						   
 
 
 	@staticmethod
-	def serial_limited_mode(): # serial limited mode
+	def serial_limited_mode():
 		return b'\x1f\x2f\x43'				   
 
-
-	# Set Colors
 	
 	@staticmethod
 	def set_palette(palette):
@@ -87,5 +92,12 @@ class Cept(bytearray):
 			pal = 0
 		return bytes([0x9b, 0x30 + pal, 0x40, 0x90 + c])
 		
+		
+		
+		
+	@staticmethod
+	def set_cursor(y, x):
+		return bytes([0x1f, 0x40 + y, 0x40 + x])
+	
 		
 		
