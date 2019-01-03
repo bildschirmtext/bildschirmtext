@@ -43,9 +43,7 @@ def g2code(c, mode):
 	if mode == 0:
 		return b'\x19' + c
 	else:
-		code = bytearray()
-		code.append(ord(c) + 0x80)
-		return code
+		return bytearray([ord(c) + 0x80])
 
 def cept_from_unicode(s1, mode = 0):
 	s2 = bytearray()
@@ -878,7 +876,7 @@ def handle_inputs(inputs):
 				hint = ""
 		
 			cept_data  = create_system_message(0, 0, hint)
-			cept_data += b'\x1f' + bytearray(0x40 + l) + bytearray(0x40 + c)      # set cursor
+			cept_data += b'\x1f' + bytearray([0x40 + l]) + bytearray([0x40 + c])      # set cursor
 			cept_data += set_fg_color(input["fgcolor"])
 			cept_data += set_bg_color(input["bgcolor"])
 			sys.stdout.buffer.write(cept_data)
@@ -913,7 +911,7 @@ def handle_inputs(inputs):
 			else:
 				price = 0
 				cept_data  = create_system_message(44)
-			cept_data += b'\x1f' + bytearray(0x40 + 24) + bytearray(0x40 + 24)      # set cursor
+			cept_data += b'\x1f' + bytearray([0x40 + 24]) + bytearray([0x40 + 24])      # set cursor
 			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 		
