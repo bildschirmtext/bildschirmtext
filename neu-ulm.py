@@ -6,6 +6,12 @@ import time
 import datetime
 from pprint import pprint
 
+# paths
+PATH_DATA = "data/"
+PATH_USERS = "users/"
+PATH_STATS = "stats/"
+PATH_MESSAGES = "messages/"
+
 # constants
 
 CEPT_INI = 19
@@ -380,7 +386,7 @@ def messaging_create_menu(title, items):
 def messages_load():
 	global session_messages
 	
-	filename = "messages/" + session_user + "-" + session_ext + ".messages"
+	filename = PATH_MESSAGES + session_user + "-" + session_ext + ".messages"
 	if not os.path.isfile(filename):
 		messages = []
 		sys.stderr.write("messages file not found\n")
@@ -673,19 +679,19 @@ def messaging_create_page(pagenumber):
 		)
 
 	else:
-		return ({}, "")
+		return None
 	
 	return (meta, data_cept)
 
 
 def create_page(basepath, pagenumber):
-	if pagenumber[-1:] >= '0' and pagenumber[-1:] <= '9':
+	if pagenumber[-1:].isdigit():
 		pagenumber += "a"
 
-	basedir = ""
+	basedir = None
 
 	for i in reversed(range(0, len(pagenumber))):
-		testdir = basepath + pagenumber[0:i+1]
+		testdir = basepath + pagenumber[:i+1]
 		if os.path.isdir(testdir):
 			sys.stderr.write("testdir: '" + testdir + "'\n")
 			filename = pagenumber[i+1:]
@@ -693,77 +699,66 @@ def create_page(basepath, pagenumber):
 			basedir = testdir + "/"
 			break
 
-	if basedir == "":
+	if basedir is None:
 		return None
 
 	# generated pages
 	sys.stderr.write("pagenumber[0]: '" + pagenumber[0] + "'\n")
 	if pagenumber[0] == '8':
-		(meta, data_cept) = messaging_create_page(pagenumber)
-		if data_cept == "":
+		ret = messaging_create_page(pagenumber)
+		if ret is None:
 			return None
+		(meta, data_cept) = ret
 	else:
-		if not os.path.isfile(testdir + "/" + filename + ".meta"):
+		filename_meta = basedir + filename + ".meta"
+		filename_cept = basedir + filename + ".cept"
+
+		if not os.path.isfile(filename_meta):
 			return None
 
-		sys.stderr.write("reading: '" + basedir + filename + "'.meta\n")
-		with open(basedir + filename + ".meta") as f:
+		with open(filename_meta) as f:
 			meta = json.load(f)
 		
-		filename_cept = basedir + filename + ".cept"
 		with open(filename_cept, mode='rb') as f:
 			data_cept = f.read()
 	
 		data_cept = replace_placeholders(data_cept)
 
-	sys.stderr.write("reading: '" + basedir + "'.glob\n")
 	with open(basedir + "a.glob") as f:
 		glob = json.load(f)
 	meta.update(glob) # combine dicts, glob overrides meta
 
-	all_data = b'\x14' # hide cursor
+	all_data = bytearray(b'\x14') # hide cursor
 
 	if "clear_screen" in meta and meta["clear_screen"]:
-		all_data += (
+		all_data.extend(
 			b'\x1f\x2f\x43'                 # serial limited mode
 			b'\x0c'                         # clear screen
 		)
 
-	all_data += create_preamble(basedir, meta)
+	all_data.extend(create_preamble(basedir, meta))
 
 	if "cls2" in meta and meta["cls2"]:
-		all_data += (
+		all_data.extend(
 			b'\x1f\x2f\x43'                 # serial limited mode
 			b'\x0c'                         # clear screen
 		)
 
-	# header + footer
-	all_data += headerfooter(pagenumber, meta)
-
-#	# links
-#	all_data += "\x1f\x3d\x30"
-#	i = 0x31
-#	for key, value in meta["links"].iteritems():
-#		all_data +=	"\x1f\x3d"
-#		all_data += chr(i)
-#		all_data += key.encode('utf-8').ljust(2)
-#		all_data += value.encode('utf-8')
-#		i += 1
+	# header
+	header = headerfooter(pagenumber, meta)
+	all_data.extend(header)
 
 	# payload
-	all_data += data_cept
+	all_data.extend(data_cept)
 
-	all_data += b'\x1f\x2f\x43' # serial limited mode
+	all_data.extend(b'\x1f\x2f\x43') # serial limited mode
 
-	# header + footer
-	all_data += headerfooter(pagenumber, meta)
+	# footer
+	all_data.extend(header)
 
-	all_data += CEPT_END_OF_PAGE
+	all_data.extend(CEPT_END_OF_PAGE)
 
-	if "inputs" in meta:
-		inputs = meta["inputs"]
-	else:
-		inputs = []
+	inputs = meta.get("inputs")
 	return (all_data, meta["links"], inputs)
 
 
@@ -808,7 +803,7 @@ def set_bg_color(c):
 def update_stats():
 	global session_user
 	global session_ext
-	filename = "stats/" + session_user + "-" + session_ext + ".stats"
+	filename = PATH_STATS + session_user + "-" + session_ext + ".stats"
 	stats = { "last_login": time.time() }
 	with open(filename, 'w') as f:
 		json.dump(stats, f)
@@ -829,7 +824,7 @@ def login(input_data):
 		session_user = "0"
 	if session_ext == "":
 		session_ext = "1"
-	filename = "users/" + session_user + "-" + session_ext + ".user"
+	filename = PATH_USERS + session_user + "-" + session_ext + ".user"
 	if not os.path.isfile(filename):
 		return False
 	with open(filename) as f:
@@ -839,7 +834,7 @@ def login(input_data):
 	session_last_name = user_data["last_name"]
 	success = password == user_data["password"]
 	if success:
-		filename = "stats/" + session_user + "-" + session_ext + ".stats"
+		filename = PATH_STATS + session_user + "-" + session_ext + ".stats"
 		if os.path.isfile(filename):
 			with open(filename) as f:
 				stats = json.load(f)	
@@ -978,7 +973,7 @@ def show_page(pagenumber):
 	
 	while True:
 		sys.stderr.write("showing page: '" + pagenumber + "'\n")
-		ret = create_page("data/", pagenumber)
+		ret = create_page(PATH_DATA, pagenumber)
 
 		if ret is None:
 			cept_data = create_system_message(100) + CEPT_END_OF_PAGE
@@ -992,7 +987,7 @@ def show_page(pagenumber):
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 		
-		if len(inputs) == 0:
+		if inputs is None:
 			return True
 
 		new_pagenumber = handle_inputs(inputs)
