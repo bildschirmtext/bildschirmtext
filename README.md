@@ -97,6 +97,12 @@ Der Server verknüpft die unterschiedlichen Dateien wieder und stellt sicher, da
 
 Die Startseite des Amiga-BTX-Demos erreicht man mit `*200960#`. Über sie sind alle historischen Seiten erreichbar.
 
+# Danksagung und verwandte Projekte
+
+* [Bildschirmtrix](http://www.runningserver.com/?page=rs.thelab.bildschirmtrix) von Philipp Maier
+* [Javascript BTX Server](http://members.aon.at/nkehrer/btx_server.html) von Norbert Kehrer
+* [Retrotext](https://www.acn.wtf/retrotext.html) von Anna Christina Naß
+
 # Copyright
 
 Der Code dieses Projektes steht unter der MIT-Lizenz. Maintainer ist Michael Steil, E-Mail: mist64@mac.com
