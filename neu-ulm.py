@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import sys
 import os
@@ -47,14 +48,31 @@ def hexdump(src, length=16, sep='.'):
 		lines.append("%08x  %-*s  |%s|\n" % (c, length*3, hex, printable))
 	print ''.join(lines)
 
-def encode_string(s1):
+
+def g2code(c, mode):
+	if mode == 0:
+		return "\x19" + c
+	else:
+		return chr(ord(c) + 0x80)
+
+def cept_from_unicode(s1, mode):
 	s2 = ""
 	for c in s1:
 		# TODO: complete conversion!
-		if ord(c) == 0xfc:
-			s2 += "\x19Hu"           # &uuml;
+		if ord(c) == 0xe4:
+			s2 += g2code('H', mode) + "a"           # &auml;
+		elif ord(c) == 0xf6:
+			s2 += g2code('H', mode) + "o"           # &ouml;
+		elif ord(c) == 0xfc:
+			s2 += g2code('H', mode) + "u"           # &uuml;
+		elif ord(c) == 0xc4:
+			s2 += g2code('H', mode) + "A"           # &Auml;
 		elif ord(c) == 0xd6:
-			s2 += "\x19HO"           # &Ouml;
+			s2 += g2code('H', mode) + "O"           # &Ouml;
+		elif ord(c) == 0xdc:
+			s2 += g2code('H', mode) + "U"           # &Uuml;
+		elif ord(c) == 0xdf:
+			s2 += g2code('{', mode)                 # &szlig;
 		else:
 			s2 += chr(ord(c))
 	return s2
@@ -141,7 +159,7 @@ def headerfooter(pagenumber, meta):
 
 	hf += "\x0d"                           # cursor to beginning of line
 
-	hf += encode_string(publisher_name)
+	hf += cept_from_unicode(publisher_name, 0)
 
 	# TODO: price
 	if not hide_header_footer and not hide_price:
@@ -182,28 +200,31 @@ def encode_palette(palette):
 def format_currency(price):
 	return "DM  %d" % int(price / 100) + ".%02d" % int(price % 100)
 
-def create_system_message(code, price = 0):
+def create_system_message(code, price = 0, hint = ""):
+	msg = ""
+	if hint != "":
+		msg = hint
+	elif code == 0:
+		msg = "                               "
+	elif code == 44:
+		msg = "Absenden? Ja:19 Nein:2         "
+	elif code == 47:
+		msg = "Absenden für " + format_currency(price) + "? Ja:19 Nein:2"
+	elif code == 55:
+		msg = "Eingabe wird bearbeitet        "
+	elif code == 100:
+		msg = "Seite nicht vorhanden          "
+	elif code == 291:
+		msg = "Seite wird aufgebaut           "
+	elif code == 998:
+		msg = "Ungültiger Teilnehmer oder Kennwort"
+
+	msg = cept_from_unicode(msg, 1)
+
 	msg = (
 		"\x1f\x2f\x40\x58"             # service break to row 24
 		"\x18"                         # clear line
-	)
-	if code == 0:
-		msg += "                               "
-	elif code == 44:
-		msg += "Absenden? Ja:19 Nein:2         "
-	elif code == 47:
-		msg += "Absenden f\x19Hur " + format_currency(price) + "? Ja:19 Nein:2"
-	elif code == 55:
-		msg += "Eingabe wird bearbeitet        "
-	elif code == 100:
-		msg += "Seite nicht vorhanden          "
-	elif code == 291:
-		msg += "Seite wird aufgebaut           "
-	elif code == 998:
-		msg += "Ung\x19Hultiger Teilnehmer oder Kennwort"
-	elif code == 999:
-		msg += "# eingeben um fortzufahren     "
-	msg += (
+	) + msg + (
 		"\x98"                         # hide
 		"\x08"                         # cursor left
 	)
@@ -850,8 +871,10 @@ def handle_inputs(inputs):
 			c = input["column"]
 			h = input["height"]
 			w = input["width"]
+
+			hint = input["hint"]
 		
-			cept_data  = create_system_message(999)
+			cept_data  = create_system_message(0, 0, hint)
 			cept_data += "\x1f" + chr(0x40 + l) + chr(0x40 + c)      # set cursor
 			cept_data += set_fg_color(input["fgcolor"])
 			cept_data += set_bg_color(input["bgcolor"])

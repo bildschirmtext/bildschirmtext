@@ -7,6 +7,7 @@
     	"fields": [
 			{
 				"name": "user",
+				"hint": "Abschließen mit #; Leer für Gast",
 				"line": 17,
 				"column": 26,
 				"height": 1,
@@ -17,6 +18,7 @@
 			},
 			{
 				"name": "ext",
+				"hint": "Abschließen mit #; Leer für Gast",
 				"line": 17,
 				"column": 37,
 				"height": 1,
@@ -27,6 +29,7 @@
 			},
 			{
 				"name": "password",
+				"hint": "Abschließen mit #; Leer für Gast",
 				"line": 19,
 				"column": 26,
 				"height": 1,
