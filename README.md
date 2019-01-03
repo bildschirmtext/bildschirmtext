@@ -30,7 +30,7 @@ Der BTX Server `neu-ulm.py` ist in Python 2 geschrieben und hat folgende Feature
 	* `*88#` zeigt eingegangene Mitteilunge an.
 	* Über `*810#` kann eine neue Mitteilung verfaßt werden. (*Diese wird noch nicht versendet!*)
 
-Es wurde Wert darauf gelegt, die Architektur des Servers 
+Es wurde Wert darauf gelegt, die Architektur des Servers der Original-Architektur nachzuempfinden. Seiten historischer Dumps wurden in ihre Bestandteile zerlegt (Palette, Include, Text, Header und Footer der Post), und der Server baut diese Komponenten zur Laufzeit zusammen. So werden Paletten und Zeichensätze nur dann gesendet, wenn sie nicht schon in den Decoder geladen sind. Des weiteren werden die 1. und 24. Zeile des Bildschirms wie beim Originalserver verwendet: Anbieter-Name und Preis werden aus den Metadaten gewonnen, Warnungen und Fehler besitzen die spezifizierten Codes, und die Nutzdaten dürfen diese Zeilen nicht beschreiben.
 
 ### Verwendung
 
