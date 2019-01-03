@@ -66,13 +66,21 @@ Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Dann kann der De
 
 Es existieren noch einige weitere Software-Decoder für unterschiedliche Betriebssysteme:
 
-* [TeleComm für MS-DOS](https://archive.org/details/TEleComm-KommunikationMitKomfort-BTXDecoderSharewareGerman)
-* [BTX/VTX Manager v1.2 (Drews) für MS-DOS](https://archive.org/details/BTXVTXManagerV1FrMS-DOS)
-* [MacBTX 1&1 für Mac OS Classic](https://archive.org/details/MacBTX11German)
-* PConline 1&1 für Windows 3.x
-* T-Online 1.0 für Windows 3.x
-* AMARIS
-* Amiga BTX Decoder 3.2
+* MS-DOS
+	* [TeleComm](https://archive.org/details/TEleComm-KommunikationMitKomfort-BTXDecoderSharewareGerman)
+	* [BTX/VTX Manager v1.2 (Drews)](https://archive.org/details/BTXVTXManagerV1FrMS-DOS)
+	* [PC online 1&1 BTX-COM Version 4.34 (Drews)](https://www.pagetable.com/docs/btx/decoder/PC%20online%201&1%20BTX-COM%20Version%204.34.img)
+* Windows 3.x
+	* [T-Online 1.0](https://www.pagetable.com/docs/btx/decoder/T-Online-Software%20Version%201.0%20light.img)
+	* [AMARIS](https://www.pagetable.com/docs/btx/decoder/AMARIS.zip)
+* Mac OS Classic
+	* [MacBTX 1&1](https://archive.org/details/MacBTX11German)
+* Amiga 
+	* [Amiga BTX Terminal V2.9](https://www.pagetable.com/docs/btx/decoder/Amiga%20BTX%20Terminal%20V2.9.DMS)
+	* [Amiga BTX Terminal V3.2b](https://www.pagetable.com/docs/btx/decoder/Amiga%20BTX%20Terminal%20V3.2b.DMS)
+* C64
+	* [64'er Online BTX v1.52 (Drews)](https://www.pagetable.com/docs/btx/decoder/64er%20Online%20BTX%20v1.52%20(19xx)(-)(de).d64)
+	* [64'er Online BTX v1.60 (Drews)](https://www.pagetable.com/docs/btx/decoder/64er%20Online%20BTX%20v1.60%20(19xx)(-)(de).d64)
 
 Es sollte möglich sein, auch diese über einen virtuellen seriellen Port mit der Server-Software zu verbinden. Über Erfahrungsberichte sind wir dankbar.
 
