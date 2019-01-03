@@ -33,9 +33,6 @@ last_filename_include = ""
 last_filename_palette = ""
 links = {}
 
-#reload(sys)  
-#sys.setdefaultencoding('latin-1')
-
 def g2code(c, mode):
 	if mode == 0:
 		return b'\x19' + c
@@ -697,17 +694,17 @@ def create_page(basepath, pagenumber):
 			break
 
 	if basedir == "":
-		return ("", {}, [])
+		return None
 
 	# generated pages
 	sys.stderr.write("pagenumber[0]: '" + pagenumber[0] + "'\n")
 	if pagenumber[0] == '8':
 		(meta, data_cept) = messaging_create_page(pagenumber)
 		if data_cept == "":
-			return ("", {}, [])
+			return None
 	else:
 		if not os.path.isfile(testdir + "/" + filename + ".meta"):
-			return ("", {}, [])
+			return None
 
 		sys.stderr.write("reading: '" + basedir + filename + "'.meta\n")
 		with open(basedir + filename + ".meta") as f:
@@ -979,37 +976,33 @@ def handle_inputs(inputs):
 def show_page(pagenumber):
 	global links
 	
-	success = True
 	while True:
 		sys.stderr.write("showing page: '" + pagenumber + "'\n")
-		(cept_data, new_links, inputs) = create_page("data/", pagenumber)
-		if cept_data == "":
-			sh100 = create_system_message(100)
-			cept_data = sh100 + CEPT_END_OF_PAGE
+		ret = create_page("data/", pagenumber)
+
+		if ret is None:
+			cept_data = create_system_message(100) + CEPT_END_OF_PAGE
+			sys.stdout.buffer.write(cept_data)
+			sys.stdout.flush()
 			showing_message = True
-			success = False
 			sys.stderr.write("page not found\n")
-		else:
-			links = new_links
+			return False
+
+		(cept_data, links, inputs) = ret
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 		
-		if len(inputs):
-			new_pagenumber = handle_inputs(inputs)
-			if new_pagenumber != "*00":
-				pagenumber = new_pagenumber
-		else:
-			pagenumber = ""
-			
-		if len(pagenumber) == 0:
-			break
+		if len(inputs) == 0:
+			return True
 
-	return success
+		new_pagenumber = handle_inputs(inputs)
+		if new_pagenumber != "*00":
+			pagenumber = new_pagenumber
 		
 
 # MAIN
 
-sys.stderr.write("running!!\n")
+sys.stderr.write("Neu-Ulm running.\n")
 
 if len(sys.argv) > 1 and sys.argv[1] == "c64":
 	num_crs = 0
