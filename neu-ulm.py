@@ -6,6 +6,8 @@ import time
 import datetime
 from pprint import pprint
 
+from cept import Cept
+
 # paths
 PATH_DATA = "data/"
 PATH_USERS = "users/"
@@ -17,11 +19,6 @@ PATH_MESSAGES = "messages/"
 CEPT_INI = 19
 CEPT_TER = 28
 
-CEPT_END_OF_PAGE = (
-	b'\x1f\x58\x41'      # set cursor to line 24, column 1
-	b'\x11'              # show cursor
-	b'\x1a'              # end of page
-)
 
 # session info
 session_user = "0"
@@ -41,7 +38,7 @@ links = {}
 
 def g2code(c, mode):
 	if mode == 0:
-		return b'\x19' + c
+		return b'\x19' + bytearray([ord(c)])
 	else:
 		return bytearray([ord(c) + 0x80])
 
@@ -67,10 +64,16 @@ def cept_from_unicode(s1, mode = 0):
 			s2.append(ord(c))
 	return s2
 
+def format_currency(price):
+	return "DM  %d" % int(price / 100) + ",%02d" % int(price % 100)
+
 def headerfooter(pagenumber, publisher_name, publisher_color):
 	hide_header_footer = len(publisher_name) == 0
 	hide_price = False
-#	if publisher_name == "!BTX":
+	# Early screenshots had a two-line publisher name with
+	# the BTX logo in it for BTX-internal pages. Some .meta
+	# files still reference this, but we should remove this.
+	if publisher_name == "!BTX":
 #		publisher_name = (
 #			b'\x1b\x22\x41'                 # parallel mode
 #			b'\x9b\x30\x40'                 # select palette #0
@@ -91,9 +94,10 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 #			# TODO: this does not draw!! :(
 #			b'Bildschirmtext'
 #		)
-#		hide_price = True
-#	else:
-	publisher_name = publisher_name[:30]
+		publisher_name = "Bildschirmtext"
+		hide_price = True
+	else:
+		publisher_name = publisher_name[:30]
 
 
 	hf = bytearray(
@@ -122,8 +126,7 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 	)
 
 	if publisher_color < 8:
-		color_string = bytearray(b'\x9b\x30\x40')
-		color_string.append(0x80 + publisher_color)
+		color_string = bytearray(b'\x9b\x30\x40') + bytearray([0x80 + publisher_color])
 	else:
 		color_string = bytearray([0x80 + publisher_color - 8])
 
@@ -152,7 +155,8 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 	# TODO: price
 	if not hide_header_footer and not hide_price:
 		hf += b'\x1f\x41\x5f'                   # set cursor to line 1, column 31
-		hf += cept_from_unicode("   0,00 DM")
+		hf += b'  '
+		hf += cept_from_unicode(format_currency(0))
 
 	hf += (
 		b'\x1e'                             # cursor home
@@ -162,32 +166,7 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 	)
 	return hf
 
-def encode_palette(palette):
-	palette_data = bytearray()
-	for hexcolor in palette:
-		r = int(hexcolor[1:3], 16)
-		g = int(hexcolor[3:5], 16)
-		b = int(hexcolor[5:7], 16)
-		r0 = (r >> 4) & 1
-		r1 = (r >> 5) & 1
-		r2 = (r >> 6) & 1
-		r3 = (r >> 7) & 1
-		g0 = (g >> 4) & 1
-		g1 = (g >> 5) & 1
-		g2 = (g >> 6) & 1
-		g3 = (g >> 7) & 1
-		b0 = (b >> 4) & 1
-		b1 = (b >> 5) & 1
-		b2 = (b >> 6) & 1
-		b3 = (b >> 7) & 1
-		byte0 = 0x40 | r3 << 5 | g3 << 4 | b3 << 3 | r2 << 2 | g2 << 1 | b2
-		byte1 = 0x40 | r1 << 5 | g1 << 4 | b1 << 3 | r0 << 2 | g0 << 1 | b0
-		palette_data.append(byte0)
-		palette_data.append(byte1)
-	return palette_data
 
-def format_currency(price):
-	return "DM  %d" % int(price / 100) + ".%02d" % int(price % 100)
 
 def create_system_message(code, price = 0, hint = ""):
 	msg = ""
@@ -238,11 +217,7 @@ def create_preamble(basedir, meta):
 			last_filename_palette = filename_palette
 			with open(filename_palette) as f:
 				palette = json.load(f)
-			palette_data = encode_palette(palette["palette"])
-			preamble += (
-				b'\x1f\x26\x20'           # start defining colors
-				b'\x1f\x26\x31\x36'       # define colors 16+
-			)
+			palette_data = Cept.set_palette(palette["palette"])
 			preamble += palette_data
 		else:
 			sys.stderr.write("skipping palette\n")
@@ -725,21 +700,17 @@ def create_page(basepath, pagenumber):
 		glob = json.load(f)
 	meta.update(glob) # combine dicts, glob overrides meta
 
-	all_data = bytearray(b'\x14') # hide cursor
+	all_data = bytearray(Cept.hide_cursor())
 
 	if "clear_screen" in meta and meta["clear_screen"]:
-		all_data.extend(
-			b'\x1f\x2f\x43'                 # serial limited mode
-			b'\x0c'                         # clear screen
-		)
+		all_data.extend(Cept.serial_limited_mode())
+		all_data.extend(Cept.clear_screen())
 
 	all_data.extend(create_preamble(basedir, meta))
 
 	if "cls2" in meta and meta["cls2"]:
-		all_data.extend(
-			b'\x1f\x2f\x43'                 # serial limited mode
-			b'\x0c'                         # clear screen
-		)
+		all_data.extend(Cept.serial_limited_mode())
+		all_data.extend(Cept.clear_screen())
 
 	# header
 	hf = headerfooter(pagenumber, meta["publisher_name"], meta["publisher_color"])
@@ -748,12 +719,12 @@ def create_page(basepath, pagenumber):
 	# payload
 	all_data.extend(data_cept)
 
-	all_data.extend(b'\x1f\x2f\x43') # serial limited mode
+	all_data.extend(Cept.serial_limited_mode())
 
 	# footer
 	all_data.extend(hf)
 
-	all_data.extend(CEPT_END_OF_PAGE)
+	all_data.extend(Cept.sequence_end_of_page())
 
 	inputs = meta.get("inputs")
 	return (all_data, meta["links"], inputs)
@@ -772,30 +743,6 @@ def read_with_echo(clear_line):
 	sys.stdout.flush()
 	sys.stderr.write("In: " + str(ord(c)) + "\n")
 	return c
-
-def set_fg_color(c):
-	if c > 7:
-		pal = 1
-		c -= 8
-	else:
-		pal = 0
-	b = bytearray([0x9b])
-	b.append(0x30 + pal)
-	b.append(0x40)
-	b.append(0x80 + c)
-	return b
-
-def set_bg_color(c):
-	if c > 7:
-		pal = 1
-		c -= 8
-	else:
-		pal = 0
-	b = bytearray([0x9b])
-	b.append(0x30 + pal)
-	b.append(0x40)
-	b.append(0x90 + c)
-	return b
 
 def update_stats():
 	global session_user
@@ -855,8 +802,8 @@ def handle_inputs(inputs):
 				cept_data = bytearray(b'\x1f')
 				cept_data.append(0x40 + l + i)
 				cept_data.append(0x40 + c)      # set cursor
-				cept_data.extend(set_fg_color(input["fgcolor"]))
-				cept_data.extend(set_bg_color(input["bgcolor"]))
+				cept_data.extend(Cept.set_fg_color(input["fgcolor"]))
+				cept_data.extend(Cept.set_bg_color(input["bgcolor"]))
 				cept_data.append(0x12)
 				cept_data.append(0x40 + w - 1)
 		sys.stdout.buffer.write(cept_data)
@@ -877,8 +824,8 @@ def handle_inputs(inputs):
 		
 			cept_data  = create_system_message(0, 0, hint)
 			cept_data += b'\x1f' + bytearray([0x40 + l]) + bytearray([0x40 + c])      # set cursor
-			cept_data += set_fg_color(input["fgcolor"])
-			cept_data += set_bg_color(input["bgcolor"])
+			cept_data += Cept.set_fg_color(input["fgcolor"])
+			cept_data += Cept.set_bg_color(input["bgcolor"])
 			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 		
@@ -955,7 +902,7 @@ def handle_inputs(inputs):
 			# send "input_data" to "inputs["target"]"
 			
 		cept_data = create_system_message(0)
-		cept_data += CEPT_END_OF_PAGE
+		cept_data += Cept.sequence_end_of_page()
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 		
@@ -973,7 +920,7 @@ def show_page(pagenumber):
 		ret = create_page(PATH_DATA, pagenumber)
 
 		if ret is None:
-			cept_data = create_system_message(100) + CEPT_END_OF_PAGE
+			cept_data = create_system_message(100) + Cept.sequence_end_of_page()
 			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 			showing_message = True
