@@ -11,7 +11,6 @@ from messaging import Messaging
 
 # paths
 PATH_DATA = "data/"
-PATH_USERS = "users/"
 PATH_STATS = "stats/"
 
 session = None
@@ -219,12 +218,14 @@ def replace_placeholders(cept):
 	
 		pos = cept.find(b'\x1f\x40\x45')
 		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(session.last_date) + cept[pos+3:]
+			t = datetime.datetime.fromtimestamp(session.last_login)
+			cept = cept[:pos] + Cept.from_str(t.strftime("%d.%m.%Y")) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x46')
 		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(session.last_time) + cept[pos+3:]
+			t = datetime.datetime.fromtimestamp(session.last_login)
+			cept = cept[:pos] + Cept.from_str(t.strftime("%H:%M")) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x47')
@@ -345,9 +346,7 @@ def stats_read():
 	if os.path.isfile(filename):
 		with open(filename) as f:
 			stats = json.load(f)	
-		t = datetime.datetime.fromtimestamp(stats["last_login"])
-		session.last_date = t.strftime("%d.%m.%Y")
-		session.last_time = t.strftime("%H:%M")
+		session.last_login = stats["last_login"]
 
 def state_update():
 	stats = { "last_login": time.time() }
@@ -356,29 +355,13 @@ def state_update():
 
 def login(input_data):
 	global session
-
-	session = Session()
-
-	session.user = input_data["user"]
-	session.ext = input_data["ext"]
-	password = input_data["password"]
-	if session.user == "":
-		session.user = "0"
-	if session.ext == "":
-		session.ext = "1"
-	filename = PATH_USERS + session.user + "-" + session.ext + ".user"
-	if not os.path.isfile(filename):
-		return False
-	with open(filename) as f:
-		user_data = json.load(f)
-	session.salutation = user_data["salutation"]
-	session.first_name = user_data["first_name"]
-	session.last_name = user_data["last_name"]
-	success = password == user_data["password"]
-	if success:
+	
+	session = Session.login(input_data["user"], input_data["ext"], input_data["password"])
+	
+	if not session is None:
 		stats_read()
 		
-	return success
+	return not session is None
 
 def handle_inputs(inputs):
 	while True:
