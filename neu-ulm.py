@@ -6,13 +6,13 @@ import time
 import datetime
 
 from cept import Cept
-from session import Session
+from user import User
 from messaging import Messaging
 
 # paths
 PATH_DATA = "data/"
 
-session = None
+user = None
 
 # globals
 
@@ -184,7 +184,7 @@ def create_preamble(basedir, meta):
 	return preamble
 
 def replace_placeholders(cept):
-	global session
+	global user
 
 	current_date = datetime.datetime.now().strftime("%d.%m.%Y")
 	current_time = datetime.datetime.now().strftime("%H:%M")
@@ -196,42 +196,41 @@ def replace_placeholders(cept):
 		if pos > 0:
 			cept = cept[:pos] + Cept.from_str(current_date) + cept[pos+3:]
 			found = True
-	
-		pos = cept.find(b'\x1f\x40\x42')
+			pos = cept.find(b'\x1f\x40\x42')
 		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(session.salutation) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(user.salutation) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x43')
 		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(session.first_name) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(user.first_name) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x44')
 		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(session.last_name) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(user.last_name) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x45')
 		if pos > 0:
-			t = datetime.datetime.fromtimestamp(session.stats.last_login)
+			t = datetime.datetime.fromtimestamp(user.stats.last_login)
 			cept = cept[:pos] + Cept.from_str(t.strftime("%d.%m.%Y")) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x46')
 		if pos > 0:
-			t = datetime.datetime.fromtimestamp(session.stats.last_login)
+			t = datetime.datetime.fromtimestamp(user.stats.last_login)
 			cept = cept[:pos] + Cept.from_str(t.strftime("%H:%M")) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x47')
 		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(session.user) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(user.user_id) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x48')
 		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(session.ext) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(user.ext) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x49')
@@ -265,7 +264,7 @@ def create_page(basepath, pagenumber):
 	# generated pages
 	sys.stderr.write("pagenumber[0]: '" + pagenumber[0] + "'\n")
 	if pagenumber[0] == '8':
-		ret = Messaging.messaging_create_page(session, pagenumber)
+		ret = Messaging.messaging_create_page(user, pagenumber)
 		if ret is None:
 			return None
 		(meta, data_cept) = ret
@@ -333,11 +332,11 @@ def read_with_echo(clear_line):
 	return c
 
 def login(input_data):
-	global session
+	global user
 	
-	session = Session.login(input_data["user"], input_data["ext"], input_data["password"])
+	user = User.login(input_data["user_id"], input_data["ext"], input_data["password"])
 	
-	return not session is None
+	return not user is None
 
 def handle_inputs(inputs):
 	while True:
@@ -462,8 +461,8 @@ def show_page(pagenumber):
 	global links
 	
 	while True:
-		if session is not None:
-			session.stats.update()
+		if user is not None:
+			user.stats.update()
 
 		sys.stderr.write("showing page: '" + pagenumber + "'\n")
 		ret = create_page(PATH_DATA, pagenumber)

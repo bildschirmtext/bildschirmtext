@@ -54,19 +54,19 @@ class Messaging():
 		return data_cept
 	
 	# private
-	def messages_load(session):
-		filename = PATH_MESSAGES + session.user + "-" + session.ext + ".messages"
+	def messages_load(user):
+		filename = PATH_MESSAGES + user.user_id + "-" + user.ext + ".messages"
 		if not os.path.isfile(filename):
 			messages = []
 			sys.stderr.write("messages file not found\n")
 		else:
 			with open(filename) as f:
-				session.messages = json.load(f)["messages"]
+				user.messages = json.load(f)["messages"]
 		
 	# private
-	def message_get(session, index):
-		Messaging.messages_load(session)
-		message = session.messages[index]
+	def message_get(user, index):
+		Messaging.messages_load(user)
+		message = user.messages[index]
 	
 		t = datetime.datetime.fromtimestamp(message["timestamp"])
 		from_date = t.strftime("%d.%m.%Y")
@@ -92,7 +92,7 @@ class Messaging():
 			message_body
 		)
 	
-	def messaging_create_page(session, pagenumber):
+	def messaging_create_page(user, pagenumber):
 		sys.stderr.write("pagenumber[:2] " + pagenumber[:2] + "\n")
 		if pagenumber == "8a":
 			meta = {
@@ -130,13 +130,13 @@ class Messaging():
 				"0": "8"
 			}
 			
-			Messaging.messages_load(session)
+			Messaging.messages_load(user)
 			
 			for index in range(0, 9):
-				#sys.stderr.write("message #" + str(index) + "/" + str(len(session.messages)) + "\n")
+				#sys.stderr.write("message #" + str(index) + "/" + str(len(user.messages)) + "\n")
 				data_cept.extend(Cept.from_str(str(index + 1)) + b'  ')
-				if len(session.messages) > index:
-					message = session.messages[index]
+				if len(user.messages) > index:
+					message = user.messages[index]
 					data_cept.extend(Cept.from_str(message["from_first"]) + b' ' + Cept.from_str(message["from_last"]))
 					data_cept.extend(b'\r\n   ')
 					t = datetime.datetime.fromtimestamp(message["timestamp"])
@@ -174,7 +174,7 @@ class Messaging():
 				from_street,
 				from_city,
 				message_body
-			) = Messaging.message_get(session, index)
+			) = Messaging.message_get(user, index)
 	
 	
 			data_cept = bytearray(Cept.parallel_limited_mode())
@@ -199,10 +199,10 @@ class Messaging():
 			data_cept.extend(Cept.from_str(from_city))
 			data_cept.extend(b'\r\n')
 			data_cept.extend(b'an  ')
-			data_cept.extend(Cept.from_str(session.user.ljust(12)) + b' ' + Cept.from_str(session.ext.rjust(5, '0')))
+			data_cept.extend(Cept.from_str(user.user_id.ljust(12)) + b' ' + Cept.from_str(user.ext.rjust(5, '0')))
 			data_cept.extend(b'\r\n')
 			data_cept.extend(Cept.repeat(" ", 4))
-			data_cept.extend(Cept.from_str(session.first_name) + b' ' + Cept.from_str(session.last_name))
+			data_cept.extend(Cept.from_str(user.first_name) + b' ' + Cept.from_str(user.last_name))
 			data_cept.extend(b'\r\n\n')
 			data_cept.extend(Cept.from_str(message_body))
 			data_cept.extend(Cept.set_cursor(23, 1))
@@ -287,13 +287,13 @@ class Messaging():
 			data_cept.extend(Cept.set_fg_color_simple(7))
 			data_cept.extend(Cept.from_str("Absender:"))
 	
-			data_cept.extend(Cept.from_str(session.user))
+			data_cept.extend(Cept.from_str(user.user_id))
 			data_cept.extend(Cept.set_cursor(5, 25))
-			data_cept.extend(Cept.from_str(session.ext))
+			data_cept.extend(Cept.from_str(user.ext))
 			data_cept.extend(Cept.set_cursor(6, 10))
-			data_cept.extend(Cept.from_str(session.first_name))
+			data_cept.extend(Cept.from_str(user.first_name))
 			data_cept.extend(Cept.set_cursor(7, 10))
-			data_cept.extend(Cept.from_str(session.last_name))
+			data_cept.extend(Cept.from_str(user.last_name))
 			data_cept.extend(Cept.set_cursor(5, 31))
 			data_cept.extend(Cept.from_str(current_date))
 			data_cept.extend(Cept.set_cursor(6, 31))

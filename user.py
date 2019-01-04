@@ -7,13 +7,13 @@ PATH_STATS = "stats/"
 
 class Stats():
 	last_login = None
-	session = None
+	user = None
 
 	def __filename(self):
-		return PATH_STATS + self.session.user + "-" + self.session.ext + ".stats"
+		return PATH_STATS + self.user.user_id + "-" + self.user.ext + ".stats"
 
-	def __init__(self, session):
-		self.session = session
+	def __init__(self, user):
+		self.user = user
 		filename = self.__filename()
 		if os.path.isfile(filename):
 			with open(filename) as f:
@@ -27,8 +27,8 @@ class Stats():
 			json.dump(stats, f)
 	
 
-class Session():
-	user = None
+class User():
+	user_id = None
 	ext = None
 	salutation = None
 	first_name = None
@@ -38,12 +38,12 @@ class Session():
 	stats = None
 	
 	@classmethod
-	def login(cls, user, ext, password):
-		if user is None or user == "":
-			user = "0"
+	def login(cls, user_id, ext, password):
+		if user_id is None or user_id == "":
+			user_id = "0"
 		if ext is None or ext == "":
 			ext = "1"
-		filename = PATH_USERS + user + "-" + ext + ".user"
+		filename = PATH_USERS + user_id + "-" + ext + ".user"
 		if not os.path.isfile(filename):
 			return None
 		with open(filename) as f:
@@ -52,12 +52,12 @@ class Session():
 		if password != user_data["password"]:
 			return None
 
-		session = cls()
-		session.user = user
-		session.ext = ext
-		session.salutation = user_data["salutation"]
-		session.first_name = user_data["first_name"]
-		session.last_name = user_data["last_name"]
-		session.stats = Stats(session)
+		user = cls()
+		user.user_id = user_id
+		user.ext = ext
+		user.salutation = user_data["salutation"]
+		user.first_name = user_data["first_name"]
+		user.last_name = user_data["last_name"]
+		user.stats = Stats(user)
 
-		return session
+		return user

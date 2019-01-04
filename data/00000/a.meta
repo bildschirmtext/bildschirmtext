@@ -6,7 +6,7 @@
     "inputs": {
     	"fields": [
 			{
-				"name": "user",
+				"name": "user_id",
 				"hint": "Nächstes Feld mit #; Leer für Gast",
 				"line": 17,
 				"column": 26,
