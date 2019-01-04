@@ -5,6 +5,7 @@ import time
 PATH_USERS = "users/"
 PATH_STATS = "stats/"
 
+# Currently, this only holds the last use
 class Stats():
 	last_login = None
 	user = None
@@ -18,11 +19,11 @@ class Stats():
 		if os.path.isfile(filename):
 			with open(filename) as f:
 				stats = json.load(f)	
-			self.last_login = stats["last_login"]
+			self.last_login = stats.get("last_use")
 	
 	def update(self):
-		# update the last login field with the current time
-		stats = { "last_login": time.time() }
+		# update the last use field with the current time
+		stats = { "last_use": time.time() }
 		with open(self.__filename(), 'w') as f:
 			json.dump(stats, f)
 	
@@ -33,7 +34,6 @@ class User():
 	salutation = None
 	first_name = None
 	last_name = None
-	last_login = None
 	messages = None
 	stats = None
 	

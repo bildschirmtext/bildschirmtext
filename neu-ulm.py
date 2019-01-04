@@ -213,14 +213,20 @@ def replace_placeholders(cept):
 	
 		pos = cept.find(b'\x1f\x40\x45')
 		if pos > 0:
-			t = datetime.datetime.fromtimestamp(user.stats.last_login)
-			cept = cept[:pos] + Cept.from_str(t.strftime("%d.%m.%Y")) + cept[pos+3:]
+			if user.stats.last_login is not None:
+				t = datetime.datetime.fromtimestamp(user.stats.last_login)
+				cept = cept[:pos] + Cept.from_str(t.strftime("%d.%m.%Y")) + cept[pos+3:]
+			else:
+				cept = cept[:pos] + Cept.from_str("--.--.----") + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x46')
 		if pos > 0:
-			t = datetime.datetime.fromtimestamp(user.stats.last_login)
-			cept = cept[:pos] + Cept.from_str(t.strftime("%H:%M")) + cept[pos+3:]
+			if user.stats.last_login is not None:
+				t = datetime.datetime.fromtimestamp(user.stats.last_login)
+				cept = cept[:pos] + Cept.from_str(t.strftime("%H:%M")) + cept[pos+3:]
+			else:
+				cept = cept[:pos] + Cept.from_str("--:--") + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x47')
