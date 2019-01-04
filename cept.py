@@ -142,6 +142,14 @@ class Cept(bytearray):
 	@staticmethod
 	def set_cursor(y, x):
 		return bytes([0x1f, 0x40 + y, 0x40 + x])
+
+	@staticmethod
+	def service_break(y):
+		return bytes([0x1f, 0x2f, 0x40, 0x40 + y])
+	
+	@staticmethod
+	def service_break_back():
+		return b'\x1f\x2f\x4f'
 	
 	@staticmethod
 	def normal_size():
@@ -150,6 +158,10 @@ class Cept(bytearray):
 	@staticmethod
 	def double_height():
 		return b'\x8d'
+		
+	@staticmethod
+	def hide_text():
+		return b'\x98'
 		
 	@staticmethod
 	def code_9d():

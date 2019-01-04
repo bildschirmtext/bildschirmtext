@@ -155,36 +155,32 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 
 
 def create_system_message(code, price = 0, hint = ""):
-	msg = ""
+	text = ""
 	if hint != "":
-		msg = hint
+		text = hint
 	elif code == 0:
-		msg = "                               "
+		text = "                               "
 	elif code == 44:
-		msg = "Absenden? Ja:19 Nein:2         "
+		text = "Absenden? Ja:19 Nein:2         "
 	elif code == 47:
-		msg = "Absenden für " + format_currency(price) + "? Ja:19 Nein:2"
+		text = "Absenden für " + format_currency(price) + "? Ja:19 Nein:2"
 	elif code == 55:
-		msg = "Eingabe wird bearbeitet        "
+		text = "Eingabe wird bearbeitet        "
 	elif code == 100:
-		msg = "Seite nicht vorhanden          "
+		text = "Seite nicht vorhanden          "
 	elif code == 291:
-		msg = "Seite wird aufgebaut           "
+		text = "Seite wird aufgebaut           "
 	elif code == 998:
-		msg = "Ungültiger Teilnehmer oder Kennwort"
+		text = "Ungültiger Teilnehmer oder Kennwort"
 
-	msg = cept_from_unicode(msg, 1)
-
-	msg = (
-		b'\x1f\x2f\x40\x58'             # service break to row 24
-		b'\x18'                         # clear line
-	) + msg + (
-		b'\x98'                         # hide
-		b'\b'                           # cursor left
-	)
-	msg += b'SH'
-	msg += cept_from_unicode(str(code)).rjust(3, b'0')
-	msg += b'\x1f\x2f\x4f'              # service break back
+	msg = bytearray(Cept.service_break(24))
+	msg.extend(Cept.clear_line())
+	msg.extend(cept_from_unicode(text, 1))
+	msg.extend(Cept.hide_text())
+	msg.extend(b'\b')
+	msg.extend(b'SH')
+	msg.extend(cept_from_unicode(str(code)).rjust(3, b'0'))
+	msg.extend(Cept.service_break_back())
 	return msg
 
 def create_preamble(basedir, meta):
@@ -310,8 +306,8 @@ def messaging_create_title(title):
 	data_cept.extend(Cept.set_palette(1))
 	data_cept.extend(Cept.double_height())
 	data_cept.extend(b'\r')
-	data_cept += cept_from_unicode(title)
-	data_cept += (b'\n\r')
+	data_cept.extend(cept_from_unicode(title))
+	data_cept.extend(b'\n\r')
 	data_cept.extend(Cept.set_palette(0))
 	data_cept.extend(Cept.normal_size())
 	data_cept.extend(Cept.code_9e())
@@ -319,23 +315,18 @@ def messaging_create_title(title):
 	return data_cept
 
 def messaging_create_menu(title, items):
-	data_cept = messaging_create_title(title)
-	data_cept += (
-		b"\n\r\n\r"
-	)
+	data_cept = bytearray(messaging_create_title(title))
+	data_cept.extend(b"\n\r\n\r")
 	i = 1
 	for item in items:
-		data_cept += cept_from_unicode(str(i)) + b'  ' + cept_from_unicode(item)
-		data_cept += b"\r\n\r\n"
+		data_cept.extend(cept_from_unicode(str(i)) + b'  ' + cept_from_unicode(item))
+		data_cept.extend(b"\r\n\r\n")
 		i +=1
 
-	data_cept += (
-		b'\r\n\r\n\r\n\r\n\r\n\r\n'
-	)
+	data_cept.extend(b'\r\n\r\n\r\n\r\n\r\n\r\n')
 	data_cept.extend(Cept.set_line_bg_color_simple(4))
-	data_cept.extend(
-		b'0\x19\x2b  Gesamt\x19Hubersicht'
-	)
+	data_cept.extend(b'0\x19\x2b')
+	data_cept.extend(cept_from_unicode(" Gesamtübersicht"))
 
 	return data_cept
 
@@ -411,7 +402,7 @@ def messaging_create_page(pagenumber):
 			"clear_screen": True,
 			"publisher_color": 7
 		}
-		data_cept = messaging_create_title("Neue Mitteilungen")
+		data_cept = bytearray(messaging_create_title("Neue Mitteilungen"))
 
 		links = {
 			"0": "8"
@@ -421,17 +412,17 @@ def messaging_create_page(pagenumber):
 		
 		for index in range(0, 9):
 			#sys.stderr.write("message #" + str(index) + "/" + str(len(session_messages)) + "\n")
-			data_cept += cept_from_unicode(str(index + 1)) + b'  '
+			data_cept.extend(cept_from_unicode(str(index + 1)) + b'  ')
 			if len(session_messages) > index:
 				message = session_messages[index]
-				data_cept += cept_from_unicode(message["from_first"]) + b' ' + cept_from_unicode(message["from_last"])
-				data_cept += b'\r\n   '
+				data_cept.extend(cept_from_unicode(message["from_first"]) + b' ' + cept_from_unicode(message["from_last"]))
+				data_cept.extend(b'\r\n   ')
 				t = datetime.datetime.fromtimestamp(message["timestamp"])
-				data_cept += cept_from_unicode(t.strftime("%d.%m.%Y   %H:%M"))
-				data_cept += b'\r\n'
+				data_cept.extend(cept_from_unicode(t.strftime("%d.%m.%Y   %H:%M")))
+				data_cept.extend(b'\r\n')
 				links[str(index + 1)] = "88" + str(index + 1)
 			else:
-				data_cept += b'\r\n\r\n'
+				data_cept.extend(b'\r\n\r\n')
 
 		meta["links"] = links
 	
@@ -781,10 +772,10 @@ def handle_inputs(inputs):
 			else:
 				hint = ""
 		
-			cept_data  = create_system_message(0, 0, hint)
-			cept_data += Cept.set_cursor(l, c)
-			cept_data += Cept.set_fg_color(input["fgcolor"])
-			cept_data += Cept.set_bg_color(input["bgcolor"])
+			cept_data = bytearray(create_system_message(0, 0, hint))
+			cept_data.extend(Cept.set_cursor(l, c))
+			cept_data.extend(Cept.set_fg_color(input["fgcolor"]))
+			cept_data.extend(Cept.set_bg_color(input["bgcolor"]))
 			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 		
@@ -813,11 +804,11 @@ def handle_inputs(inputs):
 		if not "confirm" in inputs or inputs["confirm"]:
 			if "price" in inputs:
 				price = inputs["price"]
-				cept_data  = create_system_message(47, price)
+				cept_data = bytearray(create_system_message(47, price))
 			else:
 				price = 0
-				cept_data  = create_system_message(44)
-			cept_data += Cept.set_cursor(24, 1)
+				cept_data = bytearray(create_system_message(44))
+			cept_data.extend(Cept.set_cursor(24, 1))
 			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 		
@@ -826,16 +817,16 @@ def handle_inputs(inputs):
 				c = sys.stdin.read(1)
 				if c == "2":
 					doit = False
-					sys.stdout.buffer.write(c)
+					sys.stdout.write(c)
 					sys.stdout.flush()
 					break
 				elif c == "1" and not seen_a_one:
 					seen_a_one = True
-					sys.stdout.buffer.write(c)
+					sys.stdout.write(c)
 					sys.stdout.flush()
 				elif c == "9" and seen_a_one:
 					doit = True
-					sys.stdout.buffer.write(c)
+					sys.stdout.write(c)
 					sys.stdout.flush()
 					break
 				elif ord(c) == 8 and seen_a_one:
@@ -860,8 +851,8 @@ def handle_inputs(inputs):
 		#else:
 			# send "input_data" to "inputs["target"]"
 			
-		cept_data = create_system_message(0)
-		cept_data += Cept.sequence_end_of_page()
+		cept_data = bytearray(create_system_message(0))
+		cept_data.extend(Cept.sequence_end_of_page())
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 		
@@ -964,8 +955,8 @@ while True:
 			# '**' resets mode
 			mode = MODE_NONE
 			new_pagenumber = ""
-			cept_data  = b'\x1f\x58\x41'
-			cept_data += b'\x18'
+			cept_data = bytearray(Cept.set_cursor(24, 1))
+			cept_data.extend(Cept.clear_line())
 			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 			sys.stderr.write("mode = MODE_NONE\n")
