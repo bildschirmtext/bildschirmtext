@@ -726,12 +726,25 @@ def read_with_echo(clear_line):
 	sys.stderr.write("In: " + str(ord(c)) + "\n")
 	return c
 
-def update_stats():
+def stats_filename():
 	global session_user
 	global session_ext
-	filename = PATH_STATS + session_user + "-" + session_ext + ".stats"
+	return PATH_STATS + session_user + "-" + session_ext + ".stats"
+
+def stats_read():
+	global session_last_date
+	global session_last_time
+	filename = stats_filename()
+	if os.path.isfile(filename):
+		with open(filename) as f:
+			stats = json.load(f)	
+		t = datetime.datetime.fromtimestamp(stats["last_login"])
+		session_last_date = t.strftime("%d.%m.%Y")
+		session_last_time = t.strftime("%H:%M")
+
+def state_update():
 	stats = { "last_login": time.time() }
-	with open(filename, 'w') as f:
+	with open(stats_filename(), 'w') as f:
 		json.dump(stats, f)
 
 def login(input_data):
@@ -760,13 +773,7 @@ def login(input_data):
 	session_last_name = user_data["last_name"]
 	success = password == user_data["password"]
 	if success:
-		filename = PATH_STATS + session_user + "-" + session_ext + ".stats"
-		if os.path.isfile(filename):
-			with open(filename) as f:
-				stats = json.load(f)	
-			t = datetime.datetime.fromtimestamp(stats["last_login"])
-			session_last_date = t.strftime("%d.%m.%Y")
-			session_last_time = t.strftime("%H:%M")
+		stats_read()
 		
 	return success
 
@@ -1012,5 +1019,5 @@ while True:
 			previous_pagenumber = current_pagenumber
 			current_pagenumber = new_pagenumber
 		new_pagenumber = ""
-		update_stats()
+		state_update()
 
