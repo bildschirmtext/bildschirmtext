@@ -4,6 +4,35 @@ class Cept(bytearray):
 	def __init__(self): 
 		print("Hello Cept")
 	
+	# private
+	def g2code(c, mode):
+		if mode == 0:
+			return b'\x19' + bytearray([ord(c)])
+		else:
+			return bytearray([ord(c) + 0x80])
+	
+	def from_str(s1, mode = 0):
+		s2 = bytearray()
+		for c in s1:
+			# TODO: complete conversion!
+			if ord(c) == 0xe4:
+				s2.extend(Cept.g2code('H', mode) + b'a')           # &auml;
+			elif ord(c) == 0xf6:
+				s2.extend(Cept.g2code('H', mode) + b'o')           # &ouml;
+			elif ord(c) == 0xfc:
+				s2.extend(Cept.g2code('H', mode) + b'u')           # &uuml;
+			elif ord(c) == 0xc4:
+				s2.extend(Cept.g2code('H', mode) + b'A')           # &Auml;
+			elif ord(c) == 0xd6:
+				s2.extend(Cept.g2code('H', mode) + b'O')           # &Ouml;
+			elif ord(c) == 0xdc:
+				s2.extend(Cept.g2code('H', mode) + b'U')           # &Uuml;
+			elif ord(c) == 0xdf:
+				s2.extend(Cept.g2code('{', mode))                 # &szlig;
+			else:
+				s2.append(ord(c))
+		return s2
+	
 
 	# CEPT sequences	
 

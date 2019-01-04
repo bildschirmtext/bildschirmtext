@@ -1,63 +1,26 @@
 # -*- coding: utf-8 -*-
-import json
 import sys
 import os
+import json
 import time
 import datetime
-from pprint import pprint
 
 from cept import Cept
+from session import Session
+from messaging import Messaging
 
 # paths
 PATH_DATA = "data/"
 PATH_USERS = "users/"
 PATH_STATS = "stats/"
-PATH_MESSAGES = "messages/"
 
-
-# session info
-session_user = "0"
-session_ext = "1"
-session_salutation = ""
-session_first_name = ""
-session_last_name = ""
-session_last_date = "01.01.1970"
-session_last_time = "0:00"
-session_messages = []
+session = None
 
 # globals
 
 last_filename_include = ""
 last_filename_palette = ""
 links = {}
-
-def g2code(c, mode):
-	if mode == 0:
-		return b'\x19' + bytearray([ord(c)])
-	else:
-		return bytearray([ord(c) + 0x80])
-
-def cept_from_unicode(s1, mode = 0):
-	s2 = bytearray()
-	for c in s1:
-		# TODO: complete conversion!
-		if ord(c) == 0xe4:
-			s2.extend(g2code('H', mode) + b'a')           # &auml;
-		elif ord(c) == 0xf6:
-			s2.extend(g2code('H', mode) + b'o')           # &ouml;
-		elif ord(c) == 0xfc:
-			s2.extend(g2code('H', mode) + b'u')           # &uuml;
-		elif ord(c) == 0xc4:
-			s2.extend(g2code('H', mode) + b'A')           # &Auml;
-		elif ord(c) == 0xd6:
-			s2.extend(g2code('H', mode) + b'O')           # &Ouml;
-		elif ord(c) == 0xdc:
-			s2.extend(g2code('H', mode) + b'U')           # &Uuml;
-		elif ord(c) == 0xdf:
-			s2.extend(g2code('{', mode))                 # &szlig;
-		else:
-			s2.append(ord(c))
-	return s2
 
 def format_currency(price):
 	return "DM  %d" % int(price / 100) + ",%02d" % int(price % 100)
@@ -125,7 +88,7 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 	hf.extend(Cept.set_cursor(24, 19))
 
 	if not hide_header_footer:
-		hf.extend(cept_from_unicode(pagenumber).rjust(22))
+		hf.extend(Cept.from_str(pagenumber).rjust(22))
 
 	hf.extend(Cept.cursor_home())
 	hf.extend(Cept.set_palette(1))
@@ -138,13 +101,13 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 
 	hf.extend(b'\r')
 
-	hf.extend(cept_from_unicode(publisher_name))
+	hf.extend(Cept.from_str(publisher_name))
 
 	# TODO: price
 	if not hide_header_footer and not hide_price:
 		hf.extend(Cept.set_cursor(1, 31))
 		hf.extend(b'  ')
-		hf.extend(cept_from_unicode(format_currency(0)))
+		hf.extend(Cept.from_str(format_currency(0)))
 
 	hf.extend(Cept.cursor_home())
 	hf.extend(Cept.set_palette(0))
@@ -175,11 +138,11 @@ def create_system_message(code, price = 0, hint = ""):
 
 	msg = bytearray(Cept.service_break(24))
 	msg.extend(Cept.clear_line())
-	msg.extend(cept_from_unicode(text, 1))
+	msg.extend(Cept.from_str(text, 1))
 	msg.extend(Cept.hide_text())
 	msg.extend(b'\b')
 	msg.extend(b'SH')
-	msg.extend(cept_from_unicode(str(code)).rjust(3, b'0'))
+	msg.extend(Cept.from_str(str(code)).rjust(3, b'0'))
 	msg.extend(Cept.service_break_back())
 	return msg
 
@@ -226,11 +189,7 @@ def create_preamble(basedir, meta):
 	return preamble
 
 def replace_placeholders(cept):
-	global session_salutation
-	global session_first_name
-	global session_last_name
-	global session_last_date
-	global session_last_time
+	global session
 
 	current_date = datetime.datetime.now().strftime("%d.%m.%Y")
 	current_time = datetime.datetime.now().strftime("%H:%M")
@@ -240,369 +199,53 @@ def replace_placeholders(cept):
 		# TODO: convert into lookup table
 		pos = cept.find(b'\x1f\x40\x41')
 		if pos > 0:
-			cept = cept[:pos] + cept_from_unicode(current_date) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(current_date) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x42')
 		if pos > 0:
-			cept = cept[:pos] + cept_from_unicode(session_salutation) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(session.salutation) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x43')
 		if pos > 0:
-			cept = cept[:pos] + cept_from_unicode(session_first_name) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(session.first_name) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x44')
 		if pos > 0:
-			cept = cept[:pos] + cept_from_unicode(session_last_name) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(session.last_name) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x45')
 		if pos > 0:
-			cept = cept[:pos] + cept_from_unicode(session_last_date) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(session.last_date) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x46')
 		if pos > 0:
-			cept = cept[:pos] + cept_from_unicode(session_last_time) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(session.last_time) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x47')
 		if pos > 0:
-			cept = cept[:pos] + cept_from_unicode(session_user) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(session.user) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x48')
 		if pos > 0:
-			cept = cept[:pos] + cept_from_unicode(session_ext) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(session.ext) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x49')
 		if pos > 0:
-			cept = cept[:pos] + cept_from_unicode(current_time) + cept[pos+3:]
+			cept = cept[:pos] + Cept.from_str(current_time) + cept[pos+3:]
 			found = True
 				
 		if not found:
 			break
 
 	return cept
-
-def messaging_create_title(title):
-	data_cept = bytearray(Cept.set_cursor(2, 1))
-	data_cept.extend(Cept.set_palette(1))
-	data_cept.extend(Cept.set_screen_bg_color_simple(4))
-	data_cept.extend(
-		b'\x1b\x28\x40'           # load G0 into G0
-		b'\x0f'                   # G0 into left charset
-	)
-	data_cept.extend(Cept.parallel_mode())
-	data_cept.extend(Cept.set_palette(0))
-	data_cept.extend(Cept.code_9e())
-	data_cept.extend(b'\n\r')
-	data_cept.extend(Cept.set_line_bg_color_simple(4))
-	data_cept.extend(b'\n')
-	data_cept.extend(Cept.set_line_bg_color_simple(4))
-	data_cept.extend(Cept.set_palette(1))
-	data_cept.extend(Cept.double_height())
-	data_cept.extend(b'\r')
-	data_cept.extend(cept_from_unicode(title))
-	data_cept.extend(b'\n\r')
-	data_cept.extend(Cept.set_palette(0))
-	data_cept.extend(Cept.normal_size())
-	data_cept.extend(Cept.code_9e())
-	data_cept.extend(Cept.set_fg_color_simple(7))
-	return data_cept
-
-def messaging_create_menu(title, items):
-	data_cept = bytearray(messaging_create_title(title))
-	data_cept.extend(b"\n\r\n\r")
-	i = 1
-	for item in items:
-		data_cept.extend(cept_from_unicode(str(i)) + b'  ' + cept_from_unicode(item))
-		data_cept.extend(b"\r\n\r\n")
-		i +=1
-
-	data_cept.extend(b'\r\n\r\n\r\n\r\n\r\n\r\n')
-	data_cept.extend(Cept.set_line_bg_color_simple(4))
-	data_cept.extend(b'0\x19\x2b')
-	data_cept.extend(cept_from_unicode(" Gesamtübersicht"))
-
-	return data_cept
-
-
-def messages_load():
-	global session_messages
-	
-	filename = PATH_MESSAGES + session_user + "-" + session_ext + ".messages"
-	if not os.path.isfile(filename):
-		messages = []
-		sys.stderr.write("messages file not found\n")
-	else:
-		with open(filename) as f:
-			session_messages = json.load(f)["messages"]
-	
-def message_get(index):
-	messages_load()
-	message = session_messages[index]
-
-	t = datetime.datetime.fromtimestamp(message["timestamp"])
-	from_date = t.strftime("%d.%m.%Y")
-	from_time = t.strftime("%H:%M")
-	from_user = message["from_user"]
-	from_ext = message["from_ext"]
-	from_org = message["from_org"]
-	from_first = message["from_first"]
-	from_last = message["from_last"]
-	from_street = message["from_street"]
-	from_city = message["from_city"]
-	message_body = message["body"]
-	return (
-		from_user,
-		from_ext,
-		from_date,
-		from_time,
-		from_org,
-		from_first,
-		from_last,
-		from_street,
-		from_city,
-		message_body
-	)
-
-def messaging_create_page(pagenumber):
-	sys.stderr.write("pagenumber[:2] " + pagenumber[:2] + "\n")
-	if pagenumber == "8a":
-		meta = {
-			"publisher_name": "!BTX",
-			"include": "a",
-			"clear_screen": True,
-			"links": {
-				"0": "0",
-				"1": "88",
-				"5": "810"
-			},
-			"publisher_color": 7
-		}
-		
-		data_cept = messaging_create_menu(
-			"Mitteilungsdienst",
-			[
-				"Neue Mitteilungen",
-				"Zur\x19Huckgelegte Mitteilungen",
-				"Abruf Antwortseiten",
-				"\x19HAndern Mitteilungsempfang",
-				"Mitteilungen mit Alphatastatur"
-			]
-		)
-	elif pagenumber == "88a":
-		meta = {
-			"publisher_name": "!BTX",
-			"include": "a",
-			"clear_screen": True,
-			"publisher_color": 7
-		}
-		data_cept = bytearray(messaging_create_title("Neue Mitteilungen"))
-
-		links = {
-			"0": "8"
-		}
-		
-		messages_load()
-		
-		for index in range(0, 9):
-			#sys.stderr.write("message #" + str(index) + "/" + str(len(session_messages)) + "\n")
-			data_cept.extend(cept_from_unicode(str(index + 1)) + b'  ')
-			if len(session_messages) > index:
-				message = session_messages[index]
-				data_cept.extend(cept_from_unicode(message["from_first"]) + b' ' + cept_from_unicode(message["from_last"]))
-				data_cept.extend(b'\r\n   ')
-				t = datetime.datetime.fromtimestamp(message["timestamp"])
-				data_cept.extend(cept_from_unicode(t.strftime("%d.%m.%Y   %H:%M")))
-				data_cept.extend(b'\r\n')
-				links[str(index + 1)] = "88" + str(index + 1)
-			else:
-				data_cept.extend(b'\r\n\r\n')
-
-		meta["links"] = links
-	
-	elif pagenumber[:2] == "88":
-		index = int(pagenumber[2:-1]) - 1
-		sys.stderr.write("pagenumber " + pagenumber + "\n")
-		sys.stderr.write("index " + str(index) + "\n")
-		meta = {
-			"publisher_name": "Bildschirmtext",
-			"include": "11a",
-			"palette": "11a",
-			"clear_screen": True,
-			"links": {
-				"0": "88",
-			},
-			"publisher_color": 7
-		}
-
-		(
-			from_user,
-			from_ext,
-			from_date,
-			from_time,
-			from_org,
-			from_first,
-			from_last,
-			from_street,
-			from_city,
-			message_body
-		) = message_get(index)
-
-
-		data_cept = bytearray(Cept.parallel_limited_mode())
-		data_cept.extend(Cept.set_cursor(2, 1))
-		data_cept.extend(Cept.set_fg_color(3))
-		data_cept.extend(b'von ')
-		data_cept.extend(cept_from_unicode(from_user.ljust(12)) + b' ' + cept_from_unicode(from_ext.rjust(5, '0')))
-		data_cept.extend(Cept.set_cursor(2, 41 - len(from_date)))
-		data_cept.extend(cept_from_unicode(from_date))
-		data_cept.extend(Cept.repeat(" ", 4))
-		data_cept.extend(cept_from_unicode(from_org))
-		data_cept.extend(Cept.set_cursor(3, 41 - len(from_time)))
-		data_cept.extend(cept_from_unicode(from_time))
-		data_cept.extend(Cept.repeat(" ", 4))
-		data_cept.extend(Cept.set_fg_color_simple(0))
-		data_cept.extend(cept_from_unicode(from_first) + b' ' + cept_from_unicode(from_last))
-		data_cept.extend(b'\r\n')
-		data_cept.extend(Cept.repeat(" ", 4))
-		data_cept.extend(cept_from_unicode(from_street))
-		data_cept.extend(b'\r\n')
-		data_cept.extend(Cept.repeat(" ", 4))
-		data_cept.extend(cept_from_unicode(from_city))
-		data_cept.extend(b'\r\n')
-		data_cept.extend(b'an  ')
-		data_cept.extend(cept_from_unicode(session_user.ljust(12)) + b' ' + cept_from_unicode(session_ext.rjust(5, '0')))
-		data_cept.extend(b'\r\n')
-		data_cept.extend(Cept.repeat(" ", 4))
-		data_cept.extend(cept_from_unicode(session_first_name) + b' ' + cept_from_unicode(session_last_name))
-		data_cept.extend(b'\r\n\n')
-		data_cept.extend(cept_from_unicode(message_body))
-		data_cept.extend(Cept.set_cursor(23, 1))
-		data_cept.extend(b'0')
-		data_cept.extend(
-			b'\x1b\x29\x20\x40'                                    # load DRCs into G1
-			b'\x1b\x7e'                                            # G1 into right charset
-		)
-		data_cept.extend(cept_from_unicode(" Gesamtübersicht"))
-		data_cept.extend(Cept.repeat(" ", 22))
-
-	elif pagenumber == "810a":
-		meta = {
-			"include": "a",
-			"clear_screen": True,
-			"links": {
-				"0": "8"
-			},
-			"publisher_color": 7,
-			"inputs": {
-				"fields": [
-					{
-						"name": "user",
-						"line": 8,
-						"column": 20,
-						"height": 1,
-						"width": 16,
-						"bgcolor": 4,
-						"fgcolor": 3
-					},
-					{
-						"name": "ext",
-						"line": 8,
-						"column": 37,
-						"height": 1,
-						"width": 1,
-						"bgcolor": 4,
-						"fgcolor": 3
-					},
-					{
-						"name": "body",
-						"line": 12,
-						"column": 1,
-						"height": 10,
-						"width": 40,
-						"bgcolor": 4,
-						"fgcolor": 3
-					}
-				],
-				"price": 30,
-				"target": "page:8"
-			}
-		}
-
-		current_date = datetime.datetime.now().strftime("%d.%m.%Y")
-		current_time = datetime.datetime.now().strftime("%H:%M")
-
-		data_cept = bytearray(Cept.set_cursor(2, 1))
-		data_cept.extend(Cept.set_palette(1))
-		data_cept.extend(Cept.set_screen_bg_color_simple(4))
-		data_cept.extend(
-			b'\x1b\x28\x40'                                    # load G0 into G0
-		)
-		data_cept.extend(
-			b'\x0f'                                            # G0 into left charset
-		)
-		data_cept.extend(Cept.parallel_mode())
-		data_cept.extend(Cept.set_palette(0))
-		data_cept.extend(Cept.code_9e())
-		data_cept.extend(b'\n\r')
-		data_cept.extend(Cept.set_line_bg_color_simple(4))
-		data_cept.extend(b'\n')
-		data_cept.extend(Cept.set_line_bg_color_simple(4))
-		data_cept.extend(Cept.set_palette(1))
-		data_cept.extend(Cept.double_height())
-		data_cept.extend(b'\r')
-		data_cept.extend(cept_from_unicode("Mitteilungsdienst"))
-		data_cept.extend(b'\n\r')
-		data_cept.extend(Cept.set_palette(0))
-		data_cept.extend(Cept.normal_size())
-		data_cept.extend(Cept.code_9e())
-		data_cept.extend(Cept.set_fg_color_simple(7))
-		data_cept.extend(cept_from_unicode("Absender:"))
-
-		data_cept.extend(cept_from_unicode(session_user))
-		data_cept.extend(Cept.set_cursor(5, 25))
-		data_cept.extend(cept_from_unicode(session_ext))
-		data_cept.extend(Cept.set_cursor(6, 10))
-		data_cept.extend(cept_from_unicode(session_first_name))
-		data_cept.extend(Cept.set_cursor(7, 10))
-		data_cept.extend(cept_from_unicode(session_last_name))
-		data_cept.extend(Cept.set_cursor(5, 31))
-		data_cept.extend(cept_from_unicode(current_date))
-		data_cept.extend(Cept.set_cursor(6, 31))
-		data_cept.extend(cept_from_unicode(current_time))
-		data_cept.extend(b'\r\n\n')
-		data_cept.extend(cept_from_unicode("Tln.-Nr. Empfänger:"))
-		data_cept.extend(Cept.set_cursor(8, 36))
-		data_cept.extend(
-			b'-'
-			b'\r\n\n\n'
-		)
-		data_cept.extend(
-			b'Text:'
-		)
-		data_cept.extend(
-			b'\r\n\n\n\n\n\n\n\n\n\n\n\n'
-		)
-		data_cept.extend(Cept.set_line_bg_color_simple(4))
-		data_cept.extend(
-			b'0'
-		)
-		data_cept.extend(
-			b'\x19'                                            # switch to G2 for one character
-			b'\x2b\xfe\x7f'                                    # "+."
-		)
-
-	else:
-		return None
-	
-	return (meta, data_cept)
-
 
 def create_page(basepath, pagenumber):
 	if pagenumber[-1:].isdigit():
@@ -625,7 +268,7 @@ def create_page(basepath, pagenumber):
 	# generated pages
 	sys.stderr.write("pagenumber[0]: '" + pagenumber[0] + "'\n")
 	if pagenumber[0] == '8':
-		ret = messaging_create_page(pagenumber)
+		ret = Messaging.messaging_create_page(session, pagenumber)
 		if ret is None:
 			return None
 		(meta, data_cept) = ret
@@ -693,20 +336,18 @@ def read_with_echo(clear_line):
 	return c
 
 def stats_filename():
-	global session_user
-	global session_ext
-	return PATH_STATS + session_user + "-" + session_ext + ".stats"
+	global session
+	return PATH_STATS + session.user + "-" + session.ext + ".stats"
 
 def stats_read():
-	global session_last_date
-	global session_last_time
+	global session
 	filename = stats_filename()
 	if os.path.isfile(filename):
 		with open(filename) as f:
 			stats = json.load(f)	
 		t = datetime.datetime.fromtimestamp(stats["last_login"])
-		session_last_date = t.strftime("%d.%m.%Y")
-		session_last_time = t.strftime("%H:%M")
+		session.last_date = t.strftime("%d.%m.%Y")
+		session.last_time = t.strftime("%H:%M")
 
 def state_update():
 	stats = { "last_login": time.time() }
@@ -714,29 +355,25 @@ def state_update():
 		json.dump(stats, f)
 
 def login(input_data):
-	global session_user
-	global session_ext
-	global session_salutation
-	global session_first_name
-	global session_last_name
-	global session_last_date
-	global session_last_time
+	global session
 
-	session_user = input_data["user"]
-	session_ext = input_data["ext"]
+	session = Session()
+
+	session.user = input_data["user"]
+	session.ext = input_data["ext"]
 	password = input_data["password"]
-	if session_user == "":
-		session_user = "0"
-	if session_ext == "":
-		session_ext = "1"
-	filename = PATH_USERS + session_user + "-" + session_ext + ".user"
+	if session.user == "":
+		session.user = "0"
+	if session.ext == "":
+		session.ext = "1"
+	filename = PATH_USERS + session.user + "-" + session.ext + ".user"
 	if not os.path.isfile(filename):
 		return False
 	with open(filename) as f:
 		user_data = json.load(f)
-	session_salutation = user_data["salutation"]
-	session_first_name = user_data["first_name"]
-	session_last_name = user_data["last_name"]
+	session.salutation = user_data["salutation"]
+	session.first_name = user_data["first_name"]
+	session.last_name = user_data["last_name"]
 	success = password == user_data["password"]
 	if success:
 		stats_read()
