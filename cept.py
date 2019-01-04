@@ -30,13 +30,20 @@ class Cept(bytearray):
 
 	@staticmethod
 	def hide_cursor():
-		return b'\x14'			
-
+		return b'\x14'
 
 
 	@staticmethod
+	def cursor_home():
+		return b'\x1e'
+
+	@staticmethod
 	def clear_screen():
-		return b'\x0c'						   
+		return b'\x0c'
+
+	@staticmethod
+	def protect_line():
+		return b'\x9b\x31\x50'
 
 
 	@staticmethod
@@ -52,7 +59,7 @@ class Cept(bytearray):
 		return bytes([ord(c), 0x12, 0x40 + n - 1])
 
 	@staticmethod
-	def set_palette(palette):
+	def define_palette(palette):
 		cept = bytearray(
 			b'\x1f\x26\x20'			  # start defining colors
 			b'\x1f\x26\x31\x36'		  # define colors 16+
@@ -81,6 +88,10 @@ class Cept(bytearray):
 		return cept
 
 	
+	@staticmethod
+	def set_palette(pal):
+		return bytes([0x9b, 0x30 + pal, 0x40])
+
 	@staticmethod
 	def set_fg_color_simple(c):
 		return bytes([0x80 + c])

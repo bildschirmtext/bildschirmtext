@@ -104,20 +104,20 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 		b'\x1f\x58\x41'                     # set cursor to line 24, column 1
 		b'\x9b\x31\x51'                     # unprotect line
 		b'\x20'                             # " "
-		b'\x08'                             # cursor left
+		b'\b'                               # cursor left
 		b'\x18'                             # clear line
 		b'\x1e'                             # cursor home
 		b'\x9b\x31\x51'                     # unprotect line
 		b'\x20'                             # " "
-		b'\x08'                             # cursor left
+		b'\b'                               # cursor left
 		b'\x18'                             # clear line
 		b'\x1f\x2f\x43'                     # serial limited mode
 		b'\x1f\x58\x41'                     # set cursor to line 24, column 1
 		b'\x9b\x31\x40'                     # select palette #1
 		b'\x80'                             # set fg color to #0
-		b'\x08'                             # cursor left
+		b'\b'                               # cursor left
 		b'\x9d'                             # ???
-		b'\x08'                             # cursor left
+		b'\b'                               # cursor left
 	)
 
 	if publisher_color < 8:
@@ -125,40 +125,38 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 	else:
 		color_string = bytearray([0x80 + publisher_color - 8])
 
-	hf += color_string
+	hf.extend(color_string)
 
-	hf += Cept.set_cursor(24, 19)
+	hf.extend(Cept.set_cursor(24, 19))
 
 	if not hide_header_footer:
-		hf += cept_from_unicode(pagenumber).rjust(22)
+		hf.extend(cept_from_unicode(pagenumber).rjust(22))
 
-	hf += (
-		b'\x1e'                             # cursor home
-		b'\x9b\x31\x40'                     # select palette #1
-		b'\x80'                             # set fg color to #0
-		b'\x08'                             # cursor left
+	hf.extend(Cept.cursor_home())
+	hf.extend(Cept.set_palette(1))
+	hf.extend(Cept.set_fg_color(8))
+	hf.extend(
+		b'\b'
 		b'\x9d'                             # ???
-		b'\x08'                             # cursor left
+		b'\b'
 	)
 	
-	hf += color_string
+	hf.extend(color_string)
 
-	hf += b'\x0d'                           # cursor to beginning of line
+	hf.extend(b'\r')
 
-	hf += cept_from_unicode(publisher_name)
+	hf.extend(cept_from_unicode(publisher_name))
 
 	# TODO: price
 	if not hide_header_footer and not hide_price:
-		hf += Cept.set_cursor(1, 31)
-		hf += b'  '
-		hf += cept_from_unicode(format_currency(0))
+		hf.extend(Cept.set_cursor(1, 31))
+		hf.extend(b'  ')
+		hf.extend(cept_from_unicode(format_currency(0)))
 
-	hf += (
-		b'\x1e'                             # cursor home
-		b'\x9b\x30\x40'                     # select palette #0
-		b'\x9b\x31\x50'                     # protect line
-		b'\x0a'                             # cursor down
-	)
+	hf.extend(Cept.cursor_home())
+	hf.extend(Cept.set_palette(0))
+	hf.extend(Cept.protect_line())
+	hf.extend(b'\n')
 	return hf
 
 
@@ -189,7 +187,7 @@ def create_system_message(code, price = 0, hint = ""):
 		b'\x18'                         # clear line
 	) + msg + (
 		b'\x98'                         # hide
-		b'\x08'                         # cursor left
+		b'\b'                           # cursor left
 	)
 	msg += b'SH'
 	msg += cept_from_unicode(str(code)).rjust(3, b'0')
@@ -212,7 +210,7 @@ def create_preamble(basedir, meta):
 			last_filename_palette = filename_palette
 			with open(filename_palette) as f:
 				palette = json.load(f)
-			palette_data = Cept.set_palette(palette["palette"])
+			palette_data = Cept.define_palette(palette["palette"])
 			preamble += palette_data
 		else:
 			sys.stderr.write("skipping palette\n")
@@ -558,7 +556,7 @@ def messaging_create_page(pagenumber):
 		current_time = datetime.datetime.now().strftime("%H:%M")
 
 		data_cept = bytearray(Cept.set_cursor(2, 1))
-		data_cept += (
+		data_cept.extend(
 			b'\x9b\x31\x40'                                    # select palette #1
 			b'\x1b\x23\x20\x54'                                # set bg color of screen to 4
 			b'\x1b\x28\x40'                                    # load G0 into G0
@@ -574,42 +572,45 @@ def messaging_create_page(pagenumber):
 			b'\x8d'                                            # double height
 			b'\r'
 		)
-		data_cept += cept_from_unicode("Mitteilungsdienst")
-		data_cept += (
+		data_cept.extend(cept_from_unicode("Mitteilungsdienst"))
+		data_cept.extend(
 			b'\n\r'
 			b'\x9b\x30\x40'                                    # select palette #0
 			b'\x8c'                                            # normal size
 			b'\x9e'                                            # ???
 			b'\x87'                                            # set fg color to #7
 		)
-		data_cept += cept_from_unicode("Absender:")
+		data_cept.extend(cept_from_unicode("Absender:"))
 
-		data_cept += cept_from_unicode(session_user)
-		data_cept += Cept.set_cursor(5, 25)
-		data_cept += cept_from_unicode(session_ext)
-		data_cept += Cept.set_cursor(6, 10)
-		data_cept += cept_from_unicode(session_first_name)
-		data_cept += Cept.set_cursor(7, 10)
-		data_cept += cept_from_unicode(session_last_name)
-		data_cept += Cept.set_cursor(5, 31)
-		data_cept += cept_from_unicode(current_date)
-		data_cept += Cept.set_cursor(6, 31)
-		data_cept += cept_from_unicode(current_time)
-		data_cept += (
-			b'\r'                                              # cursor to beginning of line
-			b'\n'                                              # cursor down
-			b'\n'                                              # cursor down
-			b'Tln.-Nr. Empf\x19Hanger:'
-		)
-		data_cept += Cept.set_cursor(8, 36)
-		data_cept += (
+		data_cept.extend(cept_from_unicode(session_user))
+		data_cept.extend(Cept.set_cursor(5, 25))
+		data_cept.extend(cept_from_unicode(session_ext))
+		data_cept.extend(Cept.set_cursor(6, 10))
+		data_cept.extend(cept_from_unicode(session_first_name))
+		data_cept.extend(Cept.set_cursor(7, 10))
+		data_cept.extend(cept_from_unicode(session_last_name))
+		data_cept.extend(Cept.set_cursor(5, 31))
+		data_cept.extend(cept_from_unicode(current_date))
+		data_cept.extend(Cept.set_cursor(6, 31))
+		data_cept.extend(cept_from_unicode(current_time))
+		data_cept.extend(b'\r\n\n')
+		data_cept.extend(cept_from_unicode("Tln.-Nr. Empfänger:"))
+		data_cept.extend(Cept.set_cursor(8, 36))
+		data_cept.extend(
 			b'-'
-			b'\r'                                              # cursor to beginning of line
-			b'\n\n\n'
+			b'\r\n\n\n'
+		)
+		data_cept.extend(
 			b'Text:'
+		)
+		data_cept.extend(
 			b'\r\n\n\n\n\n\n\n\n\n\n\n\n'
 			b'\x1b\x23\x21\x54'                                # set bg color of line to 4
+		)
+		data_cept.extend(
 			b'0'
+		)
+		data_cept.extend(
 			b'\x19'                                            # switch to G2 for one character
 			b'\x2b\xfe\x7f'                                    # "+."
 		)
@@ -768,11 +769,10 @@ def handle_inputs(inputs):
 			h = input["height"]
 			w = input["width"]
 			for i in range(0, h):
-				cept_data.extend(bytearray(Cept.set_cursor(l + i, c)))
+				cept_data.extend(Cept.set_cursor(l + i, c))
 				cept_data.extend(Cept.set_fg_color(input["fgcolor"]))
 				cept_data.extend(Cept.set_bg_color(input["bgcolor"]))
-				cept_data.append(0x12)
-				cept_data.append(0x40 + w - 1)
+				cept_data.extend(Cept.repeat(" ", w))
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 	
@@ -805,7 +805,7 @@ def handle_inputs(inputs):
 				if ord(c) == 8:
 					if len(s) == 0:
 						continue
-					sys.stdout.buffer.write(b'\x08 \x08')
+					sys.stdout.buffer.write(b'\b \b')
 					sys.stdout.flush()
 					s = s[:-1]
 				elif ord(c) < 0x20 and ord(c) != 0x19:
@@ -848,7 +848,7 @@ def handle_inputs(inputs):
 					break
 				elif ord(c) == 8 and seen_a_one:
 					seen_a_one = False
-					sys.stdout.buffer.write(b'\x08 \x08')
+					sys.stdout.buffer.write(b'\b \b')
 					sys.stdout.flush()
 				
 		cept_data = create_system_message(55)
