@@ -11,7 +11,6 @@ from messaging import Messaging
 
 # paths
 PATH_DATA = "data/"
-PATH_STATS = "stats/"
 
 session = None
 
@@ -55,7 +54,6 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 		hide_price = True
 	else:
 		publisher_name = publisher_name[:30]
-
 
 	hf = bytearray(Cept.set_res_40_24())
 	hf.extend(Cept.set_cursor(23, 1))
@@ -113,8 +111,6 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 	hf.extend(Cept.protect_line())
 	hf.extend(b'\n')
 	return hf
-
-
 
 def create_system_message(code, price = 0, hint = ""):
 	text = ""
@@ -218,13 +214,13 @@ def replace_placeholders(cept):
 	
 		pos = cept.find(b'\x1f\x40\x45')
 		if pos > 0:
-			t = datetime.datetime.fromtimestamp(session.last_login)
+			t = datetime.datetime.fromtimestamp(session.stats.last_login)
 			cept = cept[:pos] + Cept.from_str(t.strftime("%d.%m.%Y")) + cept[pos+3:]
 			found = True
 	
 		pos = cept.find(b'\x1f\x40\x46')
 		if pos > 0:
-			t = datetime.datetime.fromtimestamp(session.last_login)
+			t = datetime.datetime.fromtimestamp(session.stats.last_login)
 			cept = cept[:pos] + Cept.from_str(t.strftime("%H:%M")) + cept[pos+3:]
 			found = True
 	
@@ -336,31 +332,11 @@ def read_with_echo(clear_line):
 	sys.stderr.write("In: " + str(ord(c)) + "\n")
 	return c
 
-def stats_filename():
-	global session
-	return PATH_STATS + session.user + "-" + session.ext + ".stats"
-
-def stats_read():
-	global session
-	filename = stats_filename()
-	if os.path.isfile(filename):
-		with open(filename) as f:
-			stats = json.load(f)	
-		session.last_login = stats["last_login"]
-
-def state_update():
-	stats = { "last_login": time.time() }
-	with open(stats_filename(), 'w') as f:
-		json.dump(stats, f)
-
 def login(input_data):
 	global session
 	
 	session = Session.login(input_data["user"], input_data["ext"], input_data["password"])
 	
-	if not session is None:
-		stats_read()
-		
 	return not session is None
 
 def handle_inputs(inputs):
@@ -486,6 +462,9 @@ def show_page(pagenumber):
 	global links
 	
 	while True:
+		if session is not None:
+			session.stats.update()
+
 		sys.stderr.write("showing page: '" + pagenumber + "'\n")
 		ret = create_page(PATH_DATA, pagenumber)
 
@@ -602,5 +581,4 @@ while True:
 			previous_pagenumber = current_pagenumber
 			current_pagenumber = new_pagenumber
 		new_pagenumber = ""
-		state_update()
 
