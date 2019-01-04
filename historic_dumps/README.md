@@ -24,7 +24,7 @@ Die 169 Dateien wurden mit der Version 2.9 ausgeliefert und haben Timestamps von
 
 Wie beim Input 64 BTX Demo. Die Inhalte der 127 Dateien deuten auf einen Dump im September 1989 hin.
 
-**Die Originaldumps wurden vom Autor des Demos deutlich modifiziert!**
+**Die Originaldumps wurden vom Autor des Demos deutlich modifiziert!** (Siehe oben)
 
 ## 1991: BTX-VTX Manager v1.2
 
@@ -49,5 +49,56 @@ Die Originaldatei "Datex-J-Offline-Demo" hat einen Timestamp von Mitte April 199
 Die 128 Dateien sind entstanden, indem die Originaldatei an allen Vorkommnissen des Codes 0x1A geschnitten wurde. Bei den einzelnen Dateien handelt es sich dabei oft nicht um eigenständige Seiten, sondern manchmal auch nur um einzelne Schritte beim Ausfüllen einer Dialogseite.
 
 * Nur Einstiegsseiten eines Programms sind vollstandig (DRC, Palette), Dumps von Unterseiten wurden gespeichert, direkt nachdem die Hauptseiten übertragen worden waren, es fehlen also DRCs und Paletten. Diese können aber rekonstruiert werden.
-* Alle Dateien beginnen mit Remote-Echo-Zeichen und enden auf 0x1A
+* Alle Dateien beginnen mit Remote-Echo-Zeichen und enden auf 0x1A.
 * Die Dateinamen entsprechen der Reihenfolge der Sitzung.
+
+## 1995: BTXTEST
+
+Die Datei BTXTEST.EXE ist eine Offline-Demo für MS-DOS, die 158 Seiten aus dem Themenfeld Commodore 64 beinhaltet. Die Inhalte weisen auf einen Dump im September 1995 hin.
+
+Die Dateien wurden generiert, indem die ausführbare Datei an allen Vorkommnissen des Codes 0x00 geschnitten wurde.
+
+* Die Dateien haben keine Remote-Echo Zeichen am Anfang und enden nicht auf 0x1A.
+* Die Dateinamen entsprechen der Reihenfolge in der Datei.
+
+Beschreibung der Inhalte:
+
+* `*922502#` Dies ist die Titelseite der Brotkasten-Corner in Btx. Mit den Tasten BildAuf und BildAb und den Btx-Befehlen können Sie sich durch diese Demo bewegen.
+* `*9225020#` Die Inhaltsseiten des Diskussionsforums. Einzelne Nachrichten sind über ihre Nummer aufzurufen.
+* `*92250222#` Die Telesoftware-Rubrik. In der Demo können Sie allerdings keine Software laden. 
+* `*92250227#` Wolfgang Grimm ist der Programmierer von Btx-Extra für C64 und C128.
+* `*92250228#` Olaf Dzwiza hat sich auf Geos-Programmierung mit GeoCom und GeoBasic spezialisiert.
+* `*92250229#` Werbeseiten des Hardware-Anbieters CMD.
+* `*9225028#` Bei der regelmäßigen Btx-Hitparade landet die Brotkasten-Corner seit über einem Jahr unter den ersten 20.
+* `*92250290#` Impressum: So erreichen Sie uns.
+* `*92250240#` Informationen zum DFÜ-Spiel "Trade&War"
+* `*92250226#` Performance Peripherals vertreibt Hard- und Software für C64/128.
+* `*92250223#` Manfred Frick gibt regelmäßig Geos-Sonderhefte heraus.
+* `*9225026#` GUSS-Software ist auf Geos-Programme spezialisiert.
+* `*92250225#` Die Clubecke: Hier können alle C64- und Computerclubs zu den Selbstkosten Mitteilungen veröffentlichen.
+* `*92250224#` Im Shareware-Registrierservice können Sie Shareware-Programme unkompliziert bezahlen.
+
+## 1996: RUN_ME
+
+Die Datei RUN_ME.EXE ist eine spätere Version von BTXTEST. Die 158 Seiten weisen auf einen Dump im August 1996 hin.
+
+Beschreibung der Inhalte:
+
+* `*922502` Dies ist die Titelseite der Brotkasten-Corner in Btx. Mit den Tasten BildAuf und BildAb und den Btx-Befehlen können Sie sich durch diese Demo bewegen.
+* `*9225020002` Verweise auf Btx-Seiten anderer C64-Anbieter
+* `*9225020` Die Inhaltsseiten des Diskussionsforums. Einzelne Nachrichten sind über ihre Nummer aufzurufen.
+* `*92250221` Hinweise zur aktuellen Ausgabe der Brotkasten-CD-ROM
+* `*92250222` Die Telesoftware-Rubrik. In der Demo können Sie allerdings keine Software laden. 
+* `*92250227` Wolfgang Grimm ist der Programmierer von Btx-Extra für C64 und C128.
+* `*92250228` Olaf Dzwiza hat sich auf Geos-Programmierung mit GeoCom und GeoBasic spezialisiert.
+* `*92250229` Werbeseiten des Hardware-Anbieters CMD (u.a. Super64-CPU, 20-MHz-C64!)
+* `*92250231` Modem-Datenbank: Wie Modems mit C64-Programmen funktionieren.
+* `*92250232` HS-Ware: Homebanking-Software für C64.
+* `*9225028` Bei der regelmäßigen Btx-Hitparade in *com# landet die Brotkasten-Corner seit über zwei Jahren unter den ersten 20.
+* `*92250290` Impressum: So erreichen Sie uns.
+* `*92250291` Spendenseite - sichert die Existenz der Brotkasten-Corner.
+* `*92250226` Performance Peripherals vertreibt Hard- und Software für C64/128.
+* `*92250223` Manfred Frick gibt regelmäßig Geos-Sonderhefte heraus.
+* `*9225026` GUSS-Software ist auf Geos-Programme spezialisiert.
+* `*92250225` Die Clubecke: Hier können alle C64- und Computerclubs zu den Selbstkosten Mitteilungen veröffentlichen.
+* `*92250224`Im Shareware-Registrierservice können Sie Shareware-Programme unkompliziert bezahlen.
