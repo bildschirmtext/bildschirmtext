@@ -98,9 +98,7 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 	hf = bytearray(Cept.set_res_40_24())
 	hf.extend(Cept.set_cursor(23, 1))
 	hf.extend(Cept.unprotect_line())
-	hf.extend(
-		b'\x1b\x23\x21\x4c'                 # set fg color of line to 12
-	)
+	hf.extend(Cept.set_line_fg_color_simple(12))
 	hf.extend(Cept.parallel_limited_mode())
 	hf.extend(Cept.set_cursor(24, 1))
 	hf.extend(Cept.unprotect_line())
@@ -113,16 +111,14 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 	hf.extend(Cept.serial_limited_mode())
 	hf.extend(Cept.set_cursor(24, 1))
 	hf.extend(Cept.set_fg_color(8))
-	hf.extend(
-		b'\b'
-		b'\x9d'                             # ???
-		b'\b'
-	)
+	hf.extend(b'\b')
+	hf.extend(Cept.code_9d())
+	hf.extend(b'\b')
 
 	if publisher_color < 8:
-		color_string = bytearray(b'\x9b\x30\x40') + bytearray([0x80 + publisher_color])
+		color_string = Cept.set_fg_color(publisher_color)
 	else:
-		color_string = bytearray([0x80 + publisher_color - 8])
+		color_string = Cept.set_fg_color_simple(publisher_color - 8)
 
 	hf.extend(color_string)
 
@@ -134,11 +130,9 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 	hf.extend(Cept.cursor_home())
 	hf.extend(Cept.set_palette(1))
 	hf.extend(Cept.set_fg_color(8))
-	hf.extend(
-		b'\b'
-		b'\x9d'                             # ???
-		b'\b'
-	)
+	hf.extend(b'\b')
+	hf.extend(Cept.code_9d())
+	hf.extend(b'\b')
 	
 	hf.extend(color_string)
 
@@ -299,10 +293,10 @@ def replace_placeholders(cept):
 	return cept
 
 def messaging_create_title(title):
-	data_cept = bytearray(
-		b'\x1f\x42\x41'           # set cursor to line 2, column 1
-		b'\x9b\x31\x40'           # select palette #1
-		b'\x1b\x23\x20\x54'       # set bg color of screen to 4
+	data_cept = bytearray(Cept.set_cursor(2, 1))
+	data_cept.extend(Cept.set_palette(1))
+	data_cept.extend(Cept.set_screen_bg_color_simple(4))
+	data_cept.extend(
 		b'\x1b\x28\x40'           # load G0 into G0
 		b'\x0f'                   # G0 into left charset
 	)
@@ -310,13 +304,9 @@ def messaging_create_title(title):
 	data_cept.extend(Cept.set_palette(0))
 	data_cept.extend(Cept.code_9e())
 	data_cept.extend(b'\n\r')
-	data_cept.extend(
-		b'\x1b\x23\x21\x54'       # set bg color of line to 4
-	)
+	data_cept.extend(Cept.set_line_bg_color_simple(4))
 	data_cept.extend(b'\n')
-	data_cept.extend(
-		b'\x1b\x23\x21\x54'       # set bg color of line to 4
-	)	
+	data_cept.extend(Cept.set_line_bg_color_simple(4))
 	data_cept.extend(Cept.set_palette(1))
 	data_cept.extend(Cept.double_height())
 	data_cept.extend(b'\r')
@@ -341,7 +331,9 @@ def messaging_create_menu(title, items):
 
 	data_cept += (
 		b'\r\n\r\n\r\n\r\n\r\n\r\n'
-		b'\x1b\x23\x21\x54'                                     # set bg color of line to 4
+	)
+	data_cept.extend(Cept.set_line_bg_color_simple(4))
+	data_cept.extend(
 		b'0\x19\x2b  Gesamt\x19Hubersicht'
 	)
 
@@ -556,34 +548,30 @@ def messaging_create_page(pagenumber):
 		current_time = datetime.datetime.now().strftime("%H:%M")
 
 		data_cept = bytearray(Cept.set_cursor(2, 1))
+		data_cept.extend(Cept.set_palette(1))
+		data_cept.extend(Cept.set_screen_bg_color_simple(4))
 		data_cept.extend(
-			b'\x9b\x31\x40'                                    # select palette #1
-			b'\x1b\x23\x20\x54'                                # set bg color of screen to 4
 			b'\x1b\x28\x40'                                    # load G0 into G0
+		)
+		data_cept.extend(
 			b'\x0f'                                            # G0 into left charset
 		)
-		data_cept.extend(
-			b'\x1b\x22\x41'                                    # parallel mode
-		)
-		data_cept.extend(
-			b'\x9b\x30\x40'                                    # select palette #0
-			b'\x9e'                                            # ???
-			b'\n\r'
-			b'\x1b\x23\x21\x54'                                # set bg color of line to 4
-			b'\n'
-			b'\x1b\x23\x21\x54'                                # set bg color of line to 4
-			b'\x9b\x31\x40'                                    # select palette #1
-			b'\x8d'                                            # double height
-			b'\r'
-		)
+		data_cept.extend(Cept.parallel_mode())
+		data_cept.extend(Cept.set_palette(0))
+		data_cept.extend(Cept.code_9e())
+		data_cept.extend(b'\n\r')
+		data_cept.extend(Cept.set_line_bg_color_simple(4))
+		data_cept.extend(b'\n')
+		data_cept.extend(Cept.set_line_bg_color_simple(4))
+		data_cept.extend(Cept.set_palette(1))
+		data_cept.extend(Cept.double_height())
+		data_cept.extend(b'\r')
 		data_cept.extend(cept_from_unicode("Mitteilungsdienst"))
-		data_cept.extend(
-			b'\n\r'
-			b'\x9b\x30\x40'                                    # select palette #0
-			b'\x8c'                                            # normal size
-			b'\x9e'                                            # ???
-			b'\x87'                                            # set fg color to #7
-		)
+		data_cept.extend(b'\n\r')
+		data_cept.extend(Cept.set_palette(0))
+		data_cept.extend(Cept.normal_size())
+		data_cept.extend(Cept.code_9e())
+		data_cept.extend(Cept.set_fg_color_simple(7))
 		data_cept.extend(cept_from_unicode("Absender:"))
 
 		data_cept.extend(cept_from_unicode(session_user))
@@ -609,8 +597,8 @@ def messaging_create_page(pagenumber):
 		)
 		data_cept.extend(
 			b'\r\n\n\n\n\n\n\n\n\n\n\n\n'
-			b'\x1b\x23\x21\x54'                                # set bg color of line to 4
 		)
+		data_cept.extend(Cept.set_line_bg_color_simple(4))
 		data_cept.extend(
 			b'0'
 		)

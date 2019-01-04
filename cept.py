@@ -126,7 +126,19 @@ class Cept(bytearray):
 		else:
 			pal = 0
 		return bytes([0x9b, 0x30 + pal, 0x40, 0x90 + c])
-		
+
+	@staticmethod
+	def set_line_bg_color_simple(c):
+		return bytes([0x1b, 0x23, 0x21, 0x50 + c])
+
+	@staticmethod
+	def set_screen_bg_color_simple(c):
+		return bytes([0x1b, 0x23, 0x20, 0x50 + c])
+
+	@staticmethod
+	def set_line_fg_color_simple(c):
+		return bytes([0x1b, 0x23, 0x21, 0x40 + c])
+
 	@staticmethod
 	def set_cursor(y, x):
 		return bytes([0x1f, 0x40 + y, 0x40 + x])
@@ -138,6 +150,10 @@ class Cept(bytearray):
 	@staticmethod
 	def double_height():
 		return b'\x8d'
+		
+	@staticmethod
+	def code_9d():
+		return b'\x9d'
 		
 	@staticmethod
 	def code_9e():
