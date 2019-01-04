@@ -27,11 +27,13 @@ class Cept(bytearray):
 	def ter():
 		return 0x1c # cept terminate - 28 - prints #
 
+	@staticmethod
+	def set_res_40_24():
+		return b'\x1f\x2d'
 
 	@staticmethod
 	def hide_cursor():
 		return b'\x14'
-
 
 	@staticmethod
 	def cursor_home():
@@ -42,9 +44,16 @@ class Cept(bytearray):
 		return b'\x0c'
 
 	@staticmethod
+	def clear_line():
+		return b'\x18'
+
+	@staticmethod
 	def protect_line():
 		return b'\x9b\x31\x50'
 
+	@staticmethod
+	def unprotect_line():
+		return b'\x9b\x31\x51'
 
 	@staticmethod
 	def serial_limited_mode():
@@ -113,9 +122,6 @@ class Cept(bytearray):
 		else:
 			pal = 0
 		return bytes([0x9b, 0x30 + pal, 0x40, 0x90 + c])
-		
-		
-		
 		
 	@staticmethod
 	def set_cursor(y, x):

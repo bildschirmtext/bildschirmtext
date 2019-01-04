@@ -95,29 +95,28 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 		publisher_name = publisher_name[:30]
 
 
-	hf = bytearray(
-		b'\x1f\x2d'                         # set resolution to 40x24
-		b'\x1f\x57\x41'                     # set cursor to line 23, column 1
-		b'\x9b\x31\x51'                     # unprotect line
+	hf = bytearray(Cept.set_res_40_24())
+	hf.extend(Cept.set_cursor(23, 1))
+	hf.extend(Cept.unprotect_line())
+	hf.extend(
 		b'\x1b\x23\x21\x4c'                 # set fg color of line to 12
-		b'\x1f\x2f\x44'                     # parallel limited mode
-		b'\x1f\x58\x41'                     # set cursor to line 24, column 1
-		b'\x9b\x31\x51'                     # unprotect line
-		b'\x20'                             # " "
-		b'\b'                               # cursor left
-		b'\x18'                             # clear line
-		b'\x1e'                             # cursor home
-		b'\x9b\x31\x51'                     # unprotect line
-		b'\x20'                             # " "
-		b'\b'                               # cursor left
-		b'\x18'                             # clear line
-		b'\x1f\x2f\x43'                     # serial limited mode
-		b'\x1f\x58\x41'                     # set cursor to line 24, column 1
-		b'\x9b\x31\x40'                     # select palette #1
-		b'\x80'                             # set fg color to #0
-		b'\b'                               # cursor left
+	)
+	hf.extend(Cept.parallel_limited_mode())
+	hf.extend(Cept.set_cursor(24, 1))
+	hf.extend(Cept.unprotect_line())
+	hf.extend(b' \b')
+	hf.extend(Cept.clear_line())
+	hf.extend(Cept.cursor_home())
+	hf.extend(Cept.unprotect_line())
+	hf.extend(b' \b')
+	hf.extend(Cept.clear_line())
+	hf.extend(Cept.serial_limited_mode())
+	hf.extend(Cept.set_cursor(24, 1))
+	hf.extend(Cept.set_fg_color(8))
+	hf.extend(
+		b'\b'
 		b'\x9d'                             # ???
-		b'\b'                               # cursor left
+		b'\b'
 	)
 
 	if publisher_color < 8:
