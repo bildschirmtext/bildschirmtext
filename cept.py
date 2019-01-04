@@ -56,6 +56,10 @@ class Cept(bytearray):
 		return b'\x9b\x31\x51'
 
 	@staticmethod
+	def parallel_mode():
+		return b'\x1b\x22\x41'
+		
+	@staticmethod
 	def serial_limited_mode():
 		return b'\x1f\x2f\x43'
 		
@@ -127,5 +131,16 @@ class Cept(bytearray):
 	def set_cursor(y, x):
 		return bytes([0x1f, 0x40 + y, 0x40 + x])
 	
+	@staticmethod
+	def normal_size():
+		return b'\x8c'
+
+	@staticmethod
+	def double_height():
+		return b'\x8d'
+		
+	@staticmethod
+	def code_9e():
+		return b'\x9e'
 		
 		
