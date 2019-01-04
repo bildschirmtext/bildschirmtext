@@ -41,9 +41,16 @@ class Cept(bytearray):
 
 	@staticmethod
 	def serial_limited_mode():
-		return b'\x1f\x2f\x43'				   
+		return b'\x1f\x2f\x43'
+		
+	@staticmethod
+	def parallel_limited_mode():
+		return b'\x1f\x2f\x44'
 
-	
+	@staticmethod
+	def repeat(c, n):
+		return bytes([ord(c), 0x12, 0x40 + n - 1])
+
 	@staticmethod
 	def set_palette(palette):
 		cept = bytearray(
@@ -74,6 +81,10 @@ class Cept(bytearray):
 		return cept
 
 	
+	@staticmethod
+	def set_fg_color_simple(c):
+		return bytes([0x80 + c])
+
 	@staticmethod
 	def set_fg_color(c):
 		if c > 7:

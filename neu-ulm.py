@@ -473,61 +473,43 @@ def messaging_create_page(pagenumber):
 			message_body
 		) = message_get(index)
 
-		data_cept = (
-			b'\x1f\x2f\x44'                                        # parallel limited mode
-			b'\x1f\x42\x41'                                        # set cursor to line 2, column 1
-			b'\x9b\x30\x40'                                        # select palette #0
-			b'\x83'                                                # set fg color to #3
-		)
-		data_cept += b'von ' + cept_from_unicode(from_user.ljust(12)) + b' ' + cept_from_unicode(from_ext.rjust(5, '0'))
 
-		sys.stderr.write("len(from_date) " + str(len(from_date)) + "\n")
-		sys.stderr.write("from_date " + from_date + "\n")
-		sys.stderr.write("x = " + str(0x40 + 41 - len(from_date)) + "\n")
-		data_cept += Cept.set_cursor(2, 41 - len(from_date))
-		data_cept += cept_from_unicode(from_date)
-
-		data_cept += (
-			b' \x12\x43'
-		)
-		data_cept += cept_from_unicode(from_org)
-
-		data_cept += Cept.set_cursor(3, 41 - len(from_time))
-		data_cept += cept_from_unicode(from_time)
-
-		data_cept += (
-			b' \x12\x43'
-			b'\x80'                                                # set fg color to #0
-		)
-		data_cept += cept_from_unicode(from_first) + b' ' + cept_from_unicode(from_last)
-		data_cept += (
-			b'\r\n \x12\x43'
-		)
-		data_cept += cept_from_unicode(from_street)
-		data_cept += (
-			b'\r\n \x12\x43'
-		)
-		data_cept += cept_from_unicode(from_city)
-		data_cept += (
-			b'\r\n'
-		)
-		data_cept += b'an  ' + cept_from_unicode(session_user.ljust(12)) + b' ' + cept_from_unicode(session_ext.rjust(5, '0'))
-		data_cept += (
-			b'\r\n \x12\x43'
-		)
-		data_cept += cept_from_unicode(session_first_name) + b' ' + cept_from_unicode(session_last_name)
-		data_cept += (
-			b'\r\n\n'
-		)
-		data_cept += cept_from_unicode(message_body)
-		data_cept += (
-			b'\x1f\x57\x41'
-			b'0'
+		data_cept = bytearray(Cept.parallel_limited_mode())
+		data_cept.extend(Cept.set_cursor(2, 1))
+		data_cept.extend(Cept.set_fg_color(3))
+		data_cept.extend(b'von ')
+		data_cept.extend(cept_from_unicode(from_user.ljust(12)) + b' ' + cept_from_unicode(from_ext.rjust(5, '0')))
+		data_cept.extend(Cept.set_cursor(2, 41 - len(from_date)))
+		data_cept.extend(cept_from_unicode(from_date))
+		data_cept.extend(Cept.repeat(" ", 4))
+		data_cept.extend(cept_from_unicode(from_org))
+		data_cept.extend(Cept.set_cursor(3, 41 - len(from_time)))
+		data_cept.extend(cept_from_unicode(from_time))
+		data_cept.extend(Cept.repeat(" ", 4))
+		data_cept.extend(Cept.set_fg_color_simple(0))
+		data_cept.extend(cept_from_unicode(from_first) + b' ' + cept_from_unicode(from_last))
+		data_cept.extend(b'\r\n')
+		data_cept.extend(Cept.repeat(" ", 4))
+		data_cept.extend(cept_from_unicode(from_street))
+		data_cept.extend(b'\r\n')
+		data_cept.extend(Cept.repeat(" ", 4))
+		data_cept.extend(cept_from_unicode(from_city))
+		data_cept.extend(b'\r\n')
+		data_cept.extend(b'an  ')
+		data_cept.extend(cept_from_unicode(session_user.ljust(12)) + b' ' + cept_from_unicode(session_ext.rjust(5, '0')))
+		data_cept.extend(b'\r\n')
+		data_cept.extend(Cept.repeat(" ", 4))
+		data_cept.extend(cept_from_unicode(session_first_name) + b' ' + cept_from_unicode(session_last_name))
+		data_cept.extend(b'\r\n\n')
+		data_cept.extend(cept_from_unicode(message_body))
+		data_cept.extend(Cept.set_cursor(23, 1))
+		data_cept.extend(b'0')
+		data_cept.extend(
 			b'\x1b\x29\x20\x40'                                    # load DRCs into G1
 			b'\x1b\x7e'                                            # G1 into right charset
-			b' Gesamt\x19Hubersicht'
-			b'\x20\x12\x56'                                        # repeat ' ' 22 times
 		)
+		data_cept.extend(cept_from_unicode(" Gesamtübersicht"))
+		data_cept.extend(Cept.repeat(" ", 22))
 
 	elif pagenumber == "810a":
 		meta = {
@@ -779,16 +761,14 @@ def login(input_data):
 
 def handle_inputs(inputs):
 	while True:
-		cept_data = (
-			b'\x1f\x2f\x44'                     # parallel limited mode
-		)
+		cept_data = bytearray(Cept.parallel_limited_mode())
 		for input in inputs["fields"]:
 			l = input["line"]
 			c = input["column"]
 			h = input["height"]
 			w = input["width"]
 			for i in range(0, h):
-				cept_data = bytearray(Cept.set_cursor(l + i, c))
+				cept_data.extend(bytearray(Cept.set_cursor(l + i, c)))
 				cept_data.extend(Cept.set_fg_color(input["fgcolor"]))
 				cept_data.extend(Cept.set_bg_color(input["bgcolor"]))
 				cept_data.append(0x12)
