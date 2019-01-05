@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import time
 import datetime
 
 from cept import Cept
@@ -42,8 +43,6 @@ class Message:
 		return self.from_user.organisation
 	
 	def from_street(self):
-		sys.stderr.write("self.from_user.last_name = '" + self.from_user.last_name + "'!\n")
-		sys.stderr.write("self.from_user.street = '" + self.from_user.street + "'!\n")
 		return self.from_user.street
 	
 	def from_city(self):
@@ -59,14 +58,21 @@ class Messaging:
 	def __init__(self, u):
 		self.user = u
 
-	def load(self):
-		filename = PATH_MESSAGES + self.user.user_id + "-" + self.user.ext + ".messages"
+	def dict_filename(user_id, ext):
+		return PATH_MESSAGES + user_id + "-" + ext + ".messages"
+
+	def load_dict(user_id, ext):
+		filename = Messaging.dict_filename(user_id, ext)
 		if not os.path.isfile(filename):
-			self.messages = []
+			dict = { "messages": [] }
 			sys.stderr.write("messages file not found\n")
 		else:
 			with open(filename) as f:
-				self.messages = json.load(f)["messages"]
+				dict = json.load(f)
+		return dict
+
+	def load(self):
+		self.messages = Messaging.load_dict(self.user.user_id, self.user.ext)["messages"]
 		
 	def get(self, index):
 		self.load()
@@ -76,6 +82,21 @@ class Messaging:
 
 		message = Message(self.messages[index])
 		return message
+	
+	def send(self, user_id, ext, body):
+		messages = Messaging.load_dict(user_id, ext)
+		messages["messages"].append(
+			{
+				"from_user_id": self.user.user_id,
+				"from_ext": self.user.ext,
+				"personal_data": False,
+				"timestamp": time.time(),
+				"body": body
+			},
+		)
+		with open(Messaging.dict_filename(user_id, ext), 'w') as f:
+			json.dump(messages, f)
+		
 
 class Messaging_UI():
 
@@ -197,6 +218,12 @@ class Messaging_UI():
 
 		from_date = message.from_date()
 		from_time = message.from_time()
+		from_street = message.from_street()
+		if from_street is None:
+			from_street = ""
+		from_city = message.from_city()
+		if from_city is None:
+			from_city = ""
 
 		data_cept = bytearray(Cept.parallel_limited_mode())
 		data_cept.extend(Cept.set_cursor(2, 1))
@@ -214,10 +241,10 @@ class Messaging_UI():
 		data_cept.extend(Cept.from_str(message.from_first()) + b' ' + Cept.from_str(message.from_last()))
 		data_cept.extend(b'\r\n')
 		data_cept.extend(Cept.repeat(" ", 4))
-		data_cept.extend(Cept.from_str(message.from_street()))
+		data_cept.extend(Cept.from_str(from_street))
 		data_cept.extend(b'\r\n')
 		data_cept.extend(Cept.repeat(" ", 4))
-		data_cept.extend(Cept.from_str(message.from_city()))
+		data_cept.extend(Cept.from_str(from_city))
 		data_cept.extend(b'\r\n')
 		data_cept.extend(b'an  ')
 		data_cept.extend(Cept.from_str(user.user_id.ljust(12)) + b' ' + Cept.from_str(user.ext.rjust(5, '0')))
@@ -277,6 +304,7 @@ class Messaging_UI():
 						"fgcolor": 3
 					}
 				],
+				"action": "send_message",
 				"price": 30,
 				"target": "page:8"
 			}

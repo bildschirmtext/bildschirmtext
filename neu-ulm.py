@@ -8,6 +8,7 @@ import datetime
 from cept import Cept
 from user import User
 from editor import Editor
+from messaging import Messaging
 from messaging import Messaging_UI
 
 # paths
@@ -357,6 +358,8 @@ def login(input_data):
 	return not user is None
 
 def handle_inputs(inputs):
+	global user
+
 	while True:
 		cept_data = bytearray(Cept.parallel_limited_mode())
 
@@ -450,18 +453,22 @@ def handle_inputs(inputs):
 					sys.stdout.buffer.write(b'\b \b')
 					sys.stdout.flush()
 
-			# "sent" message
-			cept_data = bytearray(create_system_message(73))
-			cept_data.extend(Cept.set_cursor(24, 1))
-			cept_data.extend(Cept.sequence_end_of_page())
-			sys.stdout.buffer.write(cept_data)
-			sys.stdout.flush()
-			while True:
-				c = sys.stdin.read(1)
-				if ord(c) == Cept.ter():
-					sys.stdout.write(c)
-					sys.stdout.flush()
-					break
+			if doit and inputs.get("action") == "send_message":
+				messaging = Messaging(user)
+				messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
+
+				# "sent" message
+				cept_data = bytearray(create_system_message(73))
+				cept_data.extend(Cept.set_cursor(24, 1))
+				cept_data.extend(Cept.sequence_end_of_page())
+				sys.stdout.buffer.write(cept_data)
+				sys.stdout.flush()
+				while True:
+					c = sys.stdin.read(1)
+					if ord(c) == Cept.ter():
+						sys.stdout.write(c)
+						sys.stdout.flush()
+						break
 		else:				
 			cept_data = create_system_message(55)
 			sys.stdout.buffer.write(cept_data)
