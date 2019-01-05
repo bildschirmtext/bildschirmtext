@@ -7,6 +7,7 @@ import datetime
 
 from cept import Cept
 from user import User
+from editor import Editor
 from messaging import Messaging_UI
 
 # paths
@@ -353,60 +354,35 @@ def login(input_data):
 def handle_inputs(inputs):
 	while True:
 		cept_data = bytearray(Cept.parallel_limited_mode())
+
+		editors = []
+
 		for input in inputs["fields"]:
-			line = input["line"]
-			column = input["column"]
-			height = input["height"]
-			width = input["width"]
-			fgcolor = input["fgcolor"]
-			bgcolor = input["bgcolor"]
-			for i in range(0, height):
-				cept_data.extend(Cept.set_cursor(line + i, column))
-				cept_data.extend(Cept.set_fg_color(fgcolor))
-				cept_data.extend(Cept.set_bg_color(bgcolor))
-				cept_data.extend(Cept.repeat(" ", width))
-		sys.stdout.buffer.write(cept_data)
-		sys.stdout.flush()
-	
+			editor = Editor()
+			editor.line = input["line"]
+			editor.column = input["column"]
+			editor.height = input["height"]
+			editor.width = input["width"]
+			editor.fgcolor = input["fgcolor"]
+			editor.bgcolor = input["bgcolor"]
+			editors.append(editor)
+
+		for editor in editors:
+			editor.draw_background()
+
+		i = 0
 		input_data = {}
-	
-		for input in inputs["fields"]:
-			l = input["line"]
-			c = input["column"]
-			h = input["height"]
-			w = input["width"]
+		for editor in editors:
+			input = inputs["fields"][i]
 
 			hint = input.get("hint", "")
-		
-			cept_data = bytearray(create_system_message(0, 0, hint))
-			cept_data.extend(Cept.set_cursor(l, c))
-			cept_data.extend(Cept.set_fg_color(input["fgcolor"]))
-			cept_data.extend(Cept.set_bg_color(input["bgcolor"]))
+			cept_data = create_system_message(0, 0, hint)
 			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
-		
-			s = ""
-			while True:
-				c = sys.stdin.read(1)
-				sys.stderr.write("Input In: " + str(ord(c)) + "\n")
-				if ord(c) == Cept.ter():
-					break
-				if ord(c) == 8:
-					if len(s) == 0:
-						continue
-					sys.stdout.buffer.write(b'\b \b')
-					sys.stdout.flush()
-					s = s[:-1]
-				elif ord(c) < 0x20 and ord(c) != 0x19:
-					continue
-				elif len(s) < w:
-					s += c
-					sys.stdout.write(c)
-					sys.stdout.flush()
-				sys.stderr.write("String: '" + s + "'\n")
-				
-			input_data[input["name"]] = s
-	
+
+			input_data[input["name"]] = editor.edit()
+			i += 1
+
 		if not "confirm" in inputs or inputs["confirm"]:
 			if "price" in inputs:
 				price = inputs["price"]

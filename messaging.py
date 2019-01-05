@@ -140,9 +140,9 @@ class Messaging_UI():
 			"Mitteilungsdienst",
 			[
 				"Neue Mitteilungen",
-				"Zur\x19Huckgelegte Mitteilungen",
+				"Zurückgelegte Mitteilungen",
 				"Abruf Antwortseiten",
-				"\x19HAndern Mitteilungsempfang",
+				"Ändern Mitteilungsempfang",
 				"Mitteilungen mit Alphatastatur"
 			]
 		)
