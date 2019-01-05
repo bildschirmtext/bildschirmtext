@@ -340,7 +340,13 @@ def read_with_echo(clear_line):
 def login(input_data):
 	global user
 	
-	user = User.login(input_data["user_id"], input_data["ext"], input_data["password"])
+	user_id = input_data["user_id"]
+	if user_id is None or user_id == "":
+		user_id = "0"
+	ext = input_data["ext"]
+	if ext is None or ext == "":
+		ext = "1"
+	user = User.login(user_id, ext, input_data["password"])
 	
 	return not user is None
 

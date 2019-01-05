@@ -1,26 +1,16 @@
 {
 	"messages": [
 		{
-			"from_user": "02114793123",
+			"from_user_id": "02114793123",
 			"from_ext": "1",
-			"from_org": "BMPT",
-			"from_salutation": "Herr",
-			"from_first": "Christian",
-			"from_last": "Schwarz-Schilling",
-			"from_street": "Heinrich-Konen-Str. 1",
-			"from_city": "53227 Bonn",
+			"personal_data": true,
 			"timestamp": 402583000,
 			"body": "Hallo!"
 		},
 		{
-			"from_user": "02114793123",
+			"from_user_id": "02114793123",
 			"from_ext": "1",
-			"from_org": "BMPT",
-			"from_salutation": "Herr",
-			"from_first": "Christian",
-			"from_last": "Schwarz-Schilling",
-			"from_street": "Heinrich-Konen-Str. 1",
-			"from_city": "53227 Bonn",
+			"personal_data": true,
 			"timestamp": 402584000,
 			"body": "Kriegst Du diese Nachrichten??"
 		}

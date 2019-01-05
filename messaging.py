@@ -4,11 +4,25 @@ import json
 import datetime
 
 from cept import Cept
+from user import User
 
 PATH_MESSAGES = "messages/"
 
 class Message:
 	dict = None
+	from_user = None
+
+	def __init__(self, dict):
+		self.dict = dict
+		self.from_user = User.get(self.dict["from_user_id"], self.dict["from_ext"], self.dict.get("personal_data", False))
+		if self.from_user is None:
+			sys.stderr.write("from user not found!\n")
+
+	def from_user_id(self):
+		return self.dict["from_user_id"]
+
+	def from_ext(self):
+		return self.dict["from_ext"]
 
 	def from_date(self):
 		t = datetime.datetime.fromtimestamp(self.dict["timestamp"])
@@ -19,25 +33,21 @@ class Message:
 		return t.strftime("%H:%M")
 		
 	def from_first(self):
-		return self.dict["from_first"]
+		return self.from_user.first_name
 	
 	def from_last(self):
-		return self.dict["from_last"]
+		return self.from_user.last_name
 	
-	def from_org(self):
-		return self.dict["from_org"]
+	def from_organisation(self):
+		return self.from_user.organisation
 	
 	def from_street(self):
-		return self.dict["from_street"]
+		sys.stderr.write("self.from_user.last_name = '" + self.from_user.last_name + "'!\n")
+		sys.stderr.write("self.from_user.street = '" + self.from_user.street + "'!\n")
+		return self.from_user.street
 	
 	def from_city(self):
-		return self.dict["from_city"]
-
-	def from_user(self):
-		return self.dict["from_user"]
-
-	def from_ext(self):
-		return self.dict["from_ext"]
+		return self.from_user.city
 
 	def body(self):
 		return self.dict["body"]
@@ -64,8 +74,7 @@ class Messaging:
 		if len(self.messages) <= index:
 			return None
 
-		message = Message()
-		message.dict = self.messages[index]
+		message = Message(self.messages[index])
 		return message
 
 class Messaging_UI():
@@ -193,11 +202,11 @@ class Messaging_UI():
 		data_cept.extend(Cept.set_cursor(2, 1))
 		data_cept.extend(Cept.set_fg_color(3))
 		data_cept.extend(b'von ')
-		data_cept.extend(Cept.from_str(message.from_user().ljust(12)) + b' ' + Cept.from_str(message.from_ext().rjust(5, '0')))
+		data_cept.extend(Cept.from_str(message.from_user_id().ljust(12)) + b' ' + Cept.from_str(message.from_ext().rjust(5, '0')))
 		data_cept.extend(Cept.set_cursor(2, 41 - len(from_date)))
 		data_cept.extend(Cept.from_str(from_date))
 		data_cept.extend(Cept.repeat(" ", 4))
-		data_cept.extend(Cept.from_str(message.from_org()))
+		data_cept.extend(Cept.from_str(message.from_organisation()))
 		data_cept.extend(Cept.set_cursor(3, 41 - len(from_time)))
 		data_cept.extend(Cept.from_str(from_time))
 		data_cept.extend(Cept.repeat(" ", 4))
@@ -300,7 +309,6 @@ class Messaging_UI():
 		data_cept.extend(Cept.code_9e())
 		data_cept.extend(Cept.set_fg_color_simple(7))
 		data_cept.extend(Cept.from_str("Absender:"))
-
 		data_cept.extend(Cept.from_str(user.user_id))
 		data_cept.extend(Cept.set_cursor(5, 25))
 		data_cept.extend(Cept.from_str(user.ext))
@@ -319,16 +327,10 @@ class Messaging_UI():
 			b'-'
 			b'\r\n\n\n'
 		)
-		data_cept.extend(
-			b'Text:'
-		)
-		data_cept.extend(
-			b'\r\n\n\n\n\n\n\n\n\n\n\n\n'
-		)
+		data_cept.extend(b'Text:')
+		data_cept.extend(b'\r\n\n\n\n\n\n\n\n\n\n\n\n')
 		data_cept.extend(Cept.set_line_bg_color_simple(4))
-		data_cept.extend(
-			b'0'
-		)
+		data_cept.extend(b'0')
 		data_cept.extend(
 			b'\x19'                                            # switch to G2 for one character
 			b'\x2b\xfe\x7f'                                    # "+."
