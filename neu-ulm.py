@@ -376,11 +376,34 @@ def handle_inputs(inputs):
 			input = inputs["fields"][i]
 
 			hint = input.get("hint", "")
-			cept_data = create_system_message(0, 0, hint)
-			sys.stdout.buffer.write(cept_data)
-			sys.stdout.flush()
+			type = input.get("type")
 
-			input_data[input["name"]] = editor.edit()
+			while True:
+				cept_data = create_system_message(0, 0, hint)
+				sys.stdout.buffer.write(cept_data)
+				sys.stdout.flush()
+	
+				val = editor.edit()
+				input_data[input["name"]] = val
+				
+				if type == "user_id":
+					user_id = val
+					if User.exists(user_id):
+						break
+					else:
+						cept_data = create_system_message(0, 0, "Teilnehmerkennung ungültig!")
+						sys.stdout.buffer.write(cept_data)
+						sys.stdout.flush()
+				elif type == "ext":
+					if User.exists(user_id, val):
+						break
+					else:
+						cept_data = create_system_message(0, 0, "Mutbenutzernummer ungültig!")
+						sys.stdout.buffer.write(cept_data)
+						sys.stdout.flush()
+				else:
+					break
+			
 			i += 1
 
 		if not "confirm" in inputs or inputs["confirm"]:

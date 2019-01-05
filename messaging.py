@@ -248,7 +248,8 @@ class Messaging_UI():
 			"inputs": {
 				"fields": [
 					{
-						"name": "user",
+						"name": "user_id",
+						"type": "user_id",
 						"line": 8,
 						"column": 20,
 						"height": 1,
@@ -258,6 +259,7 @@ class Messaging_UI():
 					},
 					{
 						"name": "ext",
+						"type": "ext",
 						"line": 8,
 						"column": 37,
 						"height": 1,

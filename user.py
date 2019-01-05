@@ -43,6 +43,11 @@ class User():
 	city = None
 	country = None
 	stats = None
+
+	@classmethod
+	def exists(cls, user_id, ext = "1"):
+		filename = PATH_USERS + user_id + "-" + ext + ".user"
+		return os.path.isfile(filename)
 	
 	@classmethod
 	def get(cls, user_id, ext, personal_data = False):
