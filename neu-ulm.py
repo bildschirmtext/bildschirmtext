@@ -7,7 +7,7 @@ import datetime
 
 from cept import Cept
 from user import User
-from messaging import Messaging
+from messaging import Messaging_UI
 
 # paths
 PATH_DATA = "data/"
@@ -270,7 +270,7 @@ def create_page(basepath, pagenumber):
 	# generated pages
 	sys.stderr.write("pagenumber[0]: '" + pagenumber[0] + "'\n")
 	if pagenumber[0] == '8':
-		ret = Messaging.messaging_create_page(user, pagenumber)
+		ret = Messaging_UI.messaging_create_page(user, pagenumber)
 		if ret is None:
 			return None
 		(meta, data_cept) = ret
@@ -348,15 +348,17 @@ def handle_inputs(inputs):
 	while True:
 		cept_data = bytearray(Cept.parallel_limited_mode())
 		for input in inputs["fields"]:
-			l = input["line"]
-			c = input["column"]
-			h = input["height"]
-			w = input["width"]
-			for i in range(0, h):
-				cept_data.extend(Cept.set_cursor(l + i, c))
-				cept_data.extend(Cept.set_fg_color(input["fgcolor"]))
-				cept_data.extend(Cept.set_bg_color(input["bgcolor"]))
-				cept_data.extend(Cept.repeat(" ", w))
+			line = input["line"]
+			column = input["column"]
+			height = input["height"]
+			width = input["width"]
+			fgcolor = input["fgcolor"]
+			bgcolor = input["bgcolor"]
+			for i in range(0, height):
+				cept_data.extend(Cept.set_cursor(line + i, column))
+				cept_data.extend(Cept.set_fg_color(fgcolor))
+				cept_data.extend(Cept.set_bg_color(bgcolor))
+				cept_data.extend(Cept.repeat(" ", width))
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 	
@@ -368,10 +370,7 @@ def handle_inputs(inputs):
 			h = input["height"]
 			w = input["width"]
 
-			if "hint" in input:
-				hint = input["hint"]
-			else:
-				hint = ""
+			hint = input.get("hint", "")
 		
 			cept_data = bytearray(create_system_message(0, 0, hint))
 			cept_data.extend(Cept.set_cursor(l, c))

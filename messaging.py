@@ -7,7 +7,68 @@ from cept import Cept
 
 PATH_MESSAGES = "messages/"
 
-class Messaging():
+class Message:
+	dict = None
+
+	def from_date(self):
+		t = datetime.datetime.fromtimestamp(self.dict["timestamp"])
+		return t.strftime("%d.%m.%Y")
+
+	def from_time(self):
+		t = datetime.datetime.fromtimestamp(self.dict["timestamp"])
+		return t.strftime("%H:%M")
+		
+	def from_first(self):
+		return self.dict["from_first"]
+	
+	def from_last(self):
+		return self.dict["from_last"]
+	
+	def from_org(self):
+		return self.dict["from_org"]
+	
+	def from_street(self):
+		return self.dict["from_street"]
+	
+	def from_city(self):
+		return self.dict["from_city"]
+
+	def from_user(self):
+		return self.dict["from_user"]
+
+	def from_ext(self):
+		return self.dict["from_ext"]
+
+	def body(self):
+		return self.dict["body"]
+
+class Messaging:
+	user = None
+	messages = None
+
+	def __init__(self, u):
+		self.user = u
+
+	def load(self):
+		filename = PATH_MESSAGES + self.user.user_id + "-" + self.user.ext + ".messages"
+		if not os.path.isfile(filename):
+			self.messages = []
+			sys.stderr.write("messages file not found\n")
+		else:
+			with open(filename) as f:
+				self.messages = json.load(f)["messages"]
+		
+	def get(self, index):
+		self.load()
+
+		if len(self.messages) <= index:
+			return None
+
+		message = Message()
+		message.dict = self.messages[index]
+		return message
+
+class Messaging_UI():
 
 	# private
 	def messaging_create_title(title):
@@ -38,7 +99,7 @@ class Messaging():
 	
 	# private
 	def messaging_create_menu(title, items):
-		data_cept = bytearray(Messaging.messaging_create_title(title))
+		data_cept = bytearray(Messaging_UI.messaging_create_title(title))
 		data_cept.extend(b"\n\r\n\r")
 		i = 1
 		for item in items:
@@ -52,45 +113,6 @@ class Messaging():
 		data_cept.extend(Cept.from_str(" Gesamtübersicht"))
 	
 		return data_cept
-	
-	# private
-	def messages_load(user):
-		filename = PATH_MESSAGES + user.user_id + "-" + user.ext + ".messages"
-		if not os.path.isfile(filename):
-			messages = []
-			sys.stderr.write("messages file not found\n")
-		else:
-			with open(filename) as f:
-				user.messages = json.load(f)["messages"]
-		
-	# private
-	def message_get(user, index):
-		Messaging.messages_load(user)
-		message = user.messages[index]
-	
-		t = datetime.datetime.fromtimestamp(message["timestamp"])
-		from_date = t.strftime("%d.%m.%Y")
-		from_time = t.strftime("%H:%M")
-		from_user = message["from_user"]
-		from_ext = message["from_ext"]
-		from_org = message["from_org"]
-		from_first = message["from_first"]
-		from_last = message["from_last"]
-		from_street = message["from_street"]
-		from_city = message["from_city"]
-		message_body = message["body"]
-		return (
-			from_user,
-			from_ext,
-			from_date,
-			from_time,
-			from_org,
-			from_first,
-			from_last,
-			from_street,
-			from_city,
-			message_body
-		)
 	
 	def messaging_create_page(user, pagenumber):
 		sys.stderr.write("pagenumber[:2] " + pagenumber[:2] + "\n")
@@ -107,7 +129,7 @@ class Messaging():
 				"publisher_color": 7
 			}
 			
-			data_cept = Messaging.messaging_create_menu(
+			data_cept = Messaging_UI.messaging_create_menu(
 				"Mitteilungsdienst",
 				[
 					"Neue Mitteilungen",
@@ -124,23 +146,23 @@ class Messaging():
 				"clear_screen": True,
 				"publisher_color": 7
 			}
-			data_cept = bytearray(Messaging.messaging_create_title("Neue Mitteilungen"))
+			data_cept = bytearray(Messaging_UI.messaging_create_title("Neue Mitteilungen"))
 	
 			links = {
 				"0": "8"
 			}
 			
-			Messaging.messages_load(user)
+			messaging = Messaging(user)
 			
 			for index in range(0, 9):
-				#sys.stderr.write("message #" + str(index) + "/" + str(len(user.messages)) + "\n")
 				data_cept.extend(Cept.from_str(str(index + 1)) + b'  ')
-				if len(user.messages) > index:
-					message = user.messages[index]
-					data_cept.extend(Cept.from_str(message["from_first"]) + b' ' + Cept.from_str(message["from_last"]))
+				message = messaging.get(index)
+				if message is not None:
+					data_cept.extend(Cept.from_str(message.from_first()) + b' ' + Cept.from_str(message.from_last()))
 					data_cept.extend(b'\r\n   ')
-					t = datetime.datetime.fromtimestamp(message["timestamp"])
-					data_cept.extend(Cept.from_str(t.strftime("%d.%m.%Y   %H:%M")))
+					data_cept.extend(Cept.from_str(message.from_date()))
+					data_cept.extend(b'   ')
+					data_cept.extend(Cept.from_str(message.from_time()))
 					data_cept.extend(b'\r\n')
 					links[str(index + 1)] = "88" + str(index + 1)
 				else:
@@ -163,40 +185,32 @@ class Messaging():
 				"publisher_color": 7
 			}
 	
-			(
-				from_user,
-				from_ext,
-				from_date,
-				from_time,
-				from_org,
-				from_first,
-				from_last,
-				from_street,
-				from_city,
-				message_body
-			) = Messaging.message_get(user, index)
-	
-	
+			messaging = Messaging(user)
+			message = messaging.get(index)
+
+			from_date = message.from_date()
+			from_time = message.from_time()
+
 			data_cept = bytearray(Cept.parallel_limited_mode())
 			data_cept.extend(Cept.set_cursor(2, 1))
 			data_cept.extend(Cept.set_fg_color(3))
 			data_cept.extend(b'von ')
-			data_cept.extend(Cept.from_str(from_user.ljust(12)) + b' ' + Cept.from_str(from_ext.rjust(5, '0')))
+			data_cept.extend(Cept.from_str(message.from_user().ljust(12)) + b' ' + Cept.from_str(message.from_ext().rjust(5, '0')))
 			data_cept.extend(Cept.set_cursor(2, 41 - len(from_date)))
 			data_cept.extend(Cept.from_str(from_date))
 			data_cept.extend(Cept.repeat(" ", 4))
-			data_cept.extend(Cept.from_str(from_org))
+			data_cept.extend(Cept.from_str(message.from_org()))
 			data_cept.extend(Cept.set_cursor(3, 41 - len(from_time)))
 			data_cept.extend(Cept.from_str(from_time))
 			data_cept.extend(Cept.repeat(" ", 4))
 			data_cept.extend(Cept.set_fg_color_simple(0))
-			data_cept.extend(Cept.from_str(from_first) + b' ' + Cept.from_str(from_last))
+			data_cept.extend(Cept.from_str(message.from_first()) + b' ' + Cept.from_str(message.from_last()))
 			data_cept.extend(b'\r\n')
 			data_cept.extend(Cept.repeat(" ", 4))
-			data_cept.extend(Cept.from_str(from_street))
+			data_cept.extend(Cept.from_str(message.from_street()))
 			data_cept.extend(b'\r\n')
 			data_cept.extend(Cept.repeat(" ", 4))
-			data_cept.extend(Cept.from_str(from_city))
+			data_cept.extend(Cept.from_str(message.from_city()))
 			data_cept.extend(b'\r\n')
 			data_cept.extend(b'an  ')
 			data_cept.extend(Cept.from_str(user.user_id.ljust(12)) + b' ' + Cept.from_str(user.ext.rjust(5, '0')))
@@ -204,7 +218,7 @@ class Messaging():
 			data_cept.extend(Cept.repeat(" ", 4))
 			data_cept.extend(Cept.from_str(user.first_name) + b' ' + Cept.from_str(user.last_name))
 			data_cept.extend(b'\r\n\n')
-			data_cept.extend(Cept.from_str(message_body))
+			data_cept.extend(Cept.from_str(message.body()))
 			data_cept.extend(Cept.set_cursor(23, 1))
 			data_cept.extend(b'0')
 			data_cept.extend(
