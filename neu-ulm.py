@@ -115,6 +115,7 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 
 def create_system_message(code, price = 0, hint = ""):
 	text = ""
+	prefix = "SH"
 	if hint != "":
 		text = hint
 	elif code == 0:
@@ -125,6 +126,10 @@ def create_system_message(code, price = 0, hint = ""):
 		text = "Absenden für " + format_currency(price) + "? Ja:19 Nein:2"
 	elif code == 55:
 		text = "Eingabe wird bearbeitet        "
+	elif code == 73:
+		current_datetime = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+		text = "Abgesandt " + current_datetime + ", -> #  "
+		prefix = "1B"
 	elif code == 100:
 		text = "Seite nicht vorhanden          "
 	elif code == 291:
@@ -137,7 +142,7 @@ def create_system_message(code, price = 0, hint = ""):
 	msg.extend(Cept.from_str(text, 1))
 	msg.extend(Cept.hide_text())
 	msg.extend(b'\b')
-	msg.extend(b'SH')
+	msg.extend(Cept.from_str(prefix))
 	msg.extend(Cept.from_str(str(code)).rjust(3, b'0'))
 	msg.extend(Cept.service_break_back())
 	return msg
@@ -395,7 +400,11 @@ def handle_inputs(inputs):
 						sys.stdout.buffer.write(cept_data)
 						sys.stdout.flush()
 				elif type == "ext":
-					if User.exists(user_id, val):
+					if val == "":
+						ext = "1"
+					else:
+						ext = val
+					if User.exists(user_id, ext):
 						break
 					else:
 						cept_data = create_system_message(0, 0, "Mutbenutzernummer ungültig!")
@@ -407,6 +416,7 @@ def handle_inputs(inputs):
 			i += 1
 
 		if not "confirm" in inputs or inputs["confirm"]:
+			# "send?" message
 			if "price" in inputs:
 				price = inputs["price"]
 				cept_data = bytearray(create_system_message(47, price))
@@ -414,6 +424,7 @@ def handle_inputs(inputs):
 				price = 0
 				cept_data = bytearray(create_system_message(44))
 			cept_data.extend(Cept.set_cursor(24, 1))
+			cept_data.extend(Cept.sequence_end_of_page())
 			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 		
@@ -438,10 +449,23 @@ def handle_inputs(inputs):
 					seen_a_one = False
 					sys.stdout.buffer.write(b'\b \b')
 					sys.stdout.flush()
-				
-		cept_data = create_system_message(55)
-		sys.stdout.buffer.write(cept_data)
-		sys.stdout.flush()
+
+			# "sent" message
+			cept_data = bytearray(create_system_message(73))
+			cept_data.extend(Cept.set_cursor(24, 1))
+			cept_data.extend(Cept.sequence_end_of_page())
+			sys.stdout.buffer.write(cept_data)
+			sys.stdout.flush()
+			while True:
+				c = sys.stdin.read(1)
+				if ord(c) == Cept.ter():
+					sys.stdout.write(c)
+					sys.stdout.flush()
+					break
+		else:				
+			cept_data = create_system_message(55)
+			sys.stdout.buffer.write(cept_data)
+			sys.stdout.flush()
 	
 		# login page
 		if "is_login" in inputs and inputs["is_login"]:
