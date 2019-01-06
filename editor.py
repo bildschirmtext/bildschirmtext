@@ -9,21 +9,10 @@ class Editor:
 	width = None
 	fgcolor = None
 	bgcolor = None
+	allowed_inputs = None
+	string = ""
+	main_mode = False
 
-	def read_with_echo(clear_line):
-		c = sys.stdin.read(1)
-		if clear_line:
-			sys.stdout.write('\x18');
-		if ord(c) == Cept.ini():
-			sys.stdout.write('*')
-		elif ord(c) == Cept.ter():
-			sys.stdout.write('#')
-		else:
-			sys.stdout.write(c)
-		sys.stdout.flush()
-		sys.stderr.write("In: " + str(ord(c)) + "\n")
-		return c
-	
 	def debug_print(s):	
 		sys.stderr.write("'")
 		for cc in s:
@@ -35,103 +24,100 @@ class Editor:
 				sys.stderr.write(cc)
 		sys.stderr.write("'\n")
 	
-	def main_input(current_pageid, links, showing_message):
-		# convert "#" to TER in links
-		if "#" in links:
-			links[chr(Cept.ter())] = links["#"]
-			links.pop("#", None)
-		# extract link prefix characters
-		link_prefixes = set()
-		for link in links:
-			link_prefixes.add(link[0])
-	
-		s = ""
-		desired_pageid = None
-		
-		while True:
-			c = Editor.read_with_echo(showing_message)
-			showing_message = False
-	
-			# TODO: backspace
-			# TODO: only allow alphanumeric
-			
-			s += c
-			sys.stderr.write("s: '")
-			Editor.debug_print(s)
-		
-			if s[0].isdigit() or s[0] == chr(Cept.ter()):
-				# potential link
-				if s in links:
-					# correct link
-					desired_pageid = links[s]
-				elif len(s) == 1 and s in link_prefixes:
-					# prefix of a link
-					pass
-				elif s == chr(Cept.ter()):
-					# next sub-page
-					if current_pageid[-1:] >= "a" and current_pageid[-1:] <= "y":
-						desired_pageid = current_pageid[:-1] + chr(ord(current_pageid[-1:]) + 1)
-					elif current_pageid[-1:] >= '0' and current_pageid[-1:] <= '9':
-						desired_pageid = current_pageid + "b"
-				else:
-					# can't be a valid link
-					s = ""
-					sys.stdout.buffer.write(create_system_message(100) + Cept.sequence_end_of_page())
-					sys.stdout.flush()
-					showing_message = True
-			elif s[-2:] == chr(Cept.ini()) + chr(Cept.ini()):
-				# "**" clears input
-				s = ""
-				cept_data = bytearray(Cept.set_cursor(24, 1))
-				cept_data.extend(Cept.clear_line())
-				sys.stdout.buffer.write(cept_data)
-				sys.stdout.flush()
-				sys.stderr.write("Cleared.\n")
-			elif s[0] == chr(Cept.ini()) and s[-1] == chr(Cept.ter()):
-				desired_pageid = s[1:-1]
-				sys.stderr.write("New page: '" + desired_pageid+ "'.\n")
-		
-			if desired_pageid is not None:
-				break
-		return desired_pageid
-	
-
-	def draw_background(self):
+	def draw_background(self, draw_color = False):
 		cept_data = bytearray(Cept.parallel_limited_mode())
+		cept_data.extend(Cept.set_cursor(self.line, self.column))
 		for i in range(0, self.height):
-			cept_data.extend(Cept.set_cursor(self.line + i, self.column))
-			cept_data.extend(Cept.set_fg_color(self.fgcolor))
-			cept_data.extend(Cept.set_bg_color(self.bgcolor))
-			cept_data.extend(Cept.repeat(" ", self.width))
+			if draw_color:
+				cept_data.extend(Cept.set_fg_color(self.fgcolor))
+				cept_data.extend(Cept.set_bg_color(self.bgcolor))
+			if self.width == 40:
+				cept_data.extend(Cept.clear_line())
+			else:
+				cept_data.extend(Cept.repeat(" ", self.width))
+			if i != self.height - 1:
+				cept_data.extend('\n')
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 
 	def edit(self):
 		cept_data = bytearray()
 		cept_data.extend(Cept.set_cursor(self.line, self.column))
-		cept_data.extend(Cept.set_fg_color(self.fgcolor))
-		cept_data.extend(Cept.set_bg_color(self.bgcolor))
+		if self.fgcolor:
+			cept_data.extend(Cept.set_fg_color(self.fgcolor))
+		if self.bgcolor:
+			cept_data.extend(Cept.set_bg_color(self.bgcolor))
+		if self.string:
+			s = self.string
+			if s[0] == chr(Cept.ini()):
+				s = "*" + s[1:]
+			cept_data.extend(Cept.from_str(s))
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
-	
-		s = ""
+
 		while True:
 			c = sys.stdin.read(1)
-			sys.stderr.write("Input In: " + str(ord(c)) + "\n")
+			sys.stderr.write("In: 0x" + hex(ord(c)) + "\n")
+
+			if ord(c) == Cept.ini():
+				if not self.main_mode:
+					sys.stderr.write("escape\n")
+					editor = Editor()
+					editor.line = 24
+					editor.column = 1
+					editor.height = 1
+					editor.width = 40
+					editor.string = chr(Cept.ini())
+					editor.main_mode = True
+					main_mode_val = editor.edit()
+					if main_mode_val is None:
+						sys.stderr.write("unescape\n")
+						self.string = ""
+						self.draw_background(False)
+						continue
+					else:
+						Editor.debug_print(main_mode_val)
+						return main_mode_val
+					# TODO: handle *021# - *029#
 			if ord(c) == Cept.ter():
+				Editor.debug_print(self.string)
 				break
 			if ord(c) == 8:
-				if len(s) == 0:
+				if len(self.string) == 0:
 					continue
 				sys.stdout.buffer.write(b'\b \b')
 				sys.stdout.flush()
-				s = s[:-1]
-			elif ord(c) < 0x20 and ord(c) != 0x19:
-				continue
-			elif len(s) < self.width:
-				s += c
+				self.string = self.string[:-1] # TODO doesn't work with non-ASCII
+			elif (ord(c) >= 0x20 or ord(c) != 0x19) and len(self.string) < self.width:
+				is_allowed = True
+				found = False
+				if self.allowed_inputs:
+					found = False
+					is_allowed = False
+					s = self.string + c
+					for allowed_input in self.allowed_inputs:
+						if s == allowed_input:
+							is_allowed = True
+							found = True
+							break
+						if allowed_input.startswith(s):
+							is_allowed = True
+							break
+				self.string += c
 				sys.stdout.write(c)
 				sys.stdout.flush()
-			sys.stderr.write("String: '" + s + "'\n")
+				if not is_allowed:
+					break
+				if found:
+					break
+			sys.stderr.write("self.string = ")
+			Editor.debug_print(self.string)
+
+			if self.main_mode:
+				if self.string[-2:] == chr(Cept.ini()) + chr(Cept.ini()):
+					# exit main editor, tell parent to clear
+					return None
 			
-		return s
+		return self.string
+
+	

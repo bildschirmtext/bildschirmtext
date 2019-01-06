@@ -510,17 +510,6 @@ def show_page(pageid):
 		if desired_pageid != "*00":
 			pageid = desired_pageid
 
-def debug_print(s):	
-	sys.stderr.write("'")
-	for cc in s:
-		if cc == chr(Cept.ini()):
-			sys.stderr.write("<INI>")
-		if cc == chr(Cept.ter()):
-			sys.stderr.write("<TER>")
-		else:
-			sys.stderr.write(cc)
-	sys.stderr.write("'\n")
-
 # MAIN
 
 sys.stderr.write("Neu-Ulm running.\n")
@@ -544,7 +533,7 @@ current_pageid = None
 history = []
 
 desired_pageid = "00000" # login page
-#desired_pageid = "200960"
+#desired_pageid = "0"
 
 showing_message = False
 
@@ -572,11 +561,11 @@ while True:
 		current_pageid = desired_pageid
 		history.append(current_pageid)
 	else:
-		sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\n")
-		if desired_pageid and (desired_pageid[-1] >= "b" and desired_pageid[-1] <= "z"):
-			code = 101
-		else:
-			code = 100
+		code = 100
+		if desired_pageid:
+			sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\n")
+			if (desired_pageid[-1] >= "b" and desired_pageid[-1] <= "z"):
+				code = 101
 		cept_data = create_system_message(code) + Cept.sequence_end_of_page()
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
@@ -589,5 +578,33 @@ while True:
 			# showing page failed, current_pageid and history are unchanged
 			pass
 	
-	desired_pageid = Editor.main_input(current_pageid, links, showing_message)
+	desired_pageid = None
+	
+	allowed_inputs = list(links.keys())
+	if "#" in allowed_inputs:
+		allowed_inputs.remove("#")
+
+	editor = Editor()
+	editor.line = 24
+	editor.column = 1
+	editor.height = 1
+	editor.width = 40
+	editor.allowed_inputs = allowed_inputs
+	val = editor.edit()
+
+	if val and val[0] == chr(Cept.ini()):
+		# global address
+		desired_pageid = val[1:]
+	elif val in links:
+		# link
+		desired_pageid = links[val]
+	elif not val and links.get("#"):
+		# #-link
+		sys.stderr.write("Cept.ter")
+		desired_pageid = links["#"]
+	else:
+		desired_pageid = None
+		
+	
+	
 
