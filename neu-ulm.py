@@ -332,20 +332,6 @@ def create_page(basepath, pageid):
 	return (all_data, meta["links"], inputs)
 
 
-def read_with_echo(clear_line):
-	c = sys.stdin.read(1)
-	if clear_line:
-		sys.stdout.write('\x18');
-	if ord(c) == Cept.ini():
-		sys.stdout.write('*')
-	elif ord(c) == Cept.ter():
-		sys.stdout.write('#')
-	else:
-		sys.stdout.write(c)
-	sys.stdout.flush()
-	sys.stderr.write("In: " + str(ord(c)) + "\n")
-	return c
-
 def login(input_data):
 	global user
 	
@@ -535,74 +521,19 @@ def debug_print(s):
 			sys.stderr.write(cc)
 	sys.stderr.write("'\n")
 
-def main_input(current_pageid, links, showing_message):
-	# convert "#" to TER in links
-	if "#" in links:
-		links[chr(Cept.ter())] = links["#"]
-		links.pop("#", None)
-	# extract link prefix characters
-	link_prefixes = set()
-	for link in links:
-		link_prefixes.add(link[0])
-
-	s = ""
-	desired_pageid = None
-	
-	while True:
-		c = read_with_echo(showing_message)
-		showing_message = False
-
-		# TODO: backspace
-		# TODO: only allow alphanumeric
-		
-		s += c
-		sys.stderr.write("s: '")
-		debug_print(s)
-	
-		if s[0].isdigit() or s[0] == chr(Cept.ter()):
-			# potential link
-			if s in links:
-				# correct link
-				desired_pageid = links[s]
-			elif len(s) == 1 and s in link_prefixes:
-				# prefix of a link
-				pass
-			elif s == chr(Cept.ter()):
-				# next sub-page
-				if current_pageid[-1:] >= "a" and current_pageid[-1:] <= "y":
-					desired_pageid = current_pageid[:-1] + chr(ord(current_pageid[-1:]) + 1)
-				elif current_pageid[-1:] >= '0' and current_pageid[-1:] <= '9':
-					desired_pageid = current_pageid + "b"
-			else:
-				# can't be a valid link
-				s = ""
-				sys.stdout.buffer.write(create_system_message(100) + Cept.sequence_end_of_page())
-				sys.stdout.flush()
-				showing_message = True
-		elif s[-2:] == chr(Cept.ini()) + chr(Cept.ini()):
-			# "**" clears input
-			s = ""
-			cept_data = bytearray(Cept.set_cursor(24, 1))
-			cept_data.extend(Cept.clear_line())
-			sys.stdout.buffer.write(cept_data)
-			sys.stdout.flush()
-			sys.stderr.write("Cleared.\n")
-		elif s[0] == chr(Cept.ini()) and s[-1] == chr(Cept.ter()):
-			desired_pageid = s[1:-1]
-			sys.stderr.write("New page: '" + desired_pageid+ "'.\n")
-	
-		if desired_pageid is not None:
-			break
-	return desired_pageid
-
 # MAIN
 
 sys.stderr.write("Neu-Ulm running.\n")
 
+# TODO: generalize "c64": command line option to wait for n CRs
+# TODO: command line option to log in a user
+# TODO: command line option to navigate to a specific page
+
 if len(sys.argv) > 1 and sys.argv[1] == "c64":
 	num_crs = 0
 	while True:
-		c = read_with_echo(False);
+		c = sys.stdin.read(1)
+		sys.stdout.write(c)
 		if ord(c) == 13:
 			num_crs += 1
 			if num_crs == 4:
@@ -658,5 +589,5 @@ while True:
 			# showing page failed, current_pageid and history are unchanged
 			pass
 	
-	desired_pageid = main_input(current_pageid, links, showing_message)
+	desired_pageid = Editor.main_input(current_pageid, links, showing_message)
 
