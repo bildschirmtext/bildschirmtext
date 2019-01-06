@@ -2,3 +2,7 @@ decode_cept
 cut_btx
 stats
 __pycache__
+*.pyc
+users
+secrets
+messages

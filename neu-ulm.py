@@ -25,7 +25,7 @@ links = {}
 def format_currency(price):
 	return "DM  %d" % int(price / 100) + ",%02d" % int(price % 100)
 
-def headerfooter(pagenumber, publisher_name, publisher_color):
+def headerfooter(pageid, publisher_name, publisher_color):
 	hide_header_footer = len(publisher_name) == 0
 	hide_price = False
 	# Early screenshots had a two-line publisher name with
@@ -87,7 +87,7 @@ def headerfooter(pagenumber, publisher_name, publisher_color):
 	hf.extend(Cept.set_cursor(24, 19))
 
 	if not hide_header_footer:
-		hf.extend(Cept.from_str(pagenumber).rjust(22))
+		hf.extend(Cept.from_str(pageid).rjust(22))
 
 	hf.extend(Cept.cursor_home())
 	hf.extend(Cept.set_palette(1))
@@ -121,6 +121,8 @@ def create_system_message(code, price = 0, hint = ""):
 		text = hint
 	elif code == 0:
 		text = "                               "
+	elif code == 10:
+		text = "Rückblättern nicht möglich     "
 	elif code == 44:
 		text = "Absenden? Ja:19 Nein:2         "
 	elif code == 47:
@@ -131,7 +133,7 @@ def create_system_message(code, price = 0, hint = ""):
 		current_datetime = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
 		text = "Abgesandt " + current_datetime + ", -> #  "
 		prefix = "1B"
-	elif code == 100:
+	elif code == 100 or code == 101:
 		text = "Seite nicht vorhanden          "
 	elif code == 291:
 		text = "Seite wird aufgebaut           "
@@ -256,17 +258,17 @@ def replace_placeholders(cept):
 
 	return cept
 
-def create_page(basepath, pagenumber):
-	if pagenumber[-1:].isdigit():
-		pagenumber += "a"
+def create_page(basepath, pageid):
+	if pageid[-1:].isdigit():
+		pageid += "a"
 
 	basedir = None
 
-	for i in reversed(range(0, len(pagenumber))):
-		testdir = basepath + pagenumber[:i+1]
+	for i in reversed(range(0, len(pageid))):
+		testdir = basepath + pageid[:i+1]
 		if os.path.isdir(testdir):
 			sys.stderr.write("testdir: '" + testdir + "'\n")
-			filename = pagenumber[i+1:]
+			filename = pageid[i+1:]
 			sys.stderr.write("filename: '" + filename + "'\n")
 			basedir = testdir + "/"
 			break
@@ -275,9 +277,9 @@ def create_page(basepath, pagenumber):
 		return None
 
 	# generated pages
-	sys.stderr.write("pagenumber[0]: '" + pagenumber[0] + "'\n")
-	if pagenumber[0] == '8':
-		ret = Messaging_UI.messaging_create_page(user, pagenumber)
+	sys.stderr.write("pageid[0]: '" + pageid[0] + "'\n")
+	if pageid[0] == '8':
+		ret = Messaging_UI.messaging_create_page(user, pageid)
 		if ret is None:
 			return None
 		(meta, data_cept) = ret
@@ -313,7 +315,7 @@ def create_page(basepath, pagenumber):
 		all_data.extend(Cept.clear_screen())
 
 	# header
-	hf = headerfooter(pagenumber, meta["publisher_name"], meta["publisher_color"])
+	hf = headerfooter(pageid, meta["publisher_name"], meta["publisher_color"])
 	all_data.extend(hf)
 
 	# payload
@@ -498,22 +500,17 @@ def handle_inputs(inputs):
 			return ""
 
 
-def show_page(pagenumber):
+def show_page(pageid):
 	global links
 	
 	while True:
 		if user is not None:
 			user.stats.update()
 
-		sys.stderr.write("showing page: '" + pagenumber + "'\n")
-		ret = create_page(PATH_DATA, pagenumber)
+		sys.stderr.write("showing page: '" + pageid + "'\n")
+		ret = create_page(PATH_DATA, pageid)
 
 		if ret is None:
-			cept_data = create_system_message(100) + Cept.sequence_end_of_page()
-			sys.stdout.buffer.write(cept_data)
-			sys.stdout.flush()
-			showing_message = True
-			sys.stderr.write("page not found\n")
 			return False
 
 		(cept_data, links, inputs) = ret
@@ -523,10 +520,20 @@ def show_page(pagenumber):
 		if inputs is None:
 			return True
 
-		new_pagenumber = handle_inputs(inputs)
-		if new_pagenumber != "*00":
-			pagenumber = new_pagenumber
-		
+		desired_pageid = handle_inputs(inputs)
+		if desired_pageid != "*00":
+			pageid = desired_pageid
+
+def debug_print(s):	
+	sys.stderr.write("'")
+	for cc in s:
+		if cc == chr(Cept.ini()):
+			sys.stderr.write("<INI>")
+		if cc == chr(Cept.ter()):
+			sys.stderr.write("<TER>")
+		else:
+			sys.stderr.write(cc)
+	sys.stderr.write("'\n")
 
 # MAIN
 
@@ -541,84 +548,117 @@ if len(sys.argv) > 1 and sys.argv[1] == "c64":
 			if num_crs == 4:
 				break
 			
-new_pagenumber = "00000" # login page
 
-show_page(new_pagenumber)
+current_pageid = None
+history = []
 
-current_pagenumber = new_pagenumber
+desired_pageid = "00000" # login page
+#desired_pageid = "200960"
 
-MODE_NONE = 0
-MODE_INI  = 1
-
-mode = MODE_NONE
-new_pagenumber = ""
 showing_message = False
 
 while True:
-	gotopage = False;
-	c = read_with_echo(showing_message);
-	showing_message = False
-	if mode == MODE_NONE:
-		lookuplink = False
-		if ord(c) == Cept.ini():
-			mode = MODE_INI
-			new_pagenumber = ""
-			sys.stderr.write("mode = MODE_INI\n")
-		elif ord(c) == Cept.ter():
-			if len(new_pagenumber) > 0:
-				sys.stderr.write("error: TER not expected here!\n")
-			else:
-				new_pagenumber = '#'
-				lookuplink = True
-				sys.stderr.write("local link: -> '" + new_pagenumber + "'\n")
-		elif (c >= '0' and c <= '9'):
-			new_pagenumber += c
-			lookuplink = True
-			sys.stderr.write("local link: '" + c + "' -> '" + new_pagenumber + "'\n")
+	is_back = (desired_pageid == "")
 
-		if lookuplink:
-			if new_pagenumber in links:
-				new_pagenumber = links[new_pagenumber]
-				sys.stderr.write("found: -> '" + new_pagenumber + "'\n")
-				gotopage = True;
-			elif new_pagenumber == '#':
-				if current_pagenumber[-1:] >= 'a' and current_pagenumber[-1:] <= 'y':
-					new_pagenumber = current_pagenumber[:-1] + chr(ord(current_pagenumber[-1:]) + 1)
-				elif current_pagenumber[-1:] >= '0' and current_pagenumber[-1:] <= '9':
-					new_pagenumber = current_pagenumber + "b"
-				gotopage = True;
-			sys.stderr.write("new_pagenumber: '" + new_pagenumber + "'\n")
-				
-	elif mode == MODE_INI:
+	if is_back:
+		if len(history) < 2:
+			is_back = False
+			sys.stderr.write("ERROR: No history.\n")
+			sys.stdout.buffer.write(create_system_message(10) + Cept.sequence_end_of_page())
+			sys.stdout.flush()
+			showing_message = True
+		else:
+			desired_pageid = history[-2]
+			history = history[:-2]
+
+	if desired_pageid and show_page(desired_pageid):
+		# showing page worked
+		current_pageid = desired_pageid
+		history.append(current_pageid)
+	else:
+		sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\n")
+		if desired_pageid[-1] >= "b" and desired_pageid[-1] <= "z":
+			code = 101
+		else:
+			code = 100
+		cept_data = create_system_message(code) + Cept.sequence_end_of_page()
+		sys.stdout.buffer.write(cept_data)
+		sys.stdout.flush()
+		showing_message = True
+		if is_back:
+			# Going back failed -> we're still on the same page.
+			# Re-add the current page, but the previous page is removed from history
+			history.append(current_pageid)
+		else:
+			# showing page failed, current_pageid and history are unchanged
+			pass
+	
+	desired_pageid = None
+	
+	# convert "#" to TER in links
+	if "#" in links:
+		links[chr(Cept.ter())] = links["#"]
+		links.pop("#", None)
+	# extract link prefix characters
+	link_prefixes = set()
+	for link in links:
+		link_prefixes.add(link[0])
+
+	s = ""
+	
+	while True:
+		gotopage = False;
+	
+		c = sys.stdin.read(1)
+		if showing_message:
+			sys.stdout.write("\x18");
 		if ord(c) == Cept.ini():
-			# '**' resets mode
-			mode = MODE_NONE
-			new_pagenumber = ""
+			sys.stdout.write("*")
+		elif ord(c) == Cept.ter():
+			sys.stdout.write("#")
+		elif c.isdigit() or c == "\b":
+			sys.stdout.write(c)
+		sys.stdout.flush()
+		sys.stderr.write("In: " + hex(ord(c)) + "\n")
+	
+		showing_message = False
+	
+		s += c
+		sys.stderr.write("s: '")
+		debug_print(s)
+	
+		if s[0].isdigit() or s[0] == chr(Cept.ter()):
+			# potential link
+			if s in links:
+				# correct link
+				desired_pageid = links[s]
+			elif len(s) == 1 and s in link_prefixes:
+				# prefix of a link
+				pass
+			elif s == chr(Cept.ter()):
+				# next sub-page
+				if current_pageid[-1:] >= "a" and current_pageid[-1:] <= "y":
+					desired_pageid = current_pageid[:-1] + chr(ord(current_pageid[-1:]) + 1)
+				elif current_pageid[-1:] >= '0' and current_pageid[-1:] <= '9':
+					desired_pageid = current_pageid + "b"
+			else:
+				# can't be a valid link
+				s = ""
+				sys.stdout.buffer.write(create_system_message(100) + Cept.sequence_end_of_page())
+				sys.stdout.flush()
+				showing_message = True
+		elif s[-2:] == chr(Cept.ini()) + chr(Cept.ini()):
+			# "**" clears input
+			s = ""
 			cept_data = bytearray(Cept.set_cursor(24, 1))
 			cept_data.extend(Cept.clear_line())
 			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
-			sys.stderr.write("mode = MODE_NONE\n")
-		elif c >= '0' and c <= '9':
-			new_pagenumber += c
-			sys.stderr.write("global link: '" + c + "' -> '" + new_pagenumber + "'\n")
-			if new_pagenumber == "00" or new_pagenumber == "09":
-				# TODO: 09 is a *hard* refresh
-				new_pagenumber = current_pagenumber
-				gotopage = True;
-				mode = MODE_NONE
-			sys.stderr.write("mode = MODE_NONE\n")
-		elif ord(c) == Cept.ter():
-			if new_pagenumber == "":
-				new_pagenumber = previous_pagenumber
-			sys.stderr.write("TERM global link: '" + new_pagenumber + "'\n")
-			gotopage = True;
-			mode = MODE_NONE
-			sys.stderr.write("mode = MODE_NONE\n")
-		
-	if gotopage:
-		if show_page(new_pagenumber):
-			previous_pagenumber = current_pagenumber
-			current_pagenumber = new_pagenumber
-		new_pagenumber = ""
-
+			sys.stderr.write("Cleared.\n")
+		elif s[0] == chr(Cept.ini()) and s[-1] == chr(Cept.ter()):
+			desired_pageid = s[1:-1]
+			sys.stderr.write("New page: '" + desired_pageid+ "'.\n")
+	
+		if desired_pageid is not None:
+			break
+	
