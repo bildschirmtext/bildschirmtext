@@ -535,66 +535,7 @@ def debug_print(s):
 			sys.stderr.write(cc)
 	sys.stderr.write("'\n")
 
-# MAIN
-
-sys.stderr.write("Neu-Ulm running.\n")
-
-if len(sys.argv) > 1 and sys.argv[1] == "c64":
-	num_crs = 0
-	while True:
-		c = read_with_echo(False);
-		if ord(c) == 13:
-			num_crs += 1
-			if num_crs == 4:
-				break
-			
-
-current_pageid = None
-history = []
-
-desired_pageid = "00000" # login page
-#desired_pageid = "200960"
-
-showing_message = False
-
-while True:
-	is_back = (desired_pageid == "")
-
-	if is_back:
-		if len(history) < 2:
-			is_back = False
-			sys.stderr.write("ERROR: No history.\n")
-			sys.stdout.buffer.write(create_system_message(10) + Cept.sequence_end_of_page())
-			sys.stdout.flush()
-			showing_message = True
-		else:
-			desired_pageid = history[-2]
-			history = history[:-2]
-
-	if desired_pageid and show_page(desired_pageid):
-		# showing page worked
-		current_pageid = desired_pageid
-		history.append(current_pageid)
-	else:
-		sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\n")
-		if desired_pageid[-1] >= "b" and desired_pageid[-1] <= "z":
-			code = 101
-		else:
-			code = 100
-		cept_data = create_system_message(code) + Cept.sequence_end_of_page()
-		sys.stdout.buffer.write(cept_data)
-		sys.stdout.flush()
-		showing_message = True
-		if is_back:
-			# Going back failed -> we're still on the same page.
-			# Re-add the current page, but the previous page is removed from history
-			history.append(current_pageid)
-		else:
-			# showing page failed, current_pageid and history are unchanged
-			pass
-	
-	desired_pageid = None
-	
+def main_input(current_pageid, links, showing_message):
 	# convert "#" to TER in links
 	if "#" in links:
 		links[chr(Cept.ter())] = links["#"]
@@ -605,24 +546,15 @@ while True:
 		link_prefixes.add(link[0])
 
 	s = ""
+	desired_pageid = None
 	
 	while True:
-		gotopage = False;
-	
-		c = sys.stdin.read(1)
-		if showing_message:
-			sys.stdout.write("\x18");
-		if ord(c) == Cept.ini():
-			sys.stdout.write("*")
-		elif ord(c) == Cept.ter():
-			sys.stdout.write("#")
-		elif c.isdigit() or c == "\b":
-			sys.stdout.write(c)
-		sys.stdout.flush()
-		sys.stderr.write("In: " + hex(ord(c)) + "\n")
-	
+		c = read_with_echo(showing_message)
 		showing_message = False
-	
+
+		# TODO: backspace
+		# TODO: only allow alphanumeric
+		
 		s += c
 		sys.stderr.write("s: '")
 		debug_print(s)
@@ -661,4 +593,70 @@ while True:
 	
 		if desired_pageid is not None:
 			break
+	return desired_pageid
+
+# MAIN
+
+sys.stderr.write("Neu-Ulm running.\n")
+
+if len(sys.argv) > 1 and sys.argv[1] == "c64":
+	num_crs = 0
+	while True:
+		c = read_with_echo(False);
+		if ord(c) == 13:
+			num_crs += 1
+			if num_crs == 4:
+				break
+			
+
+current_pageid = None
+history = []
+
+desired_pageid = "00000" # login page
+#desired_pageid = "200960"
+
+showing_message = False
+
+while True:
+	if desired_pageid == "00":
+		# reload
+		desired_pageid = history[-1]
+		history = history[:-1]
+
+	is_back = (desired_pageid == "")
+
+	if is_back:
+		if len(history) < 2:
+			is_back = False
+			sys.stderr.write("ERROR: No history.\n")
+			sys.stdout.buffer.write(create_system_message(10) + Cept.sequence_end_of_page())
+			sys.stdout.flush()
+			showing_message = True
+		else:
+			desired_pageid = history[-2]
+			history = history[:-2]
+
+	if desired_pageid and show_page(desired_pageid):
+		# showing page worked
+		current_pageid = desired_pageid
+		history.append(current_pageid)
+	else:
+		sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\n")
+		if desired_pageid and (desired_pageid[-1] >= "b" and desired_pageid[-1] <= "z"):
+			code = 101
+		else:
+			code = 100
+		cept_data = create_system_message(code) + Cept.sequence_end_of_page()
+		sys.stdout.buffer.write(cept_data)
+		sys.stdout.flush()
+		showing_message = True
+		if is_back:
+			# Going back failed -> we're still on the same page.
+			# Re-add the current page, but the previous page is removed from history
+			history.append(current_pageid)
+		else:
+			# showing page failed, current_pageid and history are unchanged
+			pass
 	
+	desired_pageid = main_input(current_pageid, links, showing_message)
+
