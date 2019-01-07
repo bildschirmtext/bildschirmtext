@@ -98,7 +98,7 @@ class Messaging:
 			json.dump(messages, f)
 		
 
-class Messaging_UI():
+class Messaging_UI:
 
 	# private
 	def messaging_create_title(title):
@@ -367,8 +367,7 @@ class Messaging_UI():
 		)
 		return (meta, data_cept)
 
-	def messaging_create_page(user, pagenumber):
-		sys.stderr.write("pagenumber[:2] " + pagenumber[:2] + "\n")
+	def create_page(user, pagenumber):
 		if pagenumber == "8a":
 			return Messaging_UI.messaging_create_main_menu()
 		elif pagenumber == "88a":

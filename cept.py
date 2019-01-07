@@ -139,22 +139,16 @@ class Cept(bytearray):
 		return bytes([0x80 + c])
 
 	@staticmethod
+	def set_bg_color_simple(c):
+		return bytes([0x90 + c])
+
+	@staticmethod
 	def set_fg_color(c):
-		if c > 7:
-			pal = 1
-			c -= 8
-		else:
-			pal = 0
-		return bytes([0x9b, 0x30 + pal, 0x40, 0x80 + c])
+		return Cept.set_palette(c >> 3) + Cept.set_fg_color_simple(c & 7)
 
 	@staticmethod
 	def set_bg_color(c):
-		if c > 7:
-			pal = 1
-			c -= 8
-		else:
-			pal = 0
-		return bytes([0x9b, 0x30 + pal, 0x40, 0x90 + c])
+		return Cept.set_palette(c >> 3) + Cept.set_bg_color_simple(c & 7)
 
 	@staticmethod
 	def set_line_bg_color_simple(c):
@@ -163,6 +157,10 @@ class Cept(bytearray):
 	@staticmethod
 	def set_screen_bg_color_simple(c):
 		return bytes([0x1b, 0x23, 0x20, 0x50 + c])
+
+	@staticmethod
+	def set_screen_bg_color(c):
+		return Cept.set_palette(c >> 3) + Cept.set_screen_bg_color_simple(c & 7)
 
 	@staticmethod
 	def set_line_fg_color_simple(c):

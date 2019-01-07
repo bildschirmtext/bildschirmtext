@@ -59,6 +59,7 @@ from user import User
 from editor import Editor
 from messaging import Messaging
 from messaging import Messaging_UI
+from login import Login_UI
 
 # paths
 PATH_DATA = "data/"
@@ -241,72 +242,6 @@ def create_preamble(basedir, meta):
 
 	return preamble
 
-def replace_placeholders(cept):
-	global user
-
-	current_date = datetime.datetime.now().strftime("%d.%m.%Y")
-	current_time = datetime.datetime.now().strftime("%H:%M")
-
-	while True:
-		found = False
-		# TODO: convert into lookup table
-		pos = cept.find(b'\x1f\x40\x41')
-		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(current_date) + cept[pos+3:]
-			found = True
-			pos = cept.find(b'\x1f\x40\x42')
-		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(user.salutation) + cept[pos+3:]
-			found = True
-	
-		pos = cept.find(b'\x1f\x40\x43')
-		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(user.first_name) + cept[pos+3:]
-			found = True
-	
-		pos = cept.find(b'\x1f\x40\x44')
-		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(user.last_name) + cept[pos+3:]
-			found = True
-	
-		pos = cept.find(b'\x1f\x40\x45')
-		if pos > 0:
-			if user.stats.last_login is not None:
-				t = datetime.datetime.fromtimestamp(user.stats.last_login)
-				cept = cept[:pos] + Cept.from_str(t.strftime("%d.%m.%Y")) + cept[pos+3:]
-			else:
-				cept = cept[:pos] + Cept.from_str("--.--.----") + cept[pos+3:]
-			found = True
-	
-		pos = cept.find(b'\x1f\x40\x46')
-		if pos > 0:
-			if user.stats.last_login is not None:
-				t = datetime.datetime.fromtimestamp(user.stats.last_login)
-				cept = cept[:pos] + Cept.from_str(t.strftime("%H:%M")) + cept[pos+3:]
-			else:
-				cept = cept[:pos] + Cept.from_str("--:--") + cept[pos+3:]
-			found = True
-	
-		pos = cept.find(b'\x1f\x40\x47')
-		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(user.user_id) + cept[pos+3:]
-			found = True
-	
-		pos = cept.find(b'\x1f\x40\x48')
-		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(user.ext) + cept[pos+3:]
-			found = True
-	
-		pos = cept.find(b'\x1f\x40\x49')
-		if pos > 0:
-			cept = cept[:pos] + Cept.from_str(current_time) + cept[pos+3:]
-			found = True
-				
-		if not found:
-			break
-
-	return cept
-
 def create_page(basepath, pageid):
 	if pageid[-1:].isdigit():
 		pageid += "a"
@@ -327,8 +262,15 @@ def create_page(basepath, pageid):
 
 	# generated pages
 	sys.stderr.write("pageid[0]: '" + pageid[0] + "'\n")
-	if pageid[0] == '8':
-		ret = Messaging_UI.messaging_create_page(user, pageid)
+	if pageid.startswith("00000"):
+		# login
+		ret = Login_UI.create_page(user, pageid)
+		if ret is None:
+			return None
+		(meta, data_cept) = ret
+	elif pageid.startswith("8"):
+		# messaging
+		ret = Messaging_UI.create_page(user, pageid)
 		if ret is None:
 			return None
 		(meta, data_cept) = ret
@@ -344,8 +286,6 @@ def create_page(basepath, pageid):
 		
 		with open(filename_cept, mode='rb') as f:
 			data_cept = f.read()
-	
-		data_cept = replace_placeholders(data_cept)
 
 	with open(basedir + "a.glob") as f:
 		glob = json.load(f)
