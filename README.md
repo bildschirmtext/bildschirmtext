@@ -46,11 +46,36 @@ Manche Hardware-Decoder, wie der LOEWE MultiTel-D, erlauben den Anschluß über 
 
 Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Die Optionen von `socat` beziehen sich auf macOS, auf anderen Betriebssystemen müssen sie eventuell angepaßt werden.
 
-### C64-Software-Decoder
+### MS-DOS: "PC online" Decoder (Drews)
 
 	socat -d -d exec:"python3 neu-ulm.py --modem" pty,raw,echo=0
 
 `socat` erzeugt einen virtuellen seriellen Port, der mit der Server-Software verbunden ist. Die Ausgabe beinhaltet den Pfad zu diesem Port.
+
+Im DOSBox-Emulator muß dann folgende Zeile in die Konfigurationsdatei eingetragen werden:
+
+	serial3=directserial realport:ttys005
+
+Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Wichtig: Auf Unix-Systemen muß der Pfad `/dev/` weggelassen werden!
+
+Der Decoder wird bit `BTX1` gestartet, die Einwahl erfolgt mit F10.
+
+In der Konfigurationsdatei kann man im Abschnitt `[autoexec]` das Starten der Software automatisieren:
+
+	mount c: /Pfad/zum/Decoder
+	c:
+	btx1
+
+Geschwindigkeitsoptimierung:
+
+* Die Einwahl kann beschleunigt werden, indem man das Modem auf "Schnelles Modem mit V.32" stellt und die drei `AT`-Strings löscht.
+* Eine schnellere Datenübertragung erhält man, indem in "Option -> Schnittstelle (Alt-S)" die Baudrate auf 9600 gestellt wird.
+
+Um die Einstellungen zu speichern, muß das Programm regulär beendet werden (Alt-Y).
+
+### Commodore 64: 64'er-Decoder (Drews)
+
+`socat` muß wie beim "PC online" Decoder gestartet werden.
 
 Im VICE-C64-Emulator müssen dann folgende Zeilen in die `vicerc`-Konfigurationsdatei eingetragen werden:
 
@@ -60,7 +85,9 @@ Im VICE-C64-Emulator müssen dann folgende Zeilen in die `vicerc`-Konfigurations
 	RsUserEnable=1
 	RsUserBaud=1200
 
-Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Dann kann der Decoder (siehe Downloads unten) gestartet werden. Die Einwahl wird mit F7 gestartet. `*` befindet sich auf F1 und `#` auf F3.
+Der Pfad zum seriellen Port muß entsprechend angepaßt werden.
+
+Dann kann der Decoder (siehe Downloads unten) gestartet werden. Die Einwahl wird mit F7 gestartet. `*` befindet sich auf F1 und `#` auf F3.
 
 ### Andere Software-Decoder
 
