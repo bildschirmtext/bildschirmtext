@@ -182,49 +182,41 @@ class Login_UI:
 		data_cept = bytearray()
 		data_cept.extend(Cept.clear_screen())
 		data_cept.extend(Cept.cursor_home())
+		data_cept.extend(b'\n')
 		data_cept.extend(
-			b'\n'
-		)
-		data_cept.extend(
-			b'\x9b\x31\x40'                           # select palette #1
-			b'\x1b\x23\x20\x54'                        # set bg color of screen to 4
-			b'\x1b\x28\x40'                           # load G0 into G0
-			b'\x0f'                                 # G0 into left charset
-			b'\x1b\x22\x41'                           # parallel mode
-			b'\x9b\x30\x40'                           # select palette #0
-			b'\x9e'                                 # ???
-			b'\x87'                                 # set fg color to #7
-			b'\x1b\x28\x20\x40'                        # load DRCs into G0
-			b'\x0f'                                 # G0 into left charset
+			b'\x9b\x31\x40'                # select palette #1
+			b'\x1b\x23\x20\x54'            # set bg color of screen to 4
+			b'\x1b\x28\x40'                # load G0 into G0
+			b'\x0f'                        # G0 into left charset
+			b'\x1b\x22\x41'                # parallel mode
+			b'\x9b\x30\x40'                # select palette #0
+			b'\x9e'                        # ???
+			b'\x87'                        # set fg color to #7
+			b'\x1b\x28\x20\x40'            # load DRCs into G0
+			b'\x0f'                        # G0 into left charset
 			b'!"#\r\n$%&'
-			b'\x0b'                                 # cursor up
-			b'\x09'                                 # cursor right
-			b'\x1b\x28\x40'                           # load G0 into G0
-			b'\x0f'                                 # G0 into left charset
+			b'\x0b'                        # cursor up
+			b'\x09'                        # cursor right
+			b'\x1b\x28\x40'                # load G0 into G0
+			b'\x0f'                        # G0 into left charset
 		)
 		data_cept.extend(b'\n')
 		data_cept.extend(Cept.double_height())
 		data_cept.extend(Cept.from_str("Bildschirmtext"))
-		data_cept.extend(
-			b'\r\n'
-			b'\x1b\x23\x21\x54'                        # set bg color of line to 4
-			b'\n'
-			b'\x1b\x23\x21\x54'                        # set bg color of line to 4
-			b'\x9b\x31\x40'                           # select palette #1
-			b'\x8d'                                 # double height
-			b'\r'
-		)
+		data_cept.extend(b'\r\n')
+		data_cept.extend(Cept.set_line_bg_color_simple(4))
+		data_cept.extend(b'\n')
+		data_cept.extend(Cept.set_line_bg_color_simple(4))
+		data_cept.extend(Cept.set_palette(1))
+		data_cept.extend(Cept.double_height())
+		data_cept.extend(b'\r')
 		data_cept.extend(Cept.from_str("Deutsche Bundespost"))
 		data_cept.extend(b'\n\r')
-		data_cept.extend(
-			b'\x9b\x30\x40'                           # select palette #0
-			b'\x8c'                                 # normal size
-			b'\x9e'                                 # ???
-			b'\x87'                                 # set fg color to #7
-			b'\r\n'
-			b'\x8c'                                 # normal size
-			b'\x83'                                 # set fg color to #3
-		)
+		data_cept.extend(Cept.set_palette(0))
+		data_cept.extend(Cept.normal_size())
+		data_cept.extend(Cept.code_9e())
+		data_cept.extend(b'\r\n')
+		data_cept.extend(Cept.set_fg_color_simple(3))
 		data_cept.extend(Cept.from_str(current_date))
 		data_cept.extend(Cept.set_fg_color_simple(7))
 		data_cept.extend(b'\r\n\n')
