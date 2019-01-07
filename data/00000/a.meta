@@ -7,7 +7,7 @@
     	"fields": [
 			{
 				"name": "user_id",
-				"hint": "Nächstes Feld mit #; Leer für Gast",
+				"hint": "Teilnehmernummer oder # eingeben",
 				"line": 17,
 				"column": 26,
 				"height": 1,
@@ -18,7 +18,7 @@
 			},
 			{
 				"name": "ext",
-				"hint": "Nächstes Feld mit #; Leer für Gast",
+				"hint": "Mitbenutzer oder # eingeben",
 				"line": 17,
 				"column": 37,
 				"height": 1,

@@ -1,4 +1,52 @@
 # -*- coding: utf-8 -*-
+
+
+'''
+    ████████████████████████████████████████████████
+   █                                                █
+  █                                                  █
+ █                                                    █
+ █                                                    █
+ █                                                    █
+ █                ████████████████████                █
+ █             ██████████████████████████             █
+ █           ██████████████████████████████           █
+ █          ████████████████████████████████          █
+ █         ███████████            ███████████         █
+ █         ██████████              ██████████         █
+ █         ██████████     ████     ██████████         █
+ █         █████████    ████████    █████████         █
+ █          ██████     ██████████     ██████          █
+ █           ███   ███ ██████████ ███   ███           █
+ █               █████ ██████████ █████               █
+ █             ███████ ██████████ ███████             █
+ █            ████████ ██████████ ████████            █
+ █            ████████ ██████████ ████████            █
+ █            ████████ ██████████ ████████            █
+ █            █████████ ████████ █████████            █
+ █            ██████████  ████  ██████████            █
+ █            ████████████    ████████████            █
+ █            ████████████████████████████            █
+ █            ████████████████████████████            █
+ █            ████████████████████████████            █
+ █                                                    █
+ █                                                    █
+ █                                                    █
+ █   ███ █ █   █        █   █                         █
+ █   █ █   █   █        █              █          █   █
+ █   █ █ █ █ ███ ███ ██ ███ █ ██ █████ ██ ███ █ █ ██  █
+ █   ██  █ █ █ █ █   █  █ █ █ █  █ █ █ █  █ █ █ █ █   █
+ █   █ █ █ █ █ █ ███ █  █ █ █ █  █ █ █ █  ███  █  █   █
+ █   █ █ █ █ █ █   █ █  █ █ █ █  █ █ █ █  █   █ █ █   █
+ █   ███ █ █ ███ ███ ██ █ █ █ █  █ █ █ ██ ███ █ █ ██  █
+ █                                                    █
+ █                                                    █
+ █                                                    █
+  █                                                  █
+   █                                                █
+    ████████████████████████████████████████████████
+'''
+
 import sys
 import os
 import re
@@ -376,11 +424,23 @@ def handle_inputs(inputs):
 			type = input.get("type")
 
 			while True:
-				cept_data = create_system_message(0, 0, hint)
-				sys.stdout.buffer.write(cept_data)
-				sys.stdout.flush()
+				while True:
+					cept_data = create_system_message(0, 0, hint)
+					sys.stdout.buffer.write(cept_data)
+					sys.stdout.flush()
 	
-				val = editor.edit()
+					val = editor.edit()
+	
+					if val and val[0] == chr(Cept.ini()):
+						# user has supplied page through command mode
+						if inputs.get("is_login", False):
+							# navigation not allowed on login page, except refresh
+							continue
+						else:
+							return val[1:]
+					else:
+						break
+
 				input_data[input["name"]] = val
 				
 				if type == "user_id":
@@ -407,7 +467,7 @@ def handle_inputs(inputs):
 			
 			i += 1
 
-		if not "confirm" in inputs or inputs["confirm"]:
+		if inputs.get("confirm", True):
 			# "send?" message
 			if "price" in inputs:
 				price = inputs["price"]
@@ -464,7 +524,7 @@ def handle_inputs(inputs):
 			sys.stdout.flush()
 	
 		# login page
-		if "is_login" in inputs and inputs["is_login"]:
+		if inputs.get("is_login", False):
 			if not login(input_data):
 				sys.stderr.write("login incorrect\n")
 				cept_data = create_system_message(998)
@@ -538,7 +598,6 @@ def wait_for_dial_command():
 
 sys.stderr.write("Neu-Ulm running.\n")
 
-# TODO: generalize "c64": command line option to wait for n CRs
 # TODO: command line option to log in a user
 # TODO: command line option to navigate to a specific page
 
@@ -597,16 +656,16 @@ while True:
 	
 	desired_pageid = None
 	
-	allowed_inputs = list(links.keys())
-	if "#" in allowed_inputs:
-		allowed_inputs.remove("#")
+	legal_inputs = list(links.keys())
+	if "#" in legal_inputs:
+		legal_inputs.remove("#")
 
 	editor = Editor()
 	editor.line = 24
 	editor.column = 1
 	editor.height = 1
 	editor.width = 40
-	editor.allowed_inputs = allowed_inputs
+	editor.legal_inputs = legal_inputs
 	val = editor.edit()
 
 	if val and val[0] == chr(Cept.ini()):
