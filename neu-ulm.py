@@ -260,7 +260,7 @@ def create_page(basepath, pageid):
 
 	# generated pages
 	sys.stderr.write("pageid[0]: '" + pageid[0] + "'\n")
-	if pageid.startswith("00000"):
+	if pageid.startswith("00000") or pageid == "9a":
 		# login
 		ret = Login_UI.create_page(user, pageid)
 		if ret is None:

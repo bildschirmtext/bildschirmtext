@@ -127,6 +127,37 @@ class Login_UI:
 		data_cept.extend(Cept.repeat("Q", 40))
 		return (meta, data_cept)
 
+	def create_logout():
+		meta = {
+			"clear_screen": False,
+			"links": {
+				"#": "00000"
+			},
+			"publisher_color": 7
+		}
+
+
+		data_cept = bytearray()
+		data_cept.extend(Cept.parallel_mode())
+		data_cept.extend(Cept.clear_screen())
+		data_cept.extend(Cept.set_cursor(2, 1))
+		data_cept.extend(Cept.set_screen_bg_color(12))
+		data_cept.extend(Cept.set_fg_color(7))
+		data_cept.extend(Login_UI.btx_logo())
+		data_cept.extend(b'\x1b\x6f')           # G3 into left charset
+		data_cept.extend(Cept.set_fg_color(15))
+		data_cept.extend(Cept.repeat("Q", 40))
+		data_cept.extend(Cept.set_fg_color(7))
+		data_cept.extend(b'\x0f')               # G0 into left charset
+		data_cept.extend(Cept.set_cursor(19, 8))
+		data_cept.extend(Cept.from_str("Vielen Dank für Ihren Anruf!"))
+		data_cept.extend(b'\r\n')
+		data_cept.extend(b'\r\n')
+		data_cept.extend(b'\x1b\x6f')           # G3 into left charset
+		data_cept.extend(Cept.set_fg_color(15))
+		data_cept.extend(Cept.repeat("Q", 40))
+		return (meta, data_cept)
+
 	def create_start(user):
 		meta = {
 			"include": "a",
@@ -138,15 +169,15 @@ class Login_UI:
 			"publisher_color": 7
 		}
 
-		current_date = datetime.datetime.now().strftime("%d.%m.%Y")
-		current_time = datetime.datetime.now().strftime("%H:%M")
+		t = datetime.datetime.now()
+		current_date = t.strftime("%d.%m.%Y  %H:%M")
 		if user.stats.last_login is not None:
 			t = datetime.datetime.fromtimestamp(user.stats.last_login)
-			last_date = Cept.from_str(t.strftime("%d.%m.%Y"))
-			last_time = Cept.from_str(t.strftime("%H:%M"))
+			last_date = t.strftime("%d.%m.%Y")
+			last_time = t.strftime("%H:%M")
 		else:
-			last_date = Cept.from_str("--.--.----")
-			last_time = Cept.from_str("--:--")
+			last_date = "--.--.----"
+			last_time = "--:--"
 
 		data_cept = bytearray()
 		data_cept.extend(Cept.clear_screen())
@@ -195,8 +226,6 @@ class Login_UI:
 			b'\x83'                                 # set fg color to #3
 		)
 		data_cept.extend(Cept.from_str(current_date))
-		data_cept.extend(b'  ')
-		data_cept.extend(Cept.from_str(current_time))
 		data_cept.extend(Cept.set_fg_color_simple(7))
 		data_cept.extend(b'\r\n\n')
 		data_cept.extend(Cept.from_str("Guten Tag"))
@@ -216,11 +245,11 @@ class Login_UI:
 		data_cept.extend(b'\r\n')
 		data_cept.extend(Cept.from_str("am "))
 		data_cept.extend(Cept.set_fg_color_simple(3))
-		data_cept.extend(last_date)
+		data_cept.extend(Cept.from_str(last_date))
 		data_cept.extend(Cept.set_fg_color_simple(7))
 		data_cept.extend(Cept.from_str(" bis "))
 		data_cept.extend(Cept.set_fg_color_simple(3))
-		data_cept.extend(last_time)
+		data_cept.extend(Cept.from_str(last_time))
 		data_cept.extend(Cept.set_fg_color_simple(7))
 		data_cept.extend(b'\r\n\r\n\r\n')
 		data_cept.extend(Cept.set_line_bg_color_simple(4))
@@ -232,5 +261,7 @@ class Login_UI:
 			return Login_UI.create_login()
 		elif pagenumber == "000001a":
 			return Login_UI.create_start(user)
+		elif pagenumber == "9a":
+			return Login_UI.create_logout()
 		else:
 			return None
