@@ -14,23 +14,26 @@ Dieses Repository besteht aus
 Der BTX Server `neu-ulm.py` ist in Python 3 geschrieben und hat folgende Features:
 
 * Ausliefern von Seiten
-* Eingabe von Daten in Dialoge
 * Navigation
-	* `*00`: neu laden
-	* `*#`: zur vorherigen Seite zurückkehren
-	* `*Seitennummer#`: Navigation zu einer bestimmten Seite
-	* `[0-9]` und `#`: Navigation zu einer Folgeseite
-	* `**`: löscht die Eingabe
-	* `*9#`: meldet den Benutzer ab
+* Eingabe von Daten in Dialoge
 * Benutzerverwaltung und Login
 	* Der Login-Schirm erwartet die Eingabe von Benutzer-Nummer, Mitbenutzer-Nummer und Kennwort.
 	* Läßt man die Felder leer, wird man als Gast angemeldet.
-* Mitteilungsdienst (*Work in Progress!*)
+* Mitteilungsdienst
 	* Über `*8#` erreicht man den Mitteilungsdienst.
-	* `*88#` zeigt eingegangene Mitteilunge an.
-	* Über `*810#` kann eine neue Mitteilung verfaßt werden. (*Diese wird noch nicht versendet!*)
+	* `*88#` zeigt eingegangene Mitteilungen an.
+	* Über `*810#` kann eine neue Mitteilung verfaßt werden.
 
 Es wurde Wert darauf gelegt, die Architektur des Servers der Original-Architektur nachzuempfinden. Seiten historischer Dumps wurden in ihre Bestandteile zerlegt (Palette, Include, Text, Header und Footer der Post), und der Server baut diese Komponenten zur Laufzeit zusammen. So werden Paletten und Zeichensätze nur dann gesendet, wenn sie nicht schon in den Decoder geladen sind. Des weiteren werden die 1. und 24. Zeile des Bildschirms wie beim Originalserver verwendet: Anbieter-Name und Preis werden aus den Metadaten gewonnen, Warnungen und Fehler besitzen die spezifizierten Codes, und die Nutzdaten dürfen diese Zeilen nicht beschreiben.
+
+### Bedienung
+
+* `*00#`: Seite neu laden
+* `*#`: zur vorherigen Seite zurückkehren
+* `*Seitennummer#`: Navigation zu einer bestimmten Seite
+* `[0-9]` und `#`: Navigation zu einer Folgeseite
+* `**`: löscht die Eingabe
+* `*9#`: meldet den Benutzer ab
 
 ### Verwendung
 
