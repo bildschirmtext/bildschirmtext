@@ -36,7 +36,7 @@ class Editor:
 			else:
 				cept_data.extend(Cept.repeat(" ", self.width))
 			if i != self.height - 1:
-				cept_data.extend('\n')
+				cept_data.extend(b'\n')
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 
