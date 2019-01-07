@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
+import re
 import json
 import time
 import datetime
@@ -510,6 +511,29 @@ def show_page(pageid):
 		if desired_pageid != "*00":
 			pageid = desired_pageid
 
+def wait_for_dial_command():
+	s = ""
+	while True:
+		c = sys.stdin.read(1)
+		sys.stdout.write(c)
+		sys.stdout.flush()
+		if ord(c) == 10 or ord(c) == 13:
+			sys.stderr.write("Modem command: '" + s + "'\n")
+			if re.search("^AT *(X\d)? *D.*", s):
+				break
+			s = ""
+		else:
+			s += c
+#		sys.stderr.write("'")
+#		for cc in s:
+#			if ord(cc) == 10:
+#				sys.stderr.write("\\r")
+#			if ord(cc) == 13:
+#				sys.stderr.write("\\n")
+#			else:
+#				sys.stderr.write(cc)
+#		sys.stderr.write("'\n")
+
 # MAIN
 
 sys.stderr.write("Neu-Ulm running.\n")
@@ -518,16 +542,9 @@ sys.stderr.write("Neu-Ulm running.\n")
 # TODO: command line option to log in a user
 # TODO: command line option to navigate to a specific page
 
-if len(sys.argv) > 1 and sys.argv[1] == "c64":
-	num_crs = 0
-	while True:
-		c = sys.stdin.read(1)
-		sys.stdout.write(c)
-		if ord(c) == 13:
-			num_crs += 1
-			if num_crs == 4:
-				break
-			
+for arg in sys.argv[1:]:
+	if arg == "--modem":
+		wait_for_dial_command()
 
 current_pageid = None
 history = []

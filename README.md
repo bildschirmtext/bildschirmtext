@@ -48,7 +48,7 @@ Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Die Optionen von
 
 ### C64-Software-Decoder
 
-	socat -d -d exec:"python3 neu-ulm.py c64" pty,raw,echo=0
+	socat -d -d exec:"python3 neu-ulm.py --modem" pty,raw,echo=0
 
 `socat` erzeugt einen virtuellen seriellen Port, der mit der Server-Software verbunden ist. Die Ausgabe beinhaltet den Pfad zu diesem Port.
 
@@ -60,11 +60,15 @@ Im VICE-C64-Emulator müssen dann folgende Zeilen in die `vicerc`-Konfigurations
 	RsUserEnable=1
 	RsUserBaud=1200
 
-Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Dann kann der Decoder ("64er Online BTX v1.60 (19xx)(-)(de).d64") gestartet werden. Die Einwahl wird mit F7 gestartet. `*` befindet sich auf F1 und `#` auf F3.
+Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Dann kann der Decoder (siehe Downloads unten) gestartet werden. Die Einwahl wird mit F7 gestartet. `*` befindet sich auf F1 und `#` auf F3.
 
-### Weitere Software-Decoder
+### Andere Software-Decoder
 
-Es existieren noch einige weitere Software-Decoder für unterschiedliche Betriebssysteme:
+Es sollte möglich sein, auch andere Software-Decoder über einen virtuellen seriellen Port mit der Server-Software zu verbinden. Über Erfahrungsberichte sind wir dankbar.
+
+### Software-Decoder Downloads
+
+Es existieren einige Software-Decoder für unterschiedliche Betriebssysteme:
 
 * MS-DOS
 	* [TeleComm](https://archive.org/details/TEleComm-KommunikationMitKomfort-BTXDecoderSharewareGerman)
@@ -81,8 +85,6 @@ Es existieren noch einige weitere Software-Decoder für unterschiedliche Betrieb
 * C64
 	* [64'er Online BTX v1.52 (Drews)](https://www.pagetable.com/docs/btx/decoder/64er%20Online%20BTX%20v1.52%20(19xx)(-)(de).d64)
 	* [64'er Online BTX v1.60 (Drews)](https://www.pagetable.com/docs/btx/decoder/64er%20Online%20BTX%20v1.60%20(19xx)(-)(de).d64)
-
-Es sollte möglich sein, auch diese über einen virtuellen seriellen Port mit der Server-Software zu verbinden. Über Erfahrungsberichte sind wir dankbar.
 
 ## Die Datenbank
 
