@@ -44,6 +44,8 @@ class User():
 	country = None
 	stats = None
 
+	messaging = None
+
 	@classmethod
 	def exists(cls, user_id, ext = "1"):
 		filename = PATH_USERS + user_id + "-" + ext + ".user"
@@ -51,6 +53,7 @@ class User():
 	
 	@classmethod
 	def get(cls, user_id, ext, personal_data = False):
+		from messaging import Messaging
 		filename = PATH_USERS + user_id + "-" + ext + ".user"
 		if not os.path.isfile(filename):
 			return None
@@ -70,6 +73,8 @@ class User():
 			user.city = dict.get("city", "")
 			user.country = dict.get("country", "")
 			user.stats = Stats(user)
+		
+		user.messaging = Messaging(user)
 
 		return user
 

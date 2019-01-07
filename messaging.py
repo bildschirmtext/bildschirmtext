@@ -82,7 +82,11 @@ class Messaging:
 
 		message = Message(self.messages[index])
 		return message
-	
+
+	def has_new_messages(self):
+		self.load()
+		return len(self.messages) > 0
+
 	def send(self, user_id, ext, body):
 		messages = Messaging.load_dict(user_id, ext)
 		messages["messages"].append(
@@ -96,7 +100,7 @@ class Messaging:
 		)
 		with open(Messaging.dict_filename(user_id, ext), 'w') as f:
 			json.dump(messages, f)
-		
+
 
 class Messaging_UI:
 
@@ -181,12 +185,10 @@ class Messaging_UI:
 		links = {
 			"0": "8"
 		}
-		
-		messaging = Messaging(user)
-		
+				
 		for index in range(0, 9):
 			data_cept.extend(Cept.from_str(str(index + 1)) + b'  ')
-			message = messaging.get(index)
+			message = user.messaging.get(index)
 			if message is not None:
 				data_cept.extend(Cept.from_str(message.from_first()) + b' ' + Cept.from_str(message.from_last()))
 				data_cept.extend(b'\r\n   ')
@@ -213,8 +215,7 @@ class Messaging_UI:
 			"publisher_color": 7
 		}
 
-		messaging = Messaging(user)
-		message = messaging.get(index)
+		message = user.messaging.get(index)
 
 		from_date = message.from_date()
 		from_time = message.from_time()

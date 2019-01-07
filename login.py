@@ -106,36 +106,23 @@ class Login_UI:
 		data_cept.extend(Cept.set_screen_bg_color(12))
 		data_cept.extend(Cept.set_fg_color(7))
 		data_cept.extend(Login_UI.btx_logo())
-		data_cept.extend(
-			b'\x1b\x6f'                   # G3 into left charset
-		)
+		data_cept.extend(b'\x1b\x6f')           # G3 into left charset
 		data_cept.extend(Cept.set_fg_color(15))
 		data_cept.extend(Cept.repeat("Q", 40))
 		data_cept.extend(Cept.set_fg_color(7))
-		data_cept.extend(
-			b'\x0f'                       # G0 into left charset
-			b'\x20\x12\x46'               # repeat ' ' 6 times
-		)
+		data_cept.extend(b'\x0f')               # G0 into left charset
+		data_cept.extend(Cept.set_cursor(18, 8))
 		data_cept.extend(Cept.from_str("Teilnehmer"))
-		data_cept.extend(
-			b'\x20\x12\x46'               # repeat ' ' 6 times
-			b":"
-			b'\x20\x12\x49'               # repeat ' ' 9 times
-		)
+		data_cept.extend(Cept.set_cursor(18, 25))
+		data_cept.extend(b":")
+		data_cept.extend(Cept.set_cursor(18, 36))
 		data_cept.extend(Cept.set_fg_color(3))
-		data_cept.extend(
-			b"-"
-		)
+		data_cept.extend(b'-')
 		data_cept.extend(Cept.set_fg_color(7))
-		data_cept.extend(
-			b'\r\n\n'
-			b'\x20\x12\x46'               # repeat ' ' 6 times
-		)
+		data_cept.extend(Cept.set_cursor(20, 8))
 		data_cept.extend(Cept.from_str("persönl. Kennwort:"))
 		data_cept.extend(b'\r\n')
-		data_cept.extend(
-			b'\x1b\x6f'                   # G3 into left charset
-		)
+		data_cept.extend(b'\x1b\x6f')           # G3 into left charset
 		data_cept.extend(Cept.set_fg_color(15))
 		data_cept.extend(Cept.repeat("Q", 40))
 		return (meta, data_cept)
@@ -185,12 +172,8 @@ class Login_UI:
 			b'\x0f'                                 # G0 into left charset
 		)
 		data_cept.extend(b'\n')
-		data_cept.extend(
-			b'\x8d'                                 # double height
-		)
-		data_cept.extend(
-			Cept.from_str("Bildschirmtext")
-		)
+		data_cept.extend(Cept.double_height())
+		data_cept.extend(Cept.from_str("Bildschirmtext"))
 		data_cept.extend(
 			b'\r\n'
 			b'\x1b\x23\x21\x54'                        # set bg color of line to 4
@@ -225,7 +208,8 @@ class Login_UI:
 		data_cept.extend(Cept.from_str(user.last_name))
 		data_cept.extend(b'\r\n\n\n')
 		data_cept.extend(Cept.set_fg_color_simple(3))
-		data_cept.extend(Cept.from_str("Neue Mitteilungen mit 8"))
+		if user.messaging.has_new_messages():
+			data_cept.extend(Cept.from_str("Neue Mitteilungen mit 8"))
 		data_cept.extend(Cept.set_fg_color_simple(7))
 		data_cept.extend(b'\r\n\n\n\n')
 		data_cept.extend(Cept.from_str("Sie benutzten Bildschirmtext zuletzt"))

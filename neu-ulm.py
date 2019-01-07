@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-
-
 '''
     ████████████████████████████████████████████████
    █                                                █
@@ -443,8 +441,7 @@ def handle_inputs(inputs):
 					sys.stdout.flush()
 
 			if doit and inputs.get("action") == "send_message":
-				messaging = Messaging(user)
-				messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
+				user.messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
 
 				# "sent" message
 				cept_data = bytearray(create_system_message(73))
