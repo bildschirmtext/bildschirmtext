@@ -4,7 +4,53 @@ from cept import Cept
 
 class Login_UI:
 	def btx_logo():
-		return b'\x20\x12\x478\x23\x12\x55)0\r\n\x20\x12\x46j    `x|\x5f\x12\x49}|p    j\r\n\x20\x12\x46j   h____w######c____}   j\r\n\x20\x12\x46j   *___/\'`~___t"/o__?   j\r\n\x20\x12\x46j    "cx~_j_____j_|r#    j\r\n\x20\x12\x46j     ____j_____j___5    j\r\n\x20\x12\x46j     ____};///y____5    j\r\n\x20\x12\x46j     ______________5    j\r\n\x20\x12\x46j p000 0`  0 0    ` `  ` j\r\n\x20\x12\x46j =14575mh$7547jkkj!="6j!j\r\n\x20\x12\x46"d#!!!#!#"!!!!!""""!#"""a&\r\n\x20\x12\x47 \x23\x12\x55!\r\n'
+		return Cept.from_aa(
+			[
+				"    ████████████████████████████████████████████████   ",
+				"   █                                                █  ",
+				"  █                                                  █ ",
+				" █                                                    █",
+				" █                                                    █",
+				" █                                                    █",
+				" █                ████████████████████                █",
+				" █             ██████████████████████████             █",
+				" █           ██████████████████████████████           █",
+				" █          ████████████████████████████████          █",
+				" █         ███████████            ███████████         █",
+				" █         ██████████              ██████████         █",
+				" █         ██████████     ████     ██████████         █",
+				" █         █████████    ████████    █████████         █",
+				" █          ██████     ██████████     ██████          █",
+				" █           ███   ███ ██████████ ███   ███           █",
+				" █               █████ ██████████ █████               █",
+				" █             ███████ ██████████ ███████             █",
+				" █            ████████ ██████████ ████████            █",
+				" █            ████████ ██████████ ████████            █",
+				" █            ████████ ██████████ ████████            █",
+				" █            █████████ ████████ █████████            █",
+				" █            ██████████  ████  ██████████            █",
+				" █            ████████████    ████████████            █",
+				" █            ████████████████████████████            █",
+				" █            ████████████████████████████            █",
+				" █            ████████████████████████████            █",
+				" █                                                    █",
+				" █                                                    █",
+				" █                                                    █",
+				" █   ███ █ █   █        █   █                         █",
+				" █   █ █   █   █        █              █          █   █",
+				" █   █ █ █ █ ███ ███ ██ ███ █ ██ █████ ██ ███ █ █ ██  █",
+				" █   ██  █ █ █ █ █   █  █ █ █ █  █ █ █ █  █ █ █ █ █   █",
+				" █   █ █ █ █ █ █ ███ █  █ █ █ █  █ █ █ █  ███  █  █   █",
+				" █   █ █ █ █ █ █   █ █  █ █ █ █  █ █ █ █  █   █ █ █   █",
+				" █   ███ █ █ ███ ███ ██ █ █ █ █  █ █ █ ██ ███ █ █ ██  █",
+				" █                                                    █",
+				" █                                                    █",
+				" █                                                    █",
+				"  █                                                  █ ",
+				"   █                                                █  ",
+				"    ████████████████████████████████████████████████   "
+			], 6
+		)
 
 	def create_login():
 		meta = {
@@ -17,33 +63,33 @@ class Login_UI:
 					{
 						"name": "user_id",
 						"hint": "Teilnehmernummer oder # eingeben",
-						"line": 17,
+						"line": 18,
 						"column": 26,
 						"height": 1,
 						"width": 10,
-						"bgcolor": 4,
+						"bgcolor": 12,
 						"fgcolor": 3,
 						"default": "64"
 					},
 					{
 						"name": "ext",
 						"hint": "Mitbenutzer oder # eingeben",
-						"line": 17,
+						"line": 18,
 						"column": 37,
 						"height": 1,
 						"width": 1,
-						"bgcolor": 4,
+						"bgcolor": 12,
 						"fgcolor": 3,
 						"default": "1"
 					},
 					{
 						"name": "password",
 						"hint": "Nächstes Feld mit #; Leer für Gast",
-						"line": 19,
+						"line": 20,
 						"column": 26,
 						"height": 1,
 						"width": 7,
-						"bgcolor": 4,
+						"bgcolor": 12,
 						"fgcolor": 3
 					}
 				],
@@ -59,15 +105,15 @@ class Login_UI:
 		data_cept.extend(Cept.set_cursor(2, 1))
 		data_cept.extend(Cept.set_screen_bg_color(12))
 		data_cept.extend(Cept.set_fg_color(7))
-		data_cept.extend(b'\x0e')                      # G1 into left charset
 		data_cept.extend(Login_UI.btx_logo())
 		data_cept.extend(
-			b'\x0f'                       # G0 into left charset
-			b'\r\n'
 			b'\x1b\x6f'                   # G3 into left charset
-			b'\x51\x12\x67'               # repeat 'Q' 39 times
+		)
+		data_cept.extend(Cept.set_fg_color(15))
+		data_cept.extend(Cept.repeat("Q", 40))
+		data_cept.extend(Cept.set_fg_color(7))
+		data_cept.extend(
 			b'\x0f'                       # G0 into left charset
-			b'\r\n'
 			b'\x20\x12\x46'               # repeat ' ' 6 times
 		)
 		data_cept.extend(Cept.from_str("Teilnehmer"))
@@ -75,16 +121,23 @@ class Login_UI:
 			b'\x20\x12\x46'               # repeat ' ' 6 times
 			b":"
 			b'\x20\x12\x49'               # repeat ' ' 9 times
+		)
+		data_cept.extend(Cept.set_fg_color(3))
+		data_cept.extend(
 			b"-"
-			b'\r\n\r\n'
+		)
+		data_cept.extend(Cept.set_fg_color(7))
+		data_cept.extend(
+			b'\r\n\n'
 			b'\x20\x12\x46'               # repeat ' ' 6 times
 		)
 		data_cept.extend(Cept.from_str("persönl. Kennwort:"))
+		data_cept.extend(b'\r\n')
 		data_cept.extend(
-			b'\r\n\r\n'
 			b'\x1b\x6f'                   # G3 into left charset
-			b'\x51\x12\x67'               # repeat 'Q' 39 times
 		)
+		data_cept.extend(Cept.set_fg_color(15))
+		data_cept.extend(Cept.repeat("Q", 40))
 		return (meta, data_cept)
 
 	def create_start(user):
@@ -125,7 +178,7 @@ class Login_UI:
 			b'\x87'                                 # set fg color to #7
 			b'\x1b\x28\x20\x40'                        # load DRCs into G0
 			b'\x0f'                                 # G0 into left charset
-			b'!"#\n\r$%&'
+			b'!"#\r\n$%&'
 			b'\x0b'                                 # cursor up
 			b'\x09'                                 # cursor right
 			b'\x1b\x28\x40'                           # load G0 into G0
@@ -139,7 +192,7 @@ class Login_UI:
 			Cept.from_str("Bildschirmtext")
 		)
 		data_cept.extend(
-			b'\n\r'
+			b'\r\n'
 			b'\x1b\x23\x21\x54'                        # set bg color of line to 4
 			b'\n'
 			b'\x1b\x23\x21\x54'                        # set bg color of line to 4
@@ -154,7 +207,7 @@ class Login_UI:
 			b'\x8c'                                 # normal size
 			b'\x9e'                                 # ???
 			b'\x87'                                 # set fg color to #7
-			b'\n\r'
+			b'\r\n'
 			b'\x8c'                                 # normal size
 			b'\x83'                                 # set fg color to #3
 		)

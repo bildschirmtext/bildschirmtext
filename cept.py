@@ -32,7 +32,38 @@ class Cept(bytearray):
 			else:
 				s2.append(ord(c))
 		return s2
-	
+
+	def from_aa(aa, indent):
+		dict = { "": 0x20, "1": 0x21, "2": 0x22, "12": 0x23, "3": 0x24, "13": 0x25, "23": 0x26, "123": 0x27, "4": 0x28, "14": 0x29, "24": 0x2a, "124": 0x2b, "34": 0x2c, "134": 0x2d, "234": 0x2e, "1234": 0x2f, "5": 0x30, "15": 0x31, "25": 0x32, "125": 0x33, "35": 0x34, "135": 0x35, "235": 0x36, "1235": 0x37, "45": 0x38, "145": 0x39, "245": 0x3a, "1245": 0x3b, "345": 0x3c, "1345": 0x3d, "2345": 0x3e, "12345": 0x3f, "123456": 0x5f, "6": 0x60, "16": 0x61, "26": 0x62, "126": 0x63, "36": 0x64, "136": 0x65, "236": 0x66, "1236": 0x67, "46": 0x68, "146": 0x69, "246": 0x6a, "1246": 0x6b, "346": 0x6c, "1346": 0x6d, "2346": 0x6e, "12346": 0x6f, "56": 0x70, "156": 0x71, "256": 0x72, "1256": 0x73, "356": 0x74, "1356": 0x75, "2356": 0x76, "12356": 0x77, "456": 0x78, "1456": 0x79, "2456": 0x7a, "12456": 0x7b, "3456": 0x7c, "13456": 0x7d, "23456": 0x7e }
+		while len(aa) % 3 != 0:
+			aa.append(" " * len(aa[0]))
+		data_cept = bytearray()
+		data_cept.extend(b'\x0e')                      # G1 into left charset
+		for y in range(0, len(aa), 3):
+			if indent < 4:
+				for i in range(0, indent):
+					data_cept.extend(b'\x09')
+			else:
+				data_cept.extend(bytes([0x09, 0x12, 0x40 + indent - 1]))
+			for x in range(0, len(aa[0]), 2):
+				s = ""
+				next_column_exists = x+1 < len(aa[y])
+				if aa[y][x] != " ":
+					s += "1"
+				if next_column_exists and aa[y][x+1] != " ":
+					s += "2"
+				if aa[y+1][x] != " ":
+					s += "3"
+				if next_column_exists and aa[y+1][x+1] != " ":
+					s += "4"
+				if aa[y+2][x] != " ":
+					s += "5"
+				if next_column_exists and aa[y+2][x+1] != " ":
+					s += "6"
+				data_cept.append(dict[s])
+			data_cept.extend(b'\r\n')
+		data_cept.extend(b'\x0f')                       # G0 into left charset
+		return data_cept
 
 	# CEPT sequences	
 
