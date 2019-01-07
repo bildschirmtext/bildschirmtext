@@ -608,16 +608,25 @@ while True:
 	editor.legal_inputs = legal_inputs
 	val = editor.edit()
 
-	if val and val[0] == chr(Cept.ini()):
+	if val.startswith(chr(Cept.ini())):
 		# global address
 		desired_pageid = val[1:]
 	elif val in links:
 		# link
 		desired_pageid = links[val]
-	elif not val and links.get("#"):
-		# #-link
-		sys.stderr.write("Cept.ter")
-		desired_pageid = links["#"]
+	elif not val:
+		if links.get("#"):
+			# #-link
+			sys.stderr.write("Cept.ter")
+			desired_pageid = links["#"]
+		else:
+			# next sub-page
+			if current_pageid[-1:] >= "a" and current_pageid[-1:] <= "y":
+				desired_pageid = current_pageid[:-1] + chr(ord(current_pageid[-1:]) + 1)
+			elif current_pageid[-1:] >= '0' and current_pageid[-1:] <= '9':
+				desired_pageid = current_pageid + "b"
+			else:
+				desired_pageid = None
 	else:
 		desired_pageid = None
 		
