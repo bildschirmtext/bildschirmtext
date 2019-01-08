@@ -96,6 +96,26 @@ class Cept(bytearray):
 		return b'\x1e'
 
 	@staticmethod
+	def cursor_left():
+		return b'\x08'
+
+	@staticmethod
+	def cursor_right():
+		return b'\x09'
+
+	@staticmethod
+	def cursor_down():
+		return b'\x0a'
+
+	@staticmethod
+	def cursor_up():
+		return b'\x0b'
+
+	@staticmethod
+	def set_cursor(y, x):
+		return bytes([0x1f, 0x40 + y, 0x40 + x])
+
+	@staticmethod
 	def clear_screen():
 		return b'\x0c'
 
@@ -194,8 +214,20 @@ class Cept(bytearray):
 		return bytes([0x1b, 0x23, 0x21, 0x40 + c])
 
 	@staticmethod
-	def set_cursor(y, x):
-		return bytes([0x1f, 0x40 + y, 0x40 + x])
+	def set_left_g0():
+		return b'\x0f'
+
+	@staticmethod
+	def set_left_g3():
+		return b'\x1b\x6f'
+
+	@staticmethod
+	def load_g0_drcs():
+		return b'\x1b\x28\x20\x40'
+
+	@staticmethod
+	def load_g0_g0():
+		return b'\x1b\x28\x40'
 
 	@staticmethod
 	def service_break(y):
