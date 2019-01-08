@@ -79,14 +79,14 @@ class User():
 		return user
 
 	@classmethod
-	def login(cls, user_id, ext, password):
+	def login(cls, user_id, ext, password, force = False):
 		filename = PATH_SECRETS + user_id + "-" + ext + ".secrets"
 		if not os.path.isfile(filename):
 			return None
 		with open(filename) as f:
 			dict = json.load(f)
 
-		if password != dict.get("password"):
+		if password != dict.get("password") and not force:
 			return None
 
 		return cls.get(user_id, ext, True)

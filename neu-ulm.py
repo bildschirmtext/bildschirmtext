@@ -538,15 +538,18 @@ sys.stderr.write("Neu-Ulm running.\n")
 # TODO: command line option to log in a user
 # TODO: command line option to navigate to a specific page
 
+desired_pageid = "00000" # login page
+
 for arg in sys.argv[1:]:
 	if arg == "--modem":
 		wait_for_dial_command()
+	if arg.startswith("--user="):
+		user = User.login(arg[7:], "1", None, True)
+	if arg.startswith("--page="):
+		desired_pageid = arg[7:]
 
 current_pageid = None
 history = []
-
-desired_pageid = "00000" # login page
-#desired_pageid = "0"
 
 showing_message = False
 
