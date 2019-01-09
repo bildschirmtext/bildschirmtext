@@ -10,6 +10,7 @@ Dieses Repository besteht aus
 * Tools zum Arbeiten mit CEPT-Dateien
 
 ![Bildschirmtext Login](Bildschirmtext.png?raw=true "Bildschirmtext Login")
+![Bildschirmtext Login](Bildschirmtext2.png?raw=true "Bildschirmtext Login")
 
 # Bildschirmtext Server
 
