@@ -438,6 +438,7 @@ def handle_inputs(inputs):
 		editor.bgcolor = input.get("bgcolor")
 		editor.hint = input.get("hint")
 		editor.legal_values = input.get("legal_values")
+		editor.echo_ter = input.get("echo_ter", False)
 		editor.no_navigation = inputs.get("no_navigation", False)
 		editor.string = input.get("default")
 		editors.append(editor)
@@ -616,7 +617,8 @@ while True:
 					"column": 1,
 					"height": 1,
 					"width": 40,
-					"legal_values": legal_values
+					"legal_values": legal_values,
+					"echo_ter": True
 				}
 			],
 			"confirm": False,
@@ -629,6 +631,7 @@ while True:
 
 	error = 0
 	desired_pageid = input_data.get("$command")
+
 	if desired_pageid is None:
 		val = input_data["$navigation"]
 		if val in links:

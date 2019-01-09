@@ -45,6 +45,8 @@ class Editor:
 	bgcolor = None
 	hint = None
 	legal_values = None
+	clear_line = False
+	echo_ter = False
 	string = None
 	command_mode = False
 	no_navigation = False
@@ -67,6 +69,8 @@ class Editor:
 				s = "*" + s[1:]
 		else:
 			 s = ""
+		sys.stderr.write("starting with s = ")
+		Editor.debug_print(s)
 
 		cept_data = bytearray(Cept.parallel_limited_mode())
 		cept_data.extend(Cept.hide_cursor())
@@ -76,11 +80,13 @@ class Editor:
 				cept_data.extend(Cept.set_fg_color(self.fgcolor))
 				cept_data.extend(Cept.set_bg_color(self.bgcolor))
 			if self.width == 40:
-				cept_data.extend(Cept.clear_line())
+				if self.clear_line:
+					cept_data.extend(Cept.clear_line())
 				cept_data.extend(Cept.from_str(s))
 			else:
 				cept_data.extend(Cept.from_str(s))
-				cept_data.extend(Cept.repeat(" ", self.width -  len(s)))
+				if self.clear_line:
+					cept_data.extend(Cept.repeat(" ", self.width -  len(s)))
 			if i != self.height - 1:
 				cept_data.extend(b'\n')
 		sys.stdout.buffer.write(cept_data)
@@ -141,6 +147,9 @@ class Editor:
 					editor.width = 40
 					editor.string = chr(Cept.ini())
 					editor.command_mode = True
+					editor.clear_line = True
+					editor.echo_ter = True
+					editor.draw()
 					(val, dct) = editor.edit()
 					if val is None:
 						sys.stderr.write("exiting command mode\n")
@@ -156,6 +165,9 @@ class Editor:
 					continue
 			elif ord(c) == Cept.ter():
 				#Editor.debug_print(self.string)
+				if self.echo_ter:
+					sys.stdout.write("#")
+					sys.stdout.flush()
 				break
 			elif ord(c) == Cept.dct():
 				dct = True
