@@ -90,12 +90,13 @@ class Login_UI:
 						"height": 1,
 						"width": 7,
 						"bgcolor": 12,
-						"fgcolor": 3
+						"fgcolor": 3,
+						"type": "$login_password"
 					}
 				],
 				"confirm": False,
 				"target": "page:000001a",
-				"is_login": True
+				"no_navigation": True
 			}
 		}
 

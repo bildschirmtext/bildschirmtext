@@ -51,6 +51,7 @@ import re
 import json
 import time
 import datetime
+import pprint
 
 from cept import Cept
 from user import User
@@ -185,8 +186,6 @@ def create_system_message(code, price = 0, hint = ""):
 		text = "Seite nicht vorhanden          "
 	elif code == 291:
 		text = "Seite wird aufgebaut           "
-	elif code == 998:
-		text = "Ungültiger Teilnehmer oder Kennwort"
 
 	msg = bytearray(Cept.service_break(24))
 	msg.extend(Cept.clear_line())
@@ -332,181 +331,163 @@ def login(input_data):
 	
 	return not user is None
 
+def wait_for_ter():
+	# TODO: use an editor for this, too!
+	sys.stdout.buffer.write(Cept.sequence_end_of_page())
+	sys.stdout.flush()
+	while True:
+		c = sys.stdin.read(1)
+		if ord(c) == Cept.ter():
+			sys.stdout.write(c)
+			sys.stdout.flush()
+			break
+	cept_data = bytearray(create_system_message(0))
+	cept_data.extend(Cept.sequence_end_of_page())
+	sys.stdout.buffer.write(cept_data)
+	sys.stdout.flush()
+
+VALIDATE_INPUT_OK = 0
+VALIDATE_INPUT_BAD = 1
+VALIDATE_INPUT_RESTART = 2
+
+def validate_input(input_data, type):
+	if type == "user_id":
+		if User.exists(input_data["user_id"]):
+			return VALIDATE_INPUT_OK
+		else:
+			msg = create_system_message(0, 0, "Teilnehmerkennung ungültig! -> #")
+			ret = VALIDATE_INPUT_BAD
+	elif type == "ext":
+		user_id = input_data.get("user_id")
+		ext = input_data["ext"]
+		if ext == "":
+			ext = "1"
+		if User.exists(user_id, ext):
+			return VALIDATE_INPUT_OK
+		else:
+			msg = create_system_message(0, 0, "Mitbenutzernummer ungültig! -> #")
+			ret = VALIDATE_INPUT_BAD
+	elif type == "$login_password":
+		if not login(input_data):
+			sys.stderr.write("login incorrect\n")
+			msg = create_system_message(0, 0, "Ungültiger Teilnehmer/Kennwort -> #")
+			ret = VALIDATE_INPUT_RESTART
+		else:
+			sys.stderr.write("login ok\n")
+			return VALIDATE_INPUT_OK
+	else:
+		return VALIDATE_INPUT_OK
+
+	sys.stdout.buffer.write(msg)
+	sys.stdout.flush()
+	wait_for_ter()
+	return ret
+
+def confirm(inputs): # "send?" message
+	price = inputs.get("price", 0)
+	if price > 0:
+		cept_data = bytearray(create_system_message(47, price))
+	else:
+		cept_data = bytearray(create_system_message(44))
+	cept_data.extend(Cept.set_cursor(24, 1))
+	cept_data.extend(Cept.sequence_end_of_page())
+	sys.stdout.buffer.write(cept_data)
+	sys.stdout.flush()
+
+	# TODO: use an editor for this, too!
+	seen_a_one = False
+	while True:
+		c = sys.stdin.read(1)
+		if c == "2":
+			return False
+			sys.stdout.write(c)
+			sys.stdout.flush()
+			break
+		elif c == "1" and not seen_a_one:
+			seen_a_one = True
+			sys.stdout.write(c)
+			sys.stdout.flush()
+		elif c == "9" and seen_a_one:
+			return True
+			sys.stdout.write(c)
+			sys.stdout.flush()
+			break
+		elif ord(c) == 8 and seen_a_one:
+			seen_a_one = False
+			sys.stdout.buffer.write(b'\b \b')
+			sys.stdout.flush()
+
+def system_message_sent_message():
+	# "sent" message
+	sys.stdout.buffer.write(create_system_message(73))
+	sys.stdout.flush()
+	wait_for_ter()
+
 def handle_inputs(inputs):
 	global user
 
-	while True:
-		cept_data = bytearray(Cept.parallel_limited_mode())
+	# create editors and draw backgrounds
+	editors = []
+	for input in inputs["fields"]:
+		editor = Editor()
+		editor.line = input["line"]
+		editor.column = input["column"]
+		editor.height = input["height"]
+		editor.width = input["width"]
+		editor.fgcolor = input.get("fgcolor")
+		editor.bgcolor = input.get("bgcolor")
+		editor.hint = input.get("hint")
+		editor.legal_values = input.get("legal_values")
+		editor.no_navigation = inputs.get("no_navigation", False)
+		editors.append(editor)
+		editor.draw_background()
 
-		editors = []
+	# get all inputs
+	input_data = {}
+	i = 0
+	while i < len(inputs["fields"]):
+		input = inputs["fields"][i]
+		editor = editors[i]
 
-		for input in inputs["fields"]:
-			editor = Editor()
-			editor.line = input["line"]
-			editor.column = input["column"]
-			editor.height = input["height"]
-			editor.width = input["width"]
-			editor.fgcolor = input["fgcolor"]
-			editor.bgcolor = input["bgcolor"]
-			editors.append(editor)
+		val = editor.edit()
 
-		for editor in editors:
-			editor.draw_background()
+		if val.startswith(chr(Cept.ini())):
+			return { "$command": val[1:] }
 
-		i = 0
-		input_data = {}
-		for editor in editors:
-			input = inputs["fields"][i]
+		input_data[input["name"]] = val
+		
+		ret = validate_input(input_data, input.get("type"))
 
-			hint = input.get("hint", "")
-			type = input.get("type")
-
-			while True:
-				while True:
-					cept_data = create_system_message(0, 0, hint)
-					sys.stdout.buffer.write(cept_data)
-					sys.stdout.flush()
-	
-					val = editor.edit()
-	
-					if val and val[0] == chr(Cept.ini()):
-						# user has supplied page through command mode
-						if inputs.get("is_login", False):
-							# navigation not allowed on login page, except refresh
-							continue
-						else:
-							return val[1:]
-					else:
-						break
-
-				input_data[input["name"]] = val
-				
-				if type == "user_id":
-					user_id = val
-					if User.exists(user_id):
-						break
-					else:
-						cept_data = create_system_message(0, 0, "Teilnehmerkennung ungültig!")
-						sys.stdout.buffer.write(cept_data)
-						sys.stdout.flush()
-				elif type == "ext":
-					if val == "":
-						ext = "1"
-					else:
-						ext = val
-					if User.exists(user_id, ext):
-						break
-					else:
-						cept_data = create_system_message(0, 0, "Mutbenutzernummer ungültig!")
-						sys.stdout.buffer.write(cept_data)
-						sys.stdout.flush()
-				else:
-					break
-			
+		if ret == VALIDATE_INPUT_OK:
 			i += 1
+		if ret == VALIDATE_INPUT_BAD:
+			continue
+		elif ret == VALIDATE_INPUT_RESTART:
+			i = 0
+			continue
 
-		if inputs.get("confirm", True):
-			# "send?" message
-			if "price" in inputs:
-				price = inputs["price"]
-				cept_data = bytearray(create_system_message(47, price))
-			else:
-				price = 0
-				cept_data = bytearray(create_system_message(44))
-			cept_data.extend(Cept.set_cursor(24, 1))
-			cept_data.extend(Cept.sequence_end_of_page())
-			sys.stdout.buffer.write(cept_data)
-			sys.stdout.flush()
-		
-			seen_a_one = False
-			while True:
-				c = sys.stdin.read(1)
-				if c == "2":
-					doit = False
-					sys.stdout.write(c)
-					sys.stdout.flush()
-					break
-				elif c == "1" and not seen_a_one:
-					seen_a_one = True
-					sys.stdout.write(c)
-					sys.stdout.flush()
-				elif c == "9" and seen_a_one:
-					doit = True
-					sys.stdout.write(c)
-					sys.stdout.flush()
-					break
-				elif ord(c) == 8 and seen_a_one:
-					seen_a_one = False
-					sys.stdout.buffer.write(b'\b \b')
-					sys.stdout.flush()
-
-			if doit and inputs.get("action") == "send_message":
+	# confirmation
+	if inputs.get("confirm", True):
+		if confirm(inputs):
+			if inputs.get("action") == "send_message":
 				user.messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
-
-				# "sent" message
-				cept_data = bytearray(create_system_message(73))
-				cept_data.extend(Cept.set_cursor(24, 1))
-				cept_data.extend(Cept.sequence_end_of_page())
-				sys.stdout.buffer.write(cept_data)
-				sys.stdout.flush()
-				while True:
-					c = sys.stdin.read(1)
-					if ord(c) == Cept.ter():
-						sys.stdout.write(c)
-						sys.stdout.flush()
-						break
-		else:				
-			cept_data = create_system_message(55)
-			sys.stdout.buffer.write(cept_data)
-			sys.stdout.flush()
-	
-		# login page
-		if inputs.get("is_login", False):
-			if not login(input_data):
-				sys.stderr.write("login incorrect\n")
-				cept_data = create_system_message(998)
-				sys.stdout.buffer.write(cept_data)
-				sys.stdout.flush()
-				continue
+				system_message_sent_message()
 			else:
-				sys.stderr.write("login ok\n")
-		#else:
-			# send "input_data" to "inputs["target"]"
-			
-		cept_data = bytearray(create_system_message(0))
-		cept_data.extend(Cept.sequence_end_of_page())
+				pass # TODO we stay on the page, in the navigator?
+	elif not inputs.get("no_55", False):
+		cept_data = create_system_message(55)
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
+
+	# send "input_data" to "inputs["target"]"
 		
+	if "target" in inputs:
 		if inputs["target"][:5] == "page:":
-			return inputs["target"][5:]
+			return { "$command": inputs["target"][5:] }
 		else:
-			return ""
-
-
-def show_page(pageid):
-	global links
-	
-	while True:
-		if user is not None:
-			user.stats.update()
-
-		sys.stderr.write("showing page: '" + pageid + "'\n")
-		ret = create_page(PATH_DATA, pageid)
-
-		if ret is None:
-			return False
-
-		(cept_data, links, inputs) = ret
-		sys.stdout.buffer.write(cept_data)
-		sys.stdout.flush()
-		
-		if inputs is None:
-			return True
-
-		desired_pageid = handle_inputs(inputs)
-		if desired_pageid != "*00":
-			pageid = desired_pageid
+			return None # error
+	else:
+		return input_data
 
 def wait_for_dial_command():
 	s = ""
@@ -549,87 +530,117 @@ for arg in sys.argv[1:]:
 		desired_pageid = arg[7:]
 
 current_pageid = None
+page_cept_data = b''
 history = []
+error = 0
 
 showing_message = False
 
 while True:
-	if desired_pageid == "00":
-		# reload
-		desired_pageid = history[-1]
-		history = history[:-1]
+	if user is not None:
+		user.stats.update()
 
-	is_back = (desired_pageid == "")
-
-	if is_back:
-		if len(history) < 2:
-			is_back = False
-			sys.stderr.write("ERROR: No history.\n")
-			sys.stdout.buffer.write(create_system_message(10) + Cept.sequence_end_of_page())
-			sys.stdout.flush()
-			showing_message = True
+	if error == 0:
+		add_to_history = True
+	
+		if desired_pageid == "":
+			if len(history) < 2:
+				is_back = False
+				sys.stderr.write("ERROR: No history.\n")
+				error = 10
+			else:
+				desired_pageid = history[-2]
+				history = history[:-2]
+	
+		if desired_pageid == "09": # hard reload
+			sys.stderr.write("hard reload\n")
+			desired_pageid = history[-1]
+			add_to_history = False
+	
+		if desired_pageid == "00": # re-send CEPT data of current page
+			sys.stderr.write("resend\n")
+			error = 0
+			add_to_history = False
+		elif desired_pageid:
+			sys.stderr.write("showing page: '" + desired_pageid + "'\n")
+			ret = create_page(PATH_DATA, desired_pageid)
+	
+			success = ret is not None
+			if success:
+				(page_cept_data, links, inputs) = ret
+			error = 0 if success else 100
 		else:
-			desired_pageid = history[-2]
-			history = history[:-2]
+			error = 100
 
-	if desired_pageid and show_page(desired_pageid):
+	if error == 0:
+		sys.stdout.buffer.write(page_cept_data)
+		sys.stdout.flush()
 		# showing page worked
 		current_pageid = desired_pageid
-		history.append(current_pageid)
+		if add_to_history:
+			history.append(current_pageid)
 	else:
-		code = 100
 		if desired_pageid:
 			sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\n")
 			if (desired_pageid[-1] >= "b" and desired_pageid[-1] <= "z"):
 				code = 101
-		cept_data = create_system_message(code) + Cept.sequence_end_of_page()
+		cept_data = create_system_message(error) + Cept.sequence_end_of_page()
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 		showing_message = True
-		if is_back:
-			# Going back failed -> we're still on the same page.
-			# Re-add the current page, but the previous page is removed from history
-			history.append(current_pageid)
-		else:
-			# showing page failed, current_pageid and history are unchanged
-			pass
 	
+	sys.stderr.write("history: " + pprint.pformat(history) + "\n")
+
 	desired_pageid = None
-	
-	legal_inputs = list(links.keys())
-	if "#" in legal_inputs:
-		legal_inputs.remove("#")
 
-	editor = Editor()
-	editor.line = 24
-	editor.column = 1
-	editor.height = 1
-	editor.width = 40
-	editor.legal_inputs = legal_inputs
-	val = editor.edit()
+	if inputs is None:
+		legal_values = list(links.keys())
+		if "#" in legal_values:
+			legal_values.remove("#")
+		inputs = {
+			"fields": [
+				{
+					"name": "$navigation",
+					"line": 24,
+					"column": 1,
+					"height": 1,
+					"width": 40,
+					"legal_values": legal_values
+				}
+			],
+			"confirm": False,
+			"no_55": True
+		}
 
-	if val.startswith(chr(Cept.ini())):
-		# global address
-		desired_pageid = val[1:]
-	elif val in links:
-		# link
-		desired_pageid = links[val]
-	elif not val:
-		if links.get("#"):
-			# #-link
-			sys.stderr.write("Cept.ter")
-			desired_pageid = links["#"]
-		else:
-			# next sub-page
-			if current_pageid[-1:] >= "a" and current_pageid[-1:] <= "y":
-				desired_pageid = current_pageid[:-1] + chr(ord(current_pageid[-1:]) + 1)
-			elif current_pageid[-1:] >= '0' and current_pageid[-1:] <= '9':
-				desired_pageid = current_pageid + "b"
+	input_data = handle_inputs(inputs)
+
+	sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
+
+	error = 0
+	desired_pageid = input_data.get("$command")
+	if not desired_pageid:
+		val = input_data["$navigation"]
+		if val in links:
+			# link
+			desired_pageid = links[val]
+		elif not val:
+			if links.get("#"):
+				# #-link
+				sys.stderr.write("Cept.ter")
+				desired_pageid = links["#"]
 			else:
-				desired_pageid = None
-	else:
-		desired_pageid = None
+				# next sub-page
+				if current_pageid[-1:].isdigit():
+					desired_pageid = current_pageid + "b"
+				elif current_pageid[-1:] >= "a" and current_pageid[-1:] <= "y":
+					desired_pageid = current_pageid[:-1] + chr(ord(current_pageid[-1:]) + 1)
+				else:
+					error = 101
+					desired_pageid = None
+		else:
+			error = 100
+			desired_pageid = None
+			
+		
 		
 	
-	
-
