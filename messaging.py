@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 import json
 import time
 import datetime
@@ -405,9 +406,9 @@ class Messaging_UI:
 			return Messaging_UI.messaging_create_list(user, False)
 		elif pagenumber == "89a":
 			return Messaging_UI.messaging_create_list(user, True)
-		elif pagenumber[:2] == "88":
+		elif re.search("^88\da$", pagenumber):
 			return Messaging_UI.messaging_create_message_detail(user, int(pagenumber[2:-1]) - 1, False)
-		elif pagenumber[:2] == "89":
+		elif re.search("^89\da$", pagenumber):
 			return Messaging_UI.messaging_create_message_detail(user, int(pagenumber[2:-1]) - 1, True)
 		elif pagenumber == "810a":
 			return Messaging_UI.messaging_create_compose(user)
