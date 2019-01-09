@@ -439,8 +439,9 @@ def handle_inputs(inputs):
 		editor.hint = input.get("hint")
 		editor.legal_values = input.get("legal_values")
 		editor.no_navigation = inputs.get("no_navigation", False)
+		editor.string = input.get("default")
 		editors.append(editor)
-		editor.draw_background()
+		editor.draw()
 
 	# get all inputs
 	input_data = {}

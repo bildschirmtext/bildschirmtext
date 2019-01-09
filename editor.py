@@ -45,7 +45,7 @@ class Editor:
 	bgcolor = None
 	hint = None
 	legal_values = None
-	string = ""
+	string = None
 	command_mode = False
 	no_navigation = False
 
@@ -60,7 +60,14 @@ class Editor:
 				sys.stderr.write(cc)
 		sys.stderr.write("'\n")
 	
-	def draw_background(self):
+	def draw(self):
+		if self.string:
+			s = self.string
+			if s[0] == chr(Cept.ini()):
+				s = "*" + s[1:]
+		else:
+			 s = ""
+
 		cept_data = bytearray(Cept.parallel_limited_mode())
 		cept_data.extend(Cept.hide_cursor())
 		cept_data.extend(Cept.set_cursor(self.line, self.column))
@@ -70,8 +77,10 @@ class Editor:
 				cept_data.extend(Cept.set_bg_color(self.bgcolor))
 			if self.width == 40:
 				cept_data.extend(Cept.clear_line())
+				cept_data.extend(Cept.from_str(s))
 			else:
-				cept_data.extend(Cept.repeat(" ", self.width))
+				cept_data.extend(Cept.from_str(s))
+				cept_data.extend(Cept.repeat(" ", self.width -  len(s)))
 			if i != self.height - 1:
 				cept_data.extend(b'\n')
 		sys.stdout.buffer.write(cept_data)
@@ -90,22 +99,23 @@ class Editor:
 	def edit(self, skip = False):
 		start = True
 		dct = False
+
+		if self.string is None:
+			self.string = ""
+
+		sys.stderr.write("starting with self.string = ")
+		Editor.debug_print(self.string)
 		
 		while True:
 			if start:
 				start = False
 				self.print_hint()
 				cept_data = bytearray()
-				cept_data.extend(Cept.set_cursor(self.line, self.column))
+				cept_data.extend(Cept.set_cursor(self.line, self.column + len(self.string)))
 				if self.fgcolor:
 					cept_data.extend(Cept.set_fg_color(self.fgcolor))
 				if self.bgcolor:
 					cept_data.extend(Cept.set_bg_color(self.bgcolor))
-				if self.string:
-					s = self.string
-					if s[0] == chr(Cept.ini()):
-						s = "*" + s[1:]
-					cept_data.extend(Cept.from_str(s))
 				cept_data.extend(Cept.show_cursor())
 				sys.stdout.buffer.write(cept_data)
 				sys.stdout.flush()
@@ -115,7 +125,11 @@ class Editor:
 				break
 		
 			c = sys.stdin.read(1)
-			#sys.stderr.write("In: 0x" + hex(ord(c)) + "\n")
+			sys.stderr.write("In: 0x" + hex(ord(c)) + "\n")
+
+			if self.command_mode and ord(c) == Cept.ini() and self.string[-1:] == chr(Cept.ini()):
+				# exit command mode, tell parent to clear
+				return (None, False)
 
 			if ord(c) == Cept.ini():
 				if not self.command_mode:
@@ -137,7 +151,7 @@ class Editor:
 							return (val, False)
 						sys.stderr.write("ignoring navigation\n")
 					self.string = ""
-					self.draw_background()
+					self.draw()
 					start = True
 					continue
 			elif ord(c) == Cept.ter():
@@ -174,14 +188,9 @@ class Editor:
 					break
 				if found:
 					break
-			#sys.stderr.write("self.string = ")
-			#Editor.debug_print(self.string)
+			sys.stderr.write("self.string = ")
+			Editor.debug_print(self.string)
 
-			if self.command_mode:
-				if self.string[-2:] == chr(Cept.ini()) + chr(Cept.ini()):
-					# exit command mode, tell parent to clear
-					return (None, False)
-			
 		return (self.string, dct)
 
 	
