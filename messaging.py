@@ -12,9 +12,11 @@ PATH_MESSAGES = "messages/"
 class Message:
 	dict = None
 	from_user = None
+	index = None
 
-	def __init__(self, dict):
+	def __init__(self, dict, index):
 		self.dict = dict
+		self.index = index
 		self.from_user = User.get(self.dict["from_user_id"], self.dict["from_ext"], self.dict.get("personal_data", False))
 		if self.from_user is None:
 			sys.stderr.write("from user not found!\n")
@@ -53,7 +55,7 @@ class Message:
 
 class Messaging:
 	user = None
-	messages = None
+	dict = None # this are the exact contents from the JSON file on disk
 
 	def __init__(self, u):
 		self.user = u
@@ -64,32 +66,52 @@ class Messaging:
 	def load_dict(user_id, ext):
 		filename = Messaging.dict_filename(user_id, ext)
 		if not os.path.isfile(filename):
-			dict = { "messages": [] }
 			sys.stderr.write("messages file not found\n")
+			dict = { "messages": [] }
 		else:
 			with open(filename) as f:
 				dict = json.load(f)
 		return dict
+	
+	def save_dict(user_id, ext, dict):
+		with open(Messaging.dict_filename(user_id, ext), 'w') as f:
+			json.dump(dict, f)
 
 	def load(self):
-		self.messages = Messaging.load_dict(self.user.user_id, self.user.ext)["messages"]
+		self.dict = Messaging.load_dict(self.user.user_id, self.user.ext)
 		
-	def get(self, index):
+	def save(self):
+		Messaging.save_dict(self.user.user_id, self.user.ext, self.dict)
+
+	def select(self, is_read, start, count):
 		self.load()
 
-		if len(self.messages) <= index:
-			return None
+		# add index
+		ms = []
+		for i in reversed(range(0, len(self.dict["messages"]))):
+			m = self.dict["messages"][i]
+			if m.get("read", False) == is_read:
+				ms.append(Message(m, i))
 
-		message = Message(self.messages[index])
-		return message
+		# TODO: this can be way more efficient by filtering in the loop above
+		if count is None:		
+			return ms[start:]
+		else:
+			return ms[start:start + count]
+
+	def mark_as_read(self, index):
+		self.load()
+		if not self.dict["messages"][index].get("read", False):
+			self.dict["messages"][index]["read"] = True
+			self.save()
 
 	def has_new_messages(self):
 		self.load()
-		return len(self.messages) > 0
+		return len(self.select(False, 0, None)) > 0
 
 	def send(self, user_id, ext, body):
-		messages = Messaging.load_dict(user_id, ext)
-		messages["messages"].append(
+		dict = Messaging.load_dict(user_id, ext)
+		dict["messages"].append(
 			{
 				"from_user_id": self.user.user_id,
 				"from_ext": self.user.ext,
@@ -98,8 +120,7 @@ class Messaging:
 				"body": body
 			},
 		)
-		with open(Messaging.dict_filename(user_id, ext), 'w') as f:
-			json.dump(messages, f)
+		Messaging.save_dict(user_id, ext, dict)
 
 
 class Messaging_UI:
@@ -156,6 +177,7 @@ class Messaging_UI:
 			"links": {
 				"0": "0",
 				"1": "88",
+				"2": "89",
 				"5": "810"
 			},
 			"publisher_color": 7
@@ -173,49 +195,57 @@ class Messaging_UI:
 		)
 		return (meta, data_cept)
 
-	def messaging_create_list_new(user):
+	def messaging_create_list(user, is_read):
 		meta = {
 			"publisher_name": "!BTX",
 			"include": "a",
 			"clear_screen": True,
 			"publisher_color": 7
 		}
-		data_cept = bytearray(Messaging_UI.messaging_create_title("Neue Mitteilungen"))
+		if is_read:
+			title = "Zurückgelegte Mitteilungen"
+		else:
+			title = "Neue Mitteilungen"
+		data_cept = bytearray(Messaging_UI.messaging_create_title(title))
 
 		links = {
 			"0": "8"
 		}
-				
+
+		target_prefix = "89" if is_read else "88"
+
+		messages = user.messaging.select(is_read, 0, 9)
+
 		for index in range(0, 9):
 			data_cept.extend(Cept.from_str(str(index + 1)) + b'  ')
-			message = user.messaging.get(index)
-			if message is not None:
+			if index < len(messages):
+				message = messages[index]
 				data_cept.extend(Cept.from_str(message.from_first()) + b' ' + Cept.from_str(message.from_last()))
 				data_cept.extend(b'\r\n   ')
 				data_cept.extend(Cept.from_str(message.from_date()))
 				data_cept.extend(b'   ')
 				data_cept.extend(Cept.from_str(message.from_time()))
 				data_cept.extend(b'\r\n')
-				links[str(index + 1)] = "88" + str(index + 1)
+				links[str(index + 1)] = target_prefix + str(index + 1)
 			else:
 				data_cept.extend(b'\r\n\r\n')
 
 		meta["links"] = links
 		return (meta, data_cept)
 
-	def messaging_create_message_detail(user, index):
+	def messaging_create_message_detail(user, index, is_read):
 		meta = {
 			"publisher_name": "Bildschirmtext",
 			"include": "11a",
 			"palette": "11a",
 			"clear_screen": True,
 			"links": {
-				"0": "88",
+				"0": "89" if is_read else "88",
 			},
 			"publisher_color": 7
 		}
 
-		message = user.messaging.get(index)
+		message = user.messaging.select(is_read, index, 1)[0]
 
 		from_date = message.from_date()
 		from_time = message.from_time()
@@ -262,6 +292,8 @@ class Messaging_UI:
 		)
 		data_cept.extend(Cept.from_str(" Gesamtübersicht"))
 		data_cept.extend(Cept.repeat(" ", 22))
+
+		user.messaging.mark_as_read(message.index)
 
 		return (meta, data_cept)
 
@@ -372,9 +404,13 @@ class Messaging_UI:
 		if pagenumber == "8a":
 			return Messaging_UI.messaging_create_main_menu()
 		elif pagenumber == "88a":
-			return Messaging_UI.messaging_create_list_new(user)
+			return Messaging_UI.messaging_create_list(user, False)
+		elif pagenumber == "89a":
+			return Messaging_UI.messaging_create_list(user, True)
 		elif pagenumber[:2] == "88":
-			return Messaging_UI.messaging_create_message_detail(user, int(pagenumber[2:-1]) - 1)
+			return Messaging_UI.messaging_create_message_detail(user, int(pagenumber[2:-1]) - 1, False)
+		elif pagenumber[:2] == "89":
+			return Messaging_UI.messaging_create_message_detail(user, int(pagenumber[2:-1]) - 1, True)
 		elif pagenumber == "810a":
 			return Messaging_UI.messaging_create_compose(user)
 		else:
