@@ -526,14 +526,17 @@ sys.stderr.write("Neu-Ulm running.\n")
 # TODO: command line option to navigate to a specific page
 
 desired_pageid = "00000" # login page
+compress = False
 
 for arg in sys.argv[1:]:
 	if arg == "--modem":
 		wait_for_dial_command()
-	if arg.startswith("--user="):
+	elif arg.startswith("--user="):
 		user = User.login(arg[7:], "1", None, True)
-	if arg.startswith("--page="):
+	elif arg.startswith("--page="):
 		desired_pageid = arg[7:]
+	elif arg == "--compress":
+		compress = True
 
 current_pageid = None
 page_cept_data = b''
@@ -579,6 +582,8 @@ while True:
 			error = 100
 
 	if error == 0:
+		if (compress):
+			page_cept_data = Cept.compress(page_cept_data)
 		sys.stdout.buffer.write(page_cept_data)
 		sys.stdout.flush()
 		# showing page worked

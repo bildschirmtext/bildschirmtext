@@ -1,3 +1,5 @@
+import sys
+
 class Cept(bytearray):
 
 	# private
@@ -27,6 +29,33 @@ class Cept(bytearray):
 				s2.extend(Cept.g2code('{', mode))        # &szlig;
 			else:
 				s2.append(ord(c))
+		return s2
+
+	def compress(s1):
+		s2 = bytearray()
+		i = 0
+		while True:
+			c = s1[i]
+			if c >= 0x20:
+				s1rest = s1[i + 1:]
+				l = 1
+				for j in range(0, len(s1rest)):
+					if s1rest[j] != c:
+						break
+					l += 1
+			else:
+				l = 1
+			if l > 3:
+				if l > 63:
+					l = 63
+				s2.extend(bytes([c, 0x12, 0x40 + l - 1]))
+				i += l
+			else:
+				s2.append(c)
+				i += 1
+			if i == len(s1):
+				break
+		sys.stderr.write("compressed " + str(len(s1)) + " down to " + str(len(s2)) + "\n")
 		return s2
 
 	def from_aa(aa, indent = 0):
@@ -61,7 +90,7 @@ class Cept(bytearray):
 				data_cept.append(dict[s])
 			data_cept.extend(b'\r\n')
 		data_cept.extend(b'\x0f')                       # G0 into left charset
-		return data_cept
+		return Cept.compress(data_cept)
 
 	# CEPT sequences	
 

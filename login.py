@@ -69,7 +69,6 @@ class Login_UI:
 						"width": 10,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						#"default": "64"
 					},
 					{
 						"name": "ext",
