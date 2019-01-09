@@ -41,6 +41,12 @@ Es wurde Wert darauf gelegt, die Architektur des Servers der Original-Architektu
 
 Es muß sichergestellt werden, daß die Verzeichnisse `messages` und `stats` für den Server schreibbar sind!
 
+### Befehlszeilenparameter
+
+* `--modem`: wartet vor dem Senden von Daten auf einen "`ATD`" Modem-String
+* `--user=`*n*: meldet Benutzer mit der angegebenen Nummer automatisch an (Mitbenutzer ist hier immer 1)
+* `--page=`*n*: zeigt statt der Anmeldeseite die angegebene Seite an
+
 ### BTX-Hardware-Decoder mit RS232-Anschluß
 
 Manche Hardware-Decoder, wie der LOEWE MultiTel-D, erlauben den Anschluß über RS232. (Auf diesem Gerät: `F9`, `F3`, `F1`, `Shift-F1`, `9600`, `F9`.) Mit `socat` kann der Server folgendermaßen mit dem bestehenden seriellen Port verbunden werden:
@@ -120,10 +126,11 @@ Es existieren einige Software-Decoder für unterschiedliche Betriebssysteme:
 
 Die Sammlung an BTX-Seiten befindet sich im Unterverzeichnis `data`. Unterverzeichnisse bezeichnen unterschiedliche BTX-Anbieter. Die meisten Seiten sind dem Dump des Amiga BTX Decoder entnommen und wurden in ihre Bestandteile zerlegt:
 
-* `.meta` für die Metadaten
+* `a.glob` für die globalen Metadaten des Anbieters
+* `.meta` für die Metadaten der Seite (kann beliebige `.pal` und `.inc` referenzieren)
 * `.pal` für die Palette
 * `.inc` für den Include für Zeichensatz und Bildschirmfarben
-* und `.cept` für den Seiteninhalt
+* und `.cept` für den Seiteninhalt (darf keine Zeichensätze oder Paletten heinhalten)
 
 Der Server verknüpft die unterschiedlichen Dateien wieder und stellt sicher, daß Palette und Include nur wenn notwendig übertragen werden.
 
