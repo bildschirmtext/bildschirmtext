@@ -9,6 +9,8 @@ Dieses Repository besteht aus
 * neuen BTX-Inhalten
 * Tools zum Arbeiten mit CEPT-Dateien
 
+![Bildschirmtext Login](Bildschirmtext.png?raw=true "Bildschirmtext Login")
+
 # Bildschirmtext Server
 
 Der BTX Server `neu-ulm.py` ist in Python 3 geschrieben und hat folgende Features:
@@ -28,7 +30,10 @@ Es wurde Wert darauf gelegt, die Architektur des Servers der Original-Architektu
 
 ## Bedienung
 
-* `*00#`: Seite neu laden
+Der Gastbenutzer (Benutzer 0, Mitbenutzer 1) hat ein leeres Paßwort, man kann sich also als Gast einloggen, indem man beim Start 3x "#" drückt (oder einmal DCT). Eigene Benutzer kann man definieren, indem man Dateien in `users/` und `secrets/` erstellt.
+
+* `*00#`: Seite nochmals übertragen (bei Übertragungsfehlern)
+* `*09#`: Seite nochmals erstellen (oder neu aus der Datenbank laden)
 * `*#`: zur vorherigen Seite zurückkehren
 * `*Seitennummer#`: Navigation zu einer bestimmten Seite
 * `[0-9]` und `#`: Navigation zu einer Folgeseite
