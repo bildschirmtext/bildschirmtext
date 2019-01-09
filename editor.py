@@ -113,7 +113,7 @@ class Editor:
 		Editor.debug_print(self.string)
 		
 		while True:
-			if start:
+			if start and not skip:
 				start = False
 				self.print_hint()
 				cept_data = bytearray()
