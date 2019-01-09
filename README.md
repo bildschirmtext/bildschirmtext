@@ -9,7 +9,7 @@ Dieses Repository besteht aus
 * neuen BTX-Inhalten
 * Tools zum Arbeiten mit CEPT-Dateien
 
-## Bildschirmtext Server
+# Bildschirmtext Server
 
 Der BTX Server `neu-ulm.py` ist in Python 3 geschrieben und hat folgende Features:
 
@@ -26,7 +26,7 @@ Der BTX Server `neu-ulm.py` ist in Python 3 geschrieben und hat folgende Feature
 
 Es wurde Wert darauf gelegt, die Architektur des Servers der Original-Architektur nachzuempfinden. Seiten historischer Dumps wurden in ihre Bestandteile zerlegt (Palette, Include, Text, Header und Footer der Post), und der Server baut diese Komponenten zur Laufzeit zusammen. So werden Paletten und Zeichensätze nur dann gesendet, wenn sie nicht schon in den Decoder geladen sind. Des weiteren werden die 1. und 24. Zeile des Bildschirms wie beim Originalserver verwendet: Anbieter-Name und Preis werden aus den Metadaten gewonnen, Warnungen und Fehler besitzen die spezifizierten Codes, und die Nutzdaten dürfen diese Zeilen nicht beschreiben.
 
-### Bedienung
+## Bedienung
 
 * `*00#`: Seite neu laden
 * `*#`: zur vorherigen Seite zurückkehren
@@ -35,19 +35,19 @@ Es wurde Wert darauf gelegt, die Architektur des Servers der Original-Architektu
 * `**`: löscht die Eingabe
 * `*9#`: meldet den Benutzer ab
 
-### Verwendung
+## Verwendung
 
 `neu-ulm.py` kommuniziert über `stdin` und `stdout`. Über das Tool `socat` kann es mit Terminals oder Decoder-Software in Emulatoren verbunden werden.
 
 Es muß sichergestellt werden, daß die Verzeichnisse `messages` und `stats` für den Server schreibbar sind!
 
-### Befehlszeilenparameter
+## Befehlszeilenparameter
 
 * `--modem`: wartet vor dem Senden von Daten auf einen "`ATD`" Modem-String
 * `--user=`*n*: meldet Benutzer mit der angegebenen Nummer automatisch an (Mitbenutzer ist hier immer 1)
 * `--page=`*n*: zeigt statt der Anmeldeseite die angegebene Seite an
 
-### BTX-Hardware-Decoder mit RS232-Anschluß
+## BTX-Hardware-Decoder mit RS232-Anschluß
 
 Manche Hardware-Decoder, wie der LOEWE MultiTel-D, erlauben den Anschluß über RS232. (Auf diesem Gerät: `F9`, `F3`, `F1`, `Shift-F1`, `9600`, `F9`.) Mit `socat` kann der Server folgendermaßen mit dem bestehenden seriellen Port verbunden werden:
 
@@ -55,7 +55,7 @@ Manche Hardware-Decoder, wie der LOEWE MultiTel-D, erlauben den Anschluß über 
 
 Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Die Optionen von `socat` beziehen sich auf macOS, auf anderen Betriebssystemen müssen sie eventuell angepaßt werden.
 
-### MS-DOS: "PC online" Decoder (Drews)
+## MS-DOS: "PC online" Decoder (Drews)
 
 	socat -d -d exec:"python3 neu-ulm.py --modem" pty,raw,echo=0
 
@@ -82,7 +82,7 @@ Geschwindigkeitsoptimierung:
 
 Um die Einstellungen zu speichern, muß das Programm regulär beendet werden (Alt-Y).
 
-### Commodore 64: 64'er-Decoder (Drews)
+## Commodore 64: 64'er-Decoder (Drews)
 
 `socat` muß wie beim "PC online" Decoder gestartet werden.
 
@@ -98,11 +98,11 @@ Der Pfad zum seriellen Port muß entsprechend angepaßt werden.
 
 Dann kann der Decoder (siehe Downloads unten) gestartet werden. Die Einwahl wird mit F7 gestartet. `*` befindet sich auf F1 und `#` auf F3.
 
-### Andere Software-Decoder
+## Andere Software-Decoder
 
 Es sollte möglich sein, auch andere Software-Decoder über einen virtuellen seriellen Port mit der Server-Software zu verbinden. Über Erfahrungsberichte sind wir dankbar.
 
-### Software-Decoder Downloads
+## Software-Decoder Downloads
 
 Es existieren einige Software-Decoder für unterschiedliche Betriebssysteme:
 
@@ -136,12 +136,33 @@ Der Server verknüpft die unterschiedlichen Dateien wieder und stellt sicher, da
 
 Die Startseite des Amiga-BTX-Demos erreicht man mit `*200960#`. Über sie sind alle historischen Seiten erreichbar.
 
+# Tools
+
+## decode_cept
+
+`decode_cept` zeigt den Inhalt einer CEPT-Codierten Datei side-by-side sowohl als Hex als auch mit der Beschreibung der Codes an. Hier ein Ausschnitt aus einer Ausgabe:
+
+	[...]
+	1f 2f 44                 # parallel limited mode
+	1f 42 41                 # set cursor to line 2, column 1
+	1b 2b 20 40              # load DRCs into G3
+	1b 7c                    # G3 into right charset
+	[...]
+
+Das Tool wird mit `make decode_cept` gebaut.
+
+## cut_btx
+
+`cut_btx` zerlegt die Dateien des Amiga-Dumps in .glob, .meta, .pal, .inc und .cept-Dateien. Da alle Dateien des Amiga-Dumps bereits konveriert sind, und andere Dumps wohl leicht anderen Code der Post benutzen (weil die Dumps aus einer anderen Zeit stammen), muß es erst für andere Dumps angepasst werden.
+
+Das Tool wird mit `make cut_btx` gebaut.
+
 # Danksagung und verwandte Projekte
 
 * [Bildschirmtrix](http://www.runningserver.com/?page=rs.thelab.bildschirmtrix) von Philipp Maier
 * [Javascript BTX Server](http://members.aon.at/nkehrer/btx_server.html) von Norbert Kehrer
 * [Retrotext](https://www.acn.wtf/retrotext.html) von Anna Christina Naß
-
+* [btx_modem](https://github.com/Casandro/btx_modem) von Christian Berger
 # Copyright
 
 Der Code dieses Projektes steht unter der MIT-Lizenz. Maintainer ist Michael Steil, E-Mail: mist64@mac.com
