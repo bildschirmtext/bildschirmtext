@@ -233,6 +233,12 @@ class Messaging_UI:
 		return (meta, data_cept)
 
 	def messaging_create_message_detail(user, index, is_read):
+		messages = user.messaging.select(is_read, index, 1)
+		if len(messages) == 0:
+			return None
+
+		message = messages[0]
+
 		meta = {
 			"publisher_name": "Bildschirmtext",
 			"include": "11a",
@@ -243,8 +249,6 @@ class Messaging_UI:
 			},
 			"publisher_color": 7
 		}
-
-		message = user.messaging.select(is_read, index, 1)[0]
 
 		from_date = message.from_date()
 		from_time = message.from_time()
