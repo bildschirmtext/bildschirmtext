@@ -33,17 +33,22 @@ class Stats():
 class User():
 	user_id = None
 	ext = None
+	personal_data = False
+
+	# public - person
 	salutation = None
 	first_name = None
 	last_name = None
-	organisation = None
-	
+	# public - organization
+	org_name = None
+	org_add_name = None
 	# personal_data
 	street = None
+	zip = None
 	city = None
 	country = None
-	stats = None
 
+	stats = None
 	messaging = None
 
 	@classmethod
@@ -66,10 +71,13 @@ class User():
 		user.salutation = dict.get("salutation", "")
 		user.first_name = dict.get("first_name", "")
 		user.last_name = dict.get("last_name", "")
-		user.organisation = dict.get("organisation", "")
+		user.org_name = dict.get("org_name", "")
+		user.org_add_name = dict.get("org_add_name", "")
 		
+		user.personal_data = personal_data
 		if (personal_data):
 			user.street = dict.get("street", "")
+			user.zip = dict.get("zip", "")
 			user.city = dict.get("city", "")
 			user.country = dict.get("country", "")
 			user.stats = Stats(user)

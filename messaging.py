@@ -22,12 +22,6 @@ class Message:
 		if self.from_user is None:
 			sys.stderr.write("from user not found!\n")
 
-	def from_user_id(self):
-		return self.dict["from_user_id"]
-
-	def from_ext(self):
-		return self.dict["from_ext"]
-
 	def from_date(self):
 		t = datetime.datetime.fromtimestamp(self.dict["timestamp"])
 		return t.strftime("%d.%m.%Y")
@@ -36,21 +30,6 @@ class Message:
 		t = datetime.datetime.fromtimestamp(self.dict["timestamp"])
 		return t.strftime("%H:%M")
 		
-	def from_first(self):
-		return self.from_user.first_name
-	
-	def from_last(self):
-		return self.from_user.last_name
-	
-	def from_organisation(self):
-		return self.from_user.organisation
-	
-	def from_street(self):
-		return self.from_user.street
-	
-	def from_city(self):
-		return self.from_user.city
-
 	def body(self):
 		return self.dict["body"]
 
@@ -219,7 +198,12 @@ class Messaging_UI:
 			data_cept.extend(Cept.from_str(str(index + 1)) + b'  ')
 			if index < len(messages):
 				message = messages[index]
-				data_cept.extend(Cept.from_str(message.from_first()) + b' ' + Cept.from_str(message.from_last()))
+				if message.from_user.org_name:
+					data_cept.extend(Cept.from_str(message.from_user.org_name))
+				else:
+					data_cept.extend(Cept.from_str(message.from_user.first_name))
+					data_cept.extend(b' ')
+					data_cept.extend(Cept.from_str(message.from_user.last_name))
 				data_cept.extend(b'\r\n   ')
 				data_cept.extend(Cept.from_str(message.from_date()))
 				data_cept.extend(b'   ')
@@ -252,32 +236,36 @@ class Messaging_UI:
 
 		from_date = message.from_date()
 		from_time = message.from_time()
-		from_street = message.from_street()
-		if from_street is None:
+		if message.from_user.personal_data:
+			from_street = message.from_user.street
+			from_zip = message.from_user.zip
+			from_city = message.from_user.city
+		else:
 			from_street = ""
-		from_city = message.from_city()
-		if from_city is None:
+			from_zip = ""
 			from_city = ""
 
 		data_cept = bytearray(Cept.parallel_limited_mode())
 		data_cept.extend(Cept.set_cursor(2, 1))
 		data_cept.extend(Cept.set_fg_color(3))
 		data_cept.extend(b'von ')
-		data_cept.extend(Cept.from_str(message.from_user_id().ljust(12)) + b' ' + Cept.from_str(message.from_ext().rjust(5, '0')))
+		data_cept.extend(Cept.from_str(message.from_user.user_id.ljust(12)) + b' ' + Cept.from_str(message.from_user.ext.rjust(5, '0')))
 		data_cept.extend(Cept.set_cursor(2, 41 - len(from_date)))
 		data_cept.extend(Cept.from_str(from_date))
 		data_cept.extend(Cept.repeat(" ", 4))
-		data_cept.extend(Cept.from_str(message.from_organisation()))
+		data_cept.extend(Cept.from_str(message.from_user.org_name))
 		data_cept.extend(Cept.set_cursor(3, 41 - len(from_time)))
 		data_cept.extend(Cept.from_str(from_time))
 		data_cept.extend(Cept.repeat(" ", 4))
 		data_cept.extend(Cept.set_fg_color_simple(0))
-		data_cept.extend(Cept.from_str(message.from_first()) + b' ' + Cept.from_str(message.from_last()))
+		data_cept.extend(Cept.from_str(message.from_user.first_name) + b' ' + Cept.from_str(message.from_user.last_name))
 		data_cept.extend(b'\r\n')
 		data_cept.extend(Cept.repeat(" ", 4))
 		data_cept.extend(Cept.from_str(from_street))
 		data_cept.extend(b'\r\n')
 		data_cept.extend(Cept.repeat(" ", 4))
+		data_cept.extend(Cept.from_str(from_zip))
+		data_cept.extend(b' ')
 		data_cept.extend(Cept.from_str(from_city))
 		data_cept.extend(b'\r\n')
 		data_cept.extend(b'an  ')

@@ -1,8 +1,9 @@
 {
-	"salutation": "Herr",
-	"first_name": "Christian",
-	"last_name": "Schwarz-Schilling",
-	"organisation": "BMPT",
+	"salutation": "",
+	"org_name": "Deutsche Bundespost",
+	"org_add_name": "Christian Schwarz-Schilling",
 	"street": "Heinrich-Konen-Str. 1",
-	"city": "53227 Bonn"
+	"zip": "53227",
+	"city": "Bonn",
+	"country": "de"
 }
