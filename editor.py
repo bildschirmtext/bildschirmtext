@@ -87,8 +87,9 @@ class Editor:
 			sys.stdout.buffer.write(cept_data)
 			sys.stdout.flush()
 
-	def edit(self):
+	def edit(self, skip = False):
 		start = True
+		dct = False
 		
 		while True:
 			if start:
@@ -108,6 +109,10 @@ class Editor:
 				cept_data.extend(Cept.show_cursor())
 				sys.stdout.buffer.write(cept_data)
 				sys.stdout.flush()
+
+			if skip:
+				sys.stderr.write("skipping\n")
+				break
 		
 			c = sys.stdin.read(1)
 			#sys.stderr.write("In: 0x" + hex(ord(c)) + "\n")
@@ -122,23 +127,26 @@ class Editor:
 					editor.width = 40
 					editor.string = chr(Cept.ini())
 					editor.command_mode = True
-					val = editor.edit()
+					(val, dct) = editor.edit()
 					if val is None:
 						sys.stderr.write("exiting command mode\n")
 					else:
 						#Editor.debug_print(val)
 						# TODO: handle *021# - *029#
 						if not self.no_navigation or val == chr(Cept.ini())+"00" or val == chr(Cept.ini())+"09":
-							return val
+							return (val, False)
 						sys.stderr.write("ignoring navigation\n")
 					self.string = ""
 					self.draw_background()
 					start = True
 					continue
-			if ord(c) == Cept.ter():
+			elif ord(c) == Cept.ter():
 				#Editor.debug_print(self.string)
 				break
-			if ord(c) == 8:
+			elif ord(c) == Cept.dct():
+				dct = True
+				break
+			elif ord(c) == 8:
 				if len(self.string) == 0:
 					continue
 				sys.stdout.buffer.write(b'\b \b')
@@ -172,8 +180,8 @@ class Editor:
 			if self.command_mode:
 				if self.string[-2:] == chr(Cept.ini()) + chr(Cept.ini()):
 					# exit command mode, tell parent to clear
-					return None
+					return (None, False)
 			
-		return self.string
+		return (self.string, dct)
 
 	

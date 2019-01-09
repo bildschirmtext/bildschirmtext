@@ -445,11 +445,14 @@ def handle_inputs(inputs):
 	# get all inputs
 	input_data = {}
 	i = 0
+	skip = False
 	while i < len(inputs["fields"]):
 		input = inputs["fields"][i]
 		editor = editors[i]
 
-		val = editor.edit()
+		(val, dct) = editor.edit(skip)
+		if dct:
+			skip = True
 
 		if val.startswith(chr(Cept.ini())):
 			return { "$command": val[1:] }
@@ -461,9 +464,11 @@ def handle_inputs(inputs):
 		if ret == VALIDATE_INPUT_OK:
 			i += 1
 		if ret == VALIDATE_INPUT_BAD:
+			skip = False
 			continue
 		elif ret == VALIDATE_INPUT_RESTART:
 			i = 0
+			skip = False
 			continue
 
 	# confirmation

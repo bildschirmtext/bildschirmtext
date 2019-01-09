@@ -78,12 +78,15 @@ class Cept(bytearray):
 	
 	@staticmethod
 	def ini():
-		return 0x13 # cept init - 19 - prints *
-
+		return 0x13
 
 	@staticmethod
 	def ter():
-		return 0x1c # cept terminate - 28 - prints #
+		return 0x1c
+
+	@staticmethod
+	def dct():
+		return 0x1a
 
 	@staticmethod
 	def set_res_40_24():
