@@ -110,6 +110,7 @@ class Editor:
 				sys.stdout.flush()
 		
 			c = sys.stdin.read(1)
+			#sys.stderr.write("In: 0x" + hex(ord(c)) + "\n")
 
 			if ord(c) == Cept.ini():
 				if not self.command_mode:
@@ -121,14 +122,14 @@ class Editor:
 					editor.width = 40
 					editor.string = chr(Cept.ini())
 					editor.command_mode = True
-					command_mode_val = editor.edit()
-					if command_mode_val is None:
+					val = editor.edit()
+					if val is None:
 						sys.stderr.write("exiting command mode\n")
 					else:
-						#Editor.debug_print(command_mode_val)
+						#Editor.debug_print(val)
 						# TODO: handle *021# - *029#
-						if not self.no_navigation:
-							return command_mode_val
+						if not self.no_navigation or val == chr(Cept.ini())+"00" or val == chr(Cept.ini())+"09":
+							return val
 						sys.stderr.write("ignoring navigation\n")
 					self.string = ""
 					self.draw_background()

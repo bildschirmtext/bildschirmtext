@@ -497,7 +497,7 @@ def wait_for_dial_command():
 		sys.stdout.flush()
 		if ord(c) == 10 or ord(c) == 13:
 			sys.stderr.write("Modem command: '" + s + "'\n")
-			if re.search("^AT *(X\d)? *D.*", s):
+			if re.search("^AT *(X\d)? *D", s):
 				break
 			s = ""
 		else:
@@ -618,7 +618,7 @@ while True:
 
 	error = 0
 	desired_pageid = input_data.get("$command")
-	if not desired_pageid:
+	if desired_pageid is None:
 		val = input_data["$navigation"]
 		if val in links:
 			# link
