@@ -86,18 +86,16 @@ class Messaging:
 	def select(self, is_read, start, count):
 		self.load()
 
-		# add index
 		ms = []
+		j = 0
 		for i in reversed(range(0, len(self.dict["messages"]))):
 			m = self.dict["messages"][i]
 			if m.get("read", False) == is_read:
-				ms.append(Message(m, i))
+				if j >= start and (True if count is None else j < start + count):
+					ms.append(Message(m, i))
+				j += 1
 
-		# TODO: this can be way more efficient by filtering in the loop above
-		if count is None:		
-			return ms[start:]
-		else:
-			return ms[start:start + count]
+		return ms
 
 	def mark_as_read(self, index):
 		self.load()
