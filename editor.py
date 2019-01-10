@@ -126,7 +126,7 @@ class Editor:
 
 			cept_data.extend(Cept.from_str(l))
 
-			if fill_with_spaces:
+			if fill_with_spaces and len(l) > self.width:
 				cept_data.extend(Cept.repeat(" ", self.width - len(l)))
 
 			if i != self.height - 1:
