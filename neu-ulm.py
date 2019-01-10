@@ -144,7 +144,7 @@ def headerfooter(pageid, publisher_name, publisher_color):
 	hf.extend(b'\b')
 	hf.extend(Cept.code_9d())
 	hf.extend(b'\b')
-	
+
 	hf.extend(color_string)
 
 	hf.extend(b'\r')
@@ -160,7 +160,7 @@ def headerfooter(pageid, publisher_name, publisher_color):
 	hf.extend(Cept.cursor_home())
 	hf.extend(Cept.set_palette(0))
 	hf.extend(Cept.protect_line())
-	hf.extend(b'\n')
+	hf.extend(b'\r\n')
 	return hf
 
 def create_system_message(code, price = 0, hint = ""):
@@ -207,8 +207,8 @@ def create_preamble(basedir, meta):
 	if "palette" in meta:
 		palette = meta["palette"]
 		filename_palette = basedir + meta["palette"] + ".pal"
-		sys.stderr.write("filename_palette = " + filename_palette + "\n")
-		sys.stderr.write("last_filename_palette = " + last_filename_palette + "\n")
+		sys.stderr.write("filename_palette = " + filename_palette + "\r\n")
+		sys.stderr.write("last_filename_palette = " + last_filename_palette + "\r\n")
 		if filename_palette != last_filename_palette:
 			last_filename_palette = filename_palette
 			with open(filename_palette) as f:
@@ -216,7 +216,7 @@ def create_preamble(basedir, meta):
 			palette_data = Cept.define_palette(palette["palette"])
 			preamble += palette_data
 		else:
-			sys.stderr.write("skipping palette\n")
+			sys.stderr.write("skipping palette\r\n")
 	else:
 		last_filename_palette = ""
 
@@ -248,9 +248,9 @@ def create_page(basepath, pageid):
 	for i in reversed(range(0, len(pageid))):
 		testdir = basepath + pageid[:i+1]
 		if os.path.isdir(testdir):
-			sys.stderr.write("testdir: '" + testdir + "'\n")
+			sys.stderr.write("testdir: '" + testdir + "'\r\n")
 			filename = pageid[i+1:]
-			sys.stderr.write("filename: '" + filename + "'\n")
+			sys.stderr.write("filename: '" + filename + "'\r\n")
 			basedir = testdir + "/"
 			break
 
@@ -258,7 +258,7 @@ def create_page(basepath, pageid):
 		return None
 
 	# generated pages
-	sys.stderr.write("pageid[0]: '" + pageid[0] + "'\n")
+	sys.stderr.write("pageid[0]: '" + pageid[0] + "'\r\n")
 	if pageid.startswith("00000") or pageid == "9a":
 		# login
 		ret = Login_UI.create_page(user, pageid)
@@ -280,7 +280,7 @@ def create_page(basepath, pageid):
 
 		with open(filename_meta) as f:
 			meta = json.load(f)
-		
+
 		with open(filename_cept, mode='rb') as f:
 			data_cept = f.read()
 
@@ -320,7 +320,7 @@ def create_page(basepath, pageid):
 
 def login(input_data):
 	global user
-	
+
 	user_id = input_data["user_id"]
 	if user_id is None or user_id == "":
 		user_id = "0"
@@ -328,7 +328,7 @@ def login(input_data):
 	if ext is None or ext == "":
 		ext = "1"
 	user = User.login(user_id, ext, input_data["password"])
-	
+
 	return not user is None
 
 def wait_for_ter():
@@ -369,11 +369,11 @@ def validate_input(input_data, type):
 			ret = VALIDATE_INPUT_BAD
 	elif type == "$login_password":
 		if not login(input_data):
-			sys.stderr.write("login incorrect\n")
+			sys.stderr.write("login incorrect\r\n")
 			msg = create_system_message(0, 0, "Ungültiger Teilnehmer/Kennwort -> #")
 			ret = VALIDATE_INPUT_RESTART
 		else:
-			sys.stderr.write("login ok\n")
+			sys.stderr.write("login ok\r\n")
 			return VALIDATE_INPUT_OK
 	else:
 		return VALIDATE_INPUT_OK
@@ -460,7 +460,7 @@ def handle_inputs(inputs):
 			return { "$command": val[1:] }
 
 		input_data[input["name"]] = val
-		
+
 		ret = validate_input(input_data, input.get("type"))
 
 		if ret == VALIDATE_INPUT_OK:
@@ -487,7 +487,7 @@ def handle_inputs(inputs):
 		sys.stdout.flush()
 
 	# send "input_data" to "inputs["target"]"
-		
+
 	if "target" in inputs:
 		if inputs["target"][:5] == "page:":
 			return { "$command": inputs["target"][5:] }
@@ -503,7 +503,7 @@ def wait_for_dial_command():
 		sys.stdout.write(c)
 		sys.stdout.flush()
 		if ord(c) == 10 or ord(c) == 13:
-			sys.stderr.write("Modem command: '" + s + "'\n")
+			sys.stderr.write("Modem command: '" + s + "'\r\n")
 			if re.search("^AT *(X\d)? *D", s):
 				break
 			s = ""
@@ -521,7 +521,7 @@ def wait_for_dial_command():
 
 # MAIN
 
-sys.stderr.write("Neu-Ulm running.\n")
+sys.stderr.write("Neu-Ulm running.\r\n")
 
 # TODO: command line option to log in a user
 # TODO: command line option to navigate to a specific page
@@ -552,29 +552,29 @@ while True:
 
 	if error == 0:
 		add_to_history = True
-	
+
 		if desired_pageid == "":
 			if len(history) < 2:
 				is_back = False
-				sys.stderr.write("ERROR: No history.\n")
+				sys.stderr.write("ERROR: No history.\r\n")
 				error = 10
 			else:
 				desired_pageid = history[-2]
 				history = history[:-2]
-	
+
 		if desired_pageid == "09": # hard reload
-			sys.stderr.write("hard reload\n")
+			sys.stderr.write("hard reload\r\n")
 			desired_pageid = history[-1]
 			add_to_history = False
-	
+
 		if desired_pageid == "00": # re-send CEPT data of current page
-			sys.stderr.write("resend\n")
+			sys.stderr.write("resend\r\n")
 			error = 0
 			add_to_history = False
 		elif desired_pageid:
-			sys.stderr.write("showing page: '" + desired_pageid + "'\n")
+			sys.stderr.write("showing page: '" + desired_pageid + "'\r\n")
 			ret = create_page(PATH_DATA, desired_pageid)
-	
+
 			success = ret is not None
 			if success:
 				(page_cept_data, links, inputs) = ret
@@ -593,15 +593,15 @@ while True:
 			history.append(current_pageid)
 	else:
 		if desired_pageid:
-			sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\n")
+			sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\r\n")
 			if (desired_pageid[-1] >= "b" and desired_pageid[-1] <= "z"):
 				code = 101
 		cept_data = create_system_message(error) + Cept.sequence_end_of_page()
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 		showing_message = True
-	
-	sys.stderr.write("history: " + pprint.pformat(history) + "\n")
+
+	sys.stderr.write("history: " + pprint.pformat(history) + "\r\n")
 
 	desired_pageid = None
 
@@ -627,7 +627,7 @@ while True:
 
 	input_data = handle_inputs(inputs)
 
-	sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
+	sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\r\n")
 
 	error = 0
 	desired_pageid = input_data.get("$command")
@@ -654,7 +654,7 @@ while True:
 		else:
 			error = 100
 			desired_pageid = None
-			
-		
-		
-	
+
+
+
+
