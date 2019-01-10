@@ -9,11 +9,14 @@ from cept import Cept
 	
 	## Features
 	
-	* An editor has a position, a size, a foreground and a background color. It
-	  can draw its own background.
-	* An editor can be supplied an list of legal inputs. As soon as a character
-	  is entered that makes the current contents of the editor illegal, the edit()
-	  method returns with the illegal string.
+	* An editor has a position, a size, a foreground and a background color. If
+	  the color properties are set, it will draw its own background.
+	* An editor can be given an list of legal inputs. There are two modes:
+	  If end_once_legal is True, as soon as a character is entered that makes
+	  the current contents of the editor illegal, the edit() method returns with
+	  the illegal string.
+	  If end_once_legal is False, characters that would make the input illegal
+	  are ignored.
 
 	## Command Mode
 
@@ -183,13 +186,14 @@ class Editor:
 				sys.stdout.write(c)
 				sys.stdout.flush()
 
-	def edit(self, skip = False):
+	def edit(self, skip_entry = False):
 		start = True
 		dct = False
 		prefix = bytearray()
+		inject_char = None
 
 		while True:
-			if start and not skip:
+			if start and not skip_entry:
 				start = False
 				self.print_hint()
 				cept_data = bytearray()
@@ -208,11 +212,15 @@ class Editor:
 				sys.stdout.buffer.write(cept_data)
 				sys.stdout.flush()
 
-			if skip:
+			if skip_entry:
 				sys.stderr.write("skipping\n")
 				break
 		
-			c = sys.stdin.read(1)
+			if inject_char:
+				c = inject_char
+				inject_char = None
+			else:
+				c = sys.stdin.read(1)
 			sys.stderr.write("In: " + hex(ord(c)) + "\n")
 
 			if self.command_mode and ord(c) == Cept.ini() and self.string[-1:] == chr(Cept.ini()):
@@ -237,6 +245,7 @@ class Editor:
 				prefix = bytearray()
 				if ord(c) == Cept.ini():
 					if not self.command_mode:
+						is_editor_code = False
 						sys.stderr.write("entering command mode\n")
 						editor = Editor()
 						editor.line = 24
@@ -249,16 +258,34 @@ class Editor:
 						editor.echo_ter = True
 						editor.draw()
 						(val, dct) = editor.edit()
-						if val is None:
-							sys.stderr.write("exiting command mode\n")
+						sys.stderr.write("exited command mode\n")
+						if val is None: # "**" in command mode
+							self.string = ""
+							self.draw()
 						else:
-							#Editor.debug_print(val)
-							# TODO: handle *021# - *029#
-							if not self.no_navigation or val == chr(Cept.ini())+"00" or val == chr(Cept.ini())+"09":
-								return (val, False)
-							sys.stderr.write("ignoring navigation\n")
-						self.string = ""
-						self.draw()
+							Editor.debug_print(val)
+							if val.startswith(chr(Cept.ini())+"02") and len(val) == 4:
+								# editor codes *021# etc.
+								is_editor_code = True
+								code = int(val[3:])
+								map = {
+									1: "\r",   # CR
+									2: "\x0b", # UP
+									4: "\x08", # LEFT
+									6: "\x09", # RIGHT
+									8: "\n",   # DOWN
+									9: "\x1a"  # DCT
+								}
+								c = map.get(code)
+								if c is not None:
+									inject_char = c
+								else:
+									sys.stderr.write("ignoring invalid editor code\n")
+							else:
+								# global code
+								if not self.no_navigation or val == chr(Cept.ini())+"00" or val == chr(Cept.ini())+"09":
+									return (val, False)
+								sys.stderr.write("ignoring navigation\n")
 						start = True
 						continue
 				elif ord(c) == Cept.ter():
