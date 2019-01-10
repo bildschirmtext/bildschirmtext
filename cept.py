@@ -1,4 +1,5 @@
 import sys
+import pprint
 
 class Cept(bytearray):
 
@@ -14,24 +15,61 @@ class Cept(bytearray):
 		for c in s1:
 			# TODO: complete conversion!
 			if ord(c) == 0xe4:
-				s2.extend(Cept.g2code('H', mode) + b'a') # &auml;
+				s2.extend(Cept.g2code('H', mode) + b'a') # ä
 			elif ord(c) == 0xf6:
-				s2.extend(Cept.g2code('H', mode) + b'o') # &ouml;
+				s2.extend(Cept.g2code('H', mode) + b'o') # ö
 			elif ord(c) == 0xfc:
-				s2.extend(Cept.g2code('H', mode) + b'u') # &uuml;
+				s2.extend(Cept.g2code('H', mode) + b'u') # ü
 			elif ord(c) == 0xc4:
-				s2.extend(Cept.g2code('H', mode) + b'A') # &Auml;
+				s2.extend(Cept.g2code('H', mode) + b'A') # Ä
 			elif ord(c) == 0xd6:
-				s2.extend(Cept.g2code('H', mode) + b'O') # &Ouml;
+				s2.extend(Cept.g2code('H', mode) + b'O') # Ö
 			elif ord(c) == 0xdc:
-				s2.extend(Cept.g2code('H', mode) + b'U') # &Uuml;
+				s2.extend(Cept.g2code('H', mode) + b'U') # Ü
 			elif ord(c) == 0xdf:
-				s2.extend(Cept.g2code('{', mode))        # &szlig;
+				s2.extend(Cept.g2code('{', mode))        # ß
 			elif ord(c) == 0x0a:
 				s2.extend(b'\r\n')                       # \n
 			else:
 				s2.append(ord(c))
 		return s2
+
+	def code_to_str(s1):
+		# returns a unicode string of the single-char CEPT sequence
+		# - there's is nothing we could decode in the string
+		# - None: the sequence is incomplete
+		if not s1:
+			return ""
+		if len(s1) == 1 and s1[0] <= 0x7f and s1[0] != 0x19:
+			return s1.decode("utf-8") # CEPT == ASCII for 0x00-0x7F (except 0x19)
+		if s1[0] == 0x19:
+			if len(s1) == 1:
+				return None
+			sys.stderr.write("s1[1]: " + pprint.pformat(s1[1]) + "\n")
+			sys.stderr.write("len(s1): " + pprint.pformat(len(s1)) + "\n")
+			if s1[1] == ord('H'): # "¨" prefix
+				if len(s1) == 2: # not complete
+					return None
+				else:
+					if s1[2] == ord('a'):
+						return "ä"
+					elif s1[2] == ord('o'):
+						return "ö"
+					elif s1[2] == ord('u'):
+						return "ü"
+					elif s1[2] == ord('A'):
+						return "Ä"
+					elif s1[2] == ord('O'):
+						return "Ö"
+					elif s1[2] == ord('U'):
+						return "Ü"
+					else:
+						return ""
+			elif s1[1] == ord('{'): # &szlig
+				return "ß"
+			else:
+				return ""
+		return ""
 
 	def compress(s1):
 		s2 = bytearray()

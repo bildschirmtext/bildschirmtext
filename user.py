@@ -151,6 +151,17 @@ class User_UI:
 			"inputs": {
 				"fields": [
 					{
+						"name": "user_id",
+						"hint": "Gewünschte Nummer oder # eingeben",
+						"line": 6,
+						"column": 19,
+						"height": 1,
+						"width": 20,
+						"bgcolor": 12,
+						"fgcolor": 3,
+						"type": "number"
+					},
+					{
 						"name": "salutation",
 						"hint": "Anrede oder # eingeben",
 						"line": 7,
@@ -222,6 +233,7 @@ class User_UI:
 						"fgcolor": 3,
 						"default": "de",
 						"type": "alpha",
+						"cursor_home": True,
 						"overwrite": True
 					},
 					{
@@ -234,6 +246,7 @@ class User_UI:
 						"bgcolor": 12,
 						"fgcolor": 3,
 						"default": "n",
+						"cursor_home": True,
 						"legal_values": [ "j", "n" ]
 					},
 					{
@@ -246,6 +259,7 @@ class User_UI:
 						"bgcolor": 12,
 						"fgcolor": 3,
 						"default": "n",
+						"cursor_home": True,
 						"legal_values": [ "j", "n" ]
 					},
 					{
@@ -259,6 +273,7 @@ class User_UI:
 						"fgcolor": 3,
 						"default": "9",
 						"type": "number",
+						"cursor_home": True,
 						"overwrite": True
 					},
 					{
@@ -272,6 +287,7 @@ class User_UI:
 						"fgcolor": 3,
 						"default": "99",
 						"type": "number",
+						"cursor_home": True,
 						"overwrite": True
 					},
 					{
@@ -285,6 +301,7 @@ class User_UI:
 						"fgcolor": 3,
 						"default": "9",
 						"type": "number",
+						"cursor_home": True,
 						"overwrite": True
 					},
 					{
@@ -298,6 +315,7 @@ class User_UI:
 						"fgcolor": 3,
 						"default": "99",
 						"type": "number",
+						"cursor_home": True,
 						"overwrite": True
 					},
 					{
@@ -310,7 +328,7 @@ class User_UI:
 						"bgcolor": 12,
 						"fgcolor": 3,
 						"type": "password"
-					}
+					},
 				],
 				"confirm": False
 #				"target": "page:000001a",
@@ -320,7 +338,9 @@ class User_UI:
 		
 		data_cept = bytearray()
 		data_cept.extend(User_UI.create_title("Neuen Benutzer einrichten"))
-		data_cept.extend(b"\r\n\n")
+		data_cept.extend(b"\r\n")
+		data_cept.extend(Cept.from_str("Teilnehmernummer:"))
+		data_cept.extend(b"\r\n")
 		data_cept.extend(Cept.from_str("Anrede:"))
 		data_cept.extend(b"\r\n")
 		data_cept.extend(Cept.from_str("Name:"))
@@ -356,26 +376,6 @@ class User_UI:
 	def create_page(user, pagenumber):
 		if pagenumber == "77a":
 			return User_UI.create_add_user()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

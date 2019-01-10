@@ -80,6 +80,7 @@ class Login_UI:
 						"bgcolor": 12,
 						"fgcolor": 3,
 						"type": "number",
+						"cursor_home": True,
 						"default": "1"
 					},
 					{

@@ -316,7 +316,8 @@ class Messaging_UI:
 						"height": 1,
 						"width": 1,
 						"bgcolor": 4,
-						"fgcolor": 3
+						"fgcolor": 3,
+						"default": "1"
 					},
 					{
 						"name": "body",
