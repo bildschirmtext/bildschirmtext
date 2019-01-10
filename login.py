@@ -89,7 +89,7 @@ class Login_UI:
 						"line": 20,
 						"column": 26,
 						"height": 1,
-						"width": 7,
+						"width": 14,
 						"bgcolor": 12,
 						"fgcolor": 3,
 						"type": "password",

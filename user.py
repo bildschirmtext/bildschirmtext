@@ -63,17 +63,23 @@ class User():
 			ext = "1"
 		return (user_id, ext)
 
+	def user_filename(user_id, ext):
+		return PATH_USERS + user_id + "-" + ext + ".user"
+
+	def secrets_filename(user_id, ext):
+		return PATH_SECRETS + user_id + "-" + ext + ".secrets"
+
 	@classmethod
 	def exists(cls, user_id, ext = "1"):
 		(user_id, ext) = cls.sanitize(user_id, ext)
-		filename = PATH_USERS + user_id + "-" + ext + ".user"
+		filename = User.user_filename(user_id, ext)
 		return os.path.isfile(filename)
 	
 	@classmethod
 	def get(cls, user_id, ext, personal_data = False):
 		(user_id, ext) = cls.sanitize(user_id, ext)
 		from messaging import Messaging
-		filename = PATH_USERS + user_id + "-" + ext + ".user"
+		filename = User.user_filename(user_id, ext)
 		if not os.path.isfile(filename):
 			return None
 		with open(filename) as f:
@@ -101,9 +107,35 @@ class User():
 		return user
 
 	@classmethod
+	def create(cls, user_id, ext, password, salutation, last_name, first_name, street, zip, city, country):
+		user_filename = User.user_filename(user_id, ext)
+		secrets_filename = User.secrets_filename(user_id, ext)
+		# if the user exists, don't overwrite it!
+		if os.path.isfile(user_filename) or os.path.isfile(secrets_filename):
+			sys.stderr.write("already exists: " + pprint.pformat(user_filename, secrets_filename) + "\n")
+			return False
+		user_dict = {
+			"salutation": salutation,
+			"first_name": first_name,
+			"last_name": last_name,
+			"street": street,
+			"zip": zip,
+			"city": city,
+			"country": country
+		}
+		with open(user_filename, 'w') as f:
+			json.dump(user_dict, f)
+		secrets_dict = {
+			"password": password
+		}
+		with open(secrets_filename, 'w') as f:
+			json.dump(secrets_dict, f)
+		return True
+
+	@classmethod
 	def login(cls, user_id, ext, password, force = False):
 		(user_id, ext) = cls.sanitize(user_id, ext)
-		filename = PATH_SECRETS + user_id + "-" + ext + ".secrets"
+		filename = User.secrets_filename(user_id, ext)
 		if not os.path.isfile(filename):
 			return None
 		with open(filename) as f:
@@ -169,11 +201,11 @@ class User_UI:
 						"line": 6,
 						"column": 19,
 						"height": 1,
-						"width": 20,
+						"width": 10,
 						"bgcolor": 12,
 						"fgcolor": 3,
 						"type": "number",
-						"validate": "call:User_UI.validate_unused_user_id"
+						"validate": "call:User_UI.validate_user_id"
 					},
 					{
 						"name": "salutation",
@@ -193,6 +225,7 @@ class User_UI:
 						"height": 1,
 						"width": 20,
 						"bgcolor": 12,
+						"validate": "call:User_UI.validate_last_name",
 						"fgcolor": 3
 					},
 					{
@@ -338,14 +371,15 @@ class User_UI:
 						"line": 19,
 						"column": 11,
 						"height": 1,
-						"width": 20,
+						"width": 14,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						"type": "password"
+						"type": "password",
+						"validate": "call:User_UI.validate_password",
 					},
 				],
 				"confirm": False,
-				"target": "call:User_UI.create_user_callback",
+				"target": "call:User_UI.add_user_callback",
 			},
 			"publisher_color": 7
 		}
@@ -354,6 +388,8 @@ class User_UI:
 		data_cept.extend(User_UI.create_title("Neuen Benutzer einrichten"))
 		data_cept.extend(b"\r\n")
 		data_cept.extend(Cept.from_str("Teilnehmernummer:"))
+		data_cept.extend(Cept.set_cursor(6, 29))
+		data_cept.extend(Cept.from_str("-1"))
 		data_cept.extend(b"\r\n")
 		data_cept.extend(Cept.from_str("Anrede:"))
 		data_cept.extend(b"\r\n")
@@ -387,9 +423,7 @@ class User_UI:
 		data_cept.extend(User_UI.line())
 		return (meta, data_cept)
 
-	def validate_unused_user_id(cls, input_data):
-		sys.stderr.write("validate_unused_user_id\n")
-		sys.stderr.write("input_data[\"user_id\"]: " + pprint.pformat(input_data["user_id"]) + "\n")
+	def validate_user_id(cls, input_data):
 		if User.exists(input_data["user_id"]):
 			msg = Util.create_custom_system_message("Teilnehmernummer bereits vergeben! -> #")
 			sys.stdout.buffer.write(msg)
@@ -398,11 +432,52 @@ class User_UI:
 			return Util.VALIDATE_INPUT_BAD
 		else:
 			return Util.VALIDATE_INPUT_OK
-	
-	def create_user_callback(cls, input_data):
-		sys.stderr.write("create_user_callback\n")
+
+	def validate_last_name(cls, input_data):
+		if not input_data["last_name"]:
+			msg = Util.create_custom_system_message("Name darf nicht leer sein! -> #")
+			sys.stdout.buffer.write(msg)
+			sys.stdout.flush()
+			Util.wait_for_ter()
+			return Util.VALIDATE_INPUT_BAD
+		else:
+			return Util.VALIDATE_INPUT_OK
+
+	def validate_password(cls, input_data):
+		if len(input_data["password"]) < 4:
+			msg = Util.create_custom_system_message("Kennwort muß mind. 4-stellig sein! -> #")
+			sys.stdout.buffer.write(msg)
+			sys.stdout.flush()
+			Util.wait_for_ter()
+			return Util.VALIDATE_INPUT_BAD
+		else:
+			return Util.VALIDATE_INPUT_OK
+
+	def add_user_callback(cls, input_data):
 		sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
-		return "0"
+		if User.create(
+			input_data["user_id"],
+			"1", # ext
+			input_data["password"],
+			input_data["salutation"],
+			input_data["last_name"],
+			input_data["first_name"],
+			input_data["street"],
+			input_data["zip"],
+			input_data["city"],
+			input_data["country"]
+		):
+			msg = Util.create_custom_system_message("Benutzer angelegt. Bitte neu anmelden. -> #")
+			sys.stdout.buffer.write(msg)
+			sys.stdout.flush()
+			Util.wait_for_ter()
+			return "00000"
+		else:
+			msg = Util.create_custom_system_message("Benutzer konnte nicht angelegt werden. -> #")
+			sys.stdout.buffer.write(msg)
+			sys.stdout.flush()
+			Util.wait_for_ter()
+			return "77"
 
 	def create_page(user, pagenumber):
 		if pagenumber == "77a":
