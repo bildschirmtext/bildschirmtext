@@ -66,9 +66,12 @@ class Editor:
 	
 	def draw(self):
 		if self.string:
-			s = self.string
-			if s[0] == chr(Cept.ini()):
-				s = "*" + s[1:]
+			if self.type == "password":
+				s = "*" * len(self.string)
+			else:
+				s = self.string
+				if s[0] == chr(Cept.ini()):
+					s = "*" + s[1:]
 		else:
 			 s = ""
 		sys.stderr.write("starting with s = ")
@@ -201,7 +204,10 @@ class Editor:
 							break
 				if is_legal or not self.ignore_illegal_characters:
 					self.string += c
-					sys.stdout.write(c)
+					if self.type == "password":
+						sys.stdout.write("*")
+					else:
+						sys.stdout.write(c)
 					sys.stdout.flush()
 				if not is_legal and not self.ignore_illegal_characters:
 					break
