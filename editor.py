@@ -44,7 +44,9 @@ class Editor:
 	fgcolor = None
 	bgcolor = None
 	hint = None
+	type = None
 	legal_values = None
+	ignore_illegal_characters = True # False: return illegal string
 	clear_line = False
 	echo_ter = False
 	string = None
@@ -181,7 +183,11 @@ class Editor:
 			elif (ord(c) >= 0x20 or ord(c) != 0x19) and len(self.string) < self.width:
 				is_legal = True
 				found = False
-				if self.legal_values:
+				if self.type == "number" and not c.isdigit():
+					is_legal = False
+				elif self.type == "alpha" and not c.isalpha():
+					is_legal = False
+				elif self.legal_values:
 					found = False
 					is_legal = False
 					s = self.string + c
@@ -193,10 +199,11 @@ class Editor:
 						elif legal_input.startswith(s):
 							is_legal = True
 							break
-				self.string += c
-				sys.stdout.write(c)
-				sys.stdout.flush()
-				if not is_legal:
+				if is_legal or not self.ignore_illegal_characters:
+					self.string += c
+					sys.stdout.write(c)
+					sys.stdout.flush()
+				if not is_legal and not self.ignore_illegal_characters:
 					break
 				if found:
 					break

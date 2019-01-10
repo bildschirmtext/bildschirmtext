@@ -68,7 +68,7 @@ class Login_UI:
 						"height": 1,
 						"width": 10,
 						"bgcolor": 12,
-						"fgcolor": 3,
+						"fgcolor": 3
 					},
 					{
 						"name": "ext",
@@ -79,6 +79,7 @@ class Login_UI:
 						"width": 1,
 						"bgcolor": 12,
 						"fgcolor": 3,
+						"type": "number",
 						"default": "1"
 					},
 					{
@@ -90,7 +91,8 @@ class Login_UI:
 						"width": 7,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						"type": "$login_password"
+						"type": "password",
+						"special": "$login_password"
 					}
 				],
 				"confirm": False,

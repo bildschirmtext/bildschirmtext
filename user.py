@@ -158,7 +158,7 @@ class User_UI:
 						"height": 1,
 						"width": 20,
 						"bgcolor": 12,
-						"fgcolor": 3,
+						"fgcolor": 3
 					},
 					{
 						"name": "last_name",
@@ -168,7 +168,7 @@ class User_UI:
 						"height": 1,
 						"width": 20,
 						"bgcolor": 12,
-						"fgcolor": 3,
+						"fgcolor": 3
 					},
 					{
 						"name": "first_name",
@@ -178,7 +178,7 @@ class User_UI:
 						"height": 1,
 						"width": 20,
 						"bgcolor": 12,
-						"fgcolor": 3,
+						"fgcolor": 3
 					},
 					{
 						"name": "street",
@@ -188,7 +188,7 @@ class User_UI:
 						"height": 1,
 						"width": 20,
 						"bgcolor": 12,
-						"fgcolor": 3,
+						"fgcolor": 3
 					},
 					{
 						"name": "zip",
@@ -199,6 +199,7 @@ class User_UI:
 						"width": 5,
 						"bgcolor": 12,
 						"fgcolor": 3,
+						"type": "number"
 					},
 					{
 						"name": "city",
@@ -208,7 +209,7 @@ class User_UI:
 						"height": 1,
 						"width": 13,
 						"bgcolor": 12,
-						"fgcolor": 3,
+						"fgcolor": 3
 					},
 					{
 						"name": "country",
@@ -219,7 +220,9 @@ class User_UI:
 						"width": 2,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						"default": "de"
+						"default": "de",
+						"type": "alpha",
+						"overwrite": True
 					},
 					{
 						"name": "block_payments",
@@ -230,7 +233,8 @@ class User_UI:
 						"width": 1,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						"default": "n"
+						"default": "n",
+						"legal_values": [ "j", "n" ]
 					},
 					{
 						"name": "block_fees",
@@ -241,7 +245,8 @@ class User_UI:
 						"width": 1,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						"default": "n"
+						"default": "n",
+						"legal_values": [ "j", "n" ]
 					},
 					{
 						"name": "pocket_money_major",
@@ -252,7 +257,9 @@ class User_UI:
 						"width": 1,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						"default": "9"
+						"default": "9",
+						"type": "number",
+						"overwrite": True
 					},
 					{
 						"name": "pocket_money_minor",
@@ -263,7 +270,9 @@ class User_UI:
 						"width": 2,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						"default": "99"
+						"default": "99",
+						"type": "number",
+						"overwrite": True
 					},
 					{
 						"name": "max_price_major",
@@ -274,7 +283,9 @@ class User_UI:
 						"width": 1,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						"default": "9"
+						"default": "9",
+						"type": "number",
+						"overwrite": True
 					},
 					{
 						"name": "max_price_minor",
@@ -285,7 +296,9 @@ class User_UI:
 						"width": 2,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						"default": "99"
+						"default": "99",
+						"type": "number",
+						"overwrite": True
 					},
 					{
 						"name": "password",
@@ -296,6 +309,7 @@ class User_UI:
 						"width": 20,
 						"bgcolor": 12,
 						"fgcolor": 3,
+						"type": "password"
 					}
 				],
 				"confirm": False

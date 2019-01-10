@@ -444,7 +444,9 @@ def handle_inputs(inputs):
 		editor.fgcolor = input.get("fgcolor")
 		editor.bgcolor = input.get("bgcolor")
 		editor.hint = input.get("hint")
+		editor.type = input.get("type")
 		editor.legal_values = input.get("legal_values")
+		editor.ignore_illegal_characters = input.get("ignore_illegal_characters", True)
 		editor.echo_ter = input.get("echo_ter", False)
 		editor.no_navigation = inputs.get("no_navigation", False)
 		editor.string = input.get("default")
@@ -468,7 +470,7 @@ def handle_inputs(inputs):
 
 		input_data[input["name"]] = val
 		
-		ret = validate_input(input_data, input.get("type"))
+		ret = validate_input(input_data, input.get("special"))
 
 		if ret == VALIDATE_INPUT_OK:
 			i += 1
@@ -625,6 +627,7 @@ while True:
 					"height": 1,
 					"width": 40,
 					"legal_values": legal_values,
+					"ignore_illegal_characters": False,
 					"echo_ter": True
 				}
 			],
