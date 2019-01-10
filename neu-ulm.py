@@ -54,6 +54,7 @@ import datetime
 import pprint
 
 from cept import Cept
+from util import Util
 from editor import Editor
 from user import User
 from user import User_UI
@@ -164,40 +165,6 @@ def headerfooter(pageid, publisher_name, publisher_color):
 	hf.extend(b'\n')
 	return hf
 
-def create_system_message(code, price = 0, hint = ""):
-	text = ""
-	prefix = "SH"
-	if hint != "":
-		text = hint
-	elif code == 0:
-		text = "                               "
-	elif code == 10:
-		text = "Rückblättern nicht möglich     "
-	elif code == 44:
-		text = "Absenden? Ja:19 Nein:2         "
-	elif code == 47:
-		text = "Absenden für " + format_currency(price) + "? Ja:19 Nein:2"
-	elif code == 55:
-		text = "Eingabe wird bearbeitet        "
-	elif code == 73:
-		current_datetime = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
-		text = "Abgesandt " + current_datetime + ", -> #  "
-		prefix = "1B"
-	elif code == 100 or code == 101:
-		text = "Seite nicht vorhanden          "
-	elif code == 291:
-		text = "Seite wird aufgebaut           "
-
-	msg = bytearray(Cept.service_break(24))
-	msg.extend(Cept.clear_line())
-	msg.extend(Cept.from_str(text, 1))
-	msg.extend(Cept.hide_text())
-	msg.extend(b'\b')
-	msg.extend(Cept.from_str(prefix))
-	msg.extend(Cept.from_str(str(code)).rjust(3, b'0'))
-	msg.extend(Cept.service_break_back())
-	return msg
-
 def create_preamble(basedir, meta):
 	global last_filename_include
 	global last_filename_palette
@@ -236,7 +203,7 @@ def create_preamble(basedir, meta):
 		last_filename_include = ""
 
 	if len(preamble) > 600: # > 4 seconds @ 1200 baud
-		preamble = create_system_message(291) + preamble
+		preamble = Util.create_system_message(291) + preamble
 
 	return preamble
 
@@ -328,74 +295,55 @@ def create_page(basepath, pageid):
 def login(input_data):
 	global user
 	
-	user_id = input_data["user_id"]
-	if user_id is None or user_id == "":
-		user_id = "0"
-	ext = input_data["ext"]
-	if ext is None or ext == "":
-		ext = "1"
-	user = User.login(user_id, ext, input_data["password"])
+	user = User.login(input_data["user_id"], input_data["ext"], input_data["password"])
 	
 	return not user is None
 
-def wait_for_ter():
-	# TODO: use an editor for this, too!
-	sys.stdout.buffer.write(Cept.sequence_end_of_page())
-	sys.stdout.flush()
-	while True:
-		c = sys.stdin.read(1)
-		if ord(c) == Cept.ter():
-			sys.stdout.write(c)
-			sys.stdout.flush()
-			break
-	cept_data = bytearray(create_system_message(0))
-	cept_data.extend(Cept.sequence_end_of_page())
-	sys.stdout.buffer.write(cept_data)
-	sys.stdout.flush()
+def validate_input(input_data, type, validate):
+	if validate and validate.startswith("call:"):
+		(cls, method) = validate[5:].split(".")
+		module = globals()[cls]()
+		func = getattr(module, method)
+		return func(input_data)
 
-VALIDATE_INPUT_OK = 0
-VALIDATE_INPUT_BAD = 1
-VALIDATE_INPUT_RESTART = 2
-
-def validate_input(input_data, type):
 	if type == "user_id":
 		if User.exists(input_data["user_id"]):
-			return VALIDATE_INPUT_OK
+			return Util.VALIDATE_INPUT_OK
 		else:
-			msg = create_system_message(0, 0, "Teilnehmerkennung ungültig! -> #")
-			ret = VALIDATE_INPUT_BAD
+			msg = Util.create_custom_system_message("Teilnehmerkennung ungültig! -> #")
+			ret = Util.VALIDATE_INPUT_BAD
 	elif type == "ext":
 		user_id = input_data.get("user_id")
 		ext = input_data["ext"]
 		if ext == "":
 			ext = "1"
 		if User.exists(user_id, ext):
-			return VALIDATE_INPUT_OK
+			return Util.VALIDATE_INPUT_OK
 		else:
-			msg = create_system_message(0, 0, "Mitbenutzernummer ungültig! -> #")
-			ret = VALIDATE_INPUT_BAD
+			msg = Util.create_custom_system_message("Mitbenutzernummer ungültig! -> #")
+			ret = Util.VALIDATE_INPUT_BAD
 	elif type == "$login_password":
 		if not login(input_data):
 			sys.stderr.write("login incorrect\n")
-			msg = create_system_message(0, 0, "Ungültiger Teilnehmer/Kennwort -> #")
-			ret = VALIDATE_INPUT_RESTART
+			msg = Util.create_custom_system_message("Ungültiger Teilnehmer/Kennwort -> #")
+			ret = Util.VALIDATE_INPUT_RESTART
 		else:
 			sys.stderr.write("login ok\n")
-			return VALIDATE_INPUT_OK
+			return Util.VALIDATE_INPUT_OK
 	else:
-		return VALIDATE_INPUT_OK
+		return Util.VALIDATE_INPUT_OK
 
 	sys.stdout.buffer.write(msg)
 	sys.stdout.flush()
-	wait_for_ter()
+	Util.wait_for_ter()
 	return ret
 
 def confirm(inputs): # "send?" message
 	price = inputs.get("price", 0)
 	if price > 0:
-		cept_data = bytearray(create_system_message(47, price))
+		cept_data = bytearray(Util.create_system_message(47, price))
 	else:
-		cept_data = bytearray(create_system_message(44))
+		cept_data = bytearray(Util.create_system_message(44))
 	cept_data.extend(Cept.set_cursor(24, 1))
 	cept_data.extend(Cept.sequence_end_of_page())
 	sys.stdout.buffer.write(cept_data)
@@ -426,9 +374,9 @@ def confirm(inputs): # "send?" message
 
 def system_message_sent_message():
 	# "sent" message
-	sys.stdout.buffer.write(create_system_message(73))
+	sys.stdout.buffer.write(Util.create_system_message(73))
 	sys.stdout.flush()
-	wait_for_ter()
+	Util.wait_for_ter()
 
 def handle_inputs(inputs):
 	global user
@@ -473,14 +421,14 @@ def handle_inputs(inputs):
 
 		input_data[input["name"]] = val
 		
-		ret = validate_input(input_data, input.get("special"))
+		ret = validate_input(input_data, input.get("special"), input.get("validate"))
 
-		if ret == VALIDATE_INPUT_OK:
+		if ret == Util.VALIDATE_INPUT_OK:
 			i += 1
-		if ret == VALIDATE_INPUT_BAD:
+		if ret == Util.VALIDATE_INPUT_BAD:
 			skip = False
 			continue
-		elif ret == VALIDATE_INPUT_RESTART:
+		elif ret == Util.VALIDATE_INPUT_RESTART:
 			i = 0
 			skip = False
 			continue
@@ -494,15 +442,20 @@ def handle_inputs(inputs):
 			else:
 				pass # TODO we stay on the page, in the navigator?
 	elif not inputs.get("no_55", False):
-		cept_data = create_system_message(55)
+		cept_data = Util.create_system_message(55)
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 
 	# send "input_data" to "inputs["target"]"
 		
 	if "target" in inputs:
-		if inputs["target"][:5] == "page:":
+		if inputs["target"].startswith("page:"):
 			return { "$command": inputs["target"][5:] }
+		elif inputs["target"].startswith("call:"):
+			(cls, method) = inputs["target"][5:].split(".")
+			module = globals()[cls]()
+			func = getattr(module, method)
+			return { "$command": func(input_data) }
 		else:
 			return None # error
 	else:
@@ -608,7 +561,7 @@ while True:
 			sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\n")
 			if (desired_pageid[-1] >= "b" and desired_pageid[-1] <= "z"):
 				code = 101
-		cept_data = create_system_message(error) + Cept.sequence_end_of_page()
+		cept_data = Util.create_system_message(error) + Cept.sequence_end_of_page()
 		sys.stdout.buffer.write(cept_data)
 		sys.stdout.flush()
 		showing_message = True

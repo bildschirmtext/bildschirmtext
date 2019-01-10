@@ -2,8 +2,10 @@ import os
 import sys
 import json
 import time
+import pprint
 
 from cept import Cept
+from util import Util
 
 PATH_USERS = "users/"
 PATH_SECRETS = "secrets/"
@@ -54,12 +56,22 @@ class User():
 	messaging = None
 
 	@classmethod
+	def sanitize(cls, user_id, ext):
+		if user_id is None or user_id == "":
+			user_id = "0"
+		if ext is None or ext == "":
+			ext = "1"
+		return (user_id, ext)
+
+	@classmethod
 	def exists(cls, user_id, ext = "1"):
+		(user_id, ext) = cls.sanitize(user_id, ext)
 		filename = PATH_USERS + user_id + "-" + ext + ".user"
 		return os.path.isfile(filename)
 	
 	@classmethod
 	def get(cls, user_id, ext, personal_data = False):
+		(user_id, ext) = cls.sanitize(user_id, ext)
 		from messaging import Messaging
 		filename = PATH_USERS + user_id + "-" + ext + ".user"
 		if not os.path.isfile(filename):
@@ -90,6 +102,7 @@ class User():
 
 	@classmethod
 	def login(cls, user_id, ext, password, force = False):
+		(user_id, ext) = cls.sanitize(user_id, ext)
 		filename = PATH_SECRETS + user_id + "-" + ext + ".secrets"
 		if not os.path.isfile(filename):
 			return None
@@ -159,7 +172,8 @@ class User_UI:
 						"width": 20,
 						"bgcolor": 12,
 						"fgcolor": 3,
-						"type": "number"
+						"type": "number",
+						"validate": "call:User_UI.validate_unused_user_id"
 					},
 					{
 						"name": "salutation",
@@ -330,8 +344,8 @@ class User_UI:
 						"type": "password"
 					},
 				],
-				"confirm": False
-#				"target": "page:000001a",
+				"confirm": False,
+				"target": "call:User_UI.create_user_callback",
 			},
 			"publisher_color": 7
 		}
@@ -372,6 +386,23 @@ class User_UI:
 		data_cept.extend(b"\r\n\r\n")
 		data_cept.extend(User_UI.line())
 		return (meta, data_cept)
+
+	def validate_unused_user_id(cls, input_data):
+		sys.stderr.write("validate_unused_user_id\n")
+		sys.stderr.write("input_data[\"user_id\"]: " + pprint.pformat(input_data["user_id"]) + "\n")
+		if User.exists(input_data["user_id"]):
+			msg = Util.create_custom_system_message("Teilnehmernummer bereits vergeben! -> #")
+			sys.stdout.buffer.write(msg)
+			sys.stdout.flush()
+			Util.wait_for_ter()
+			return Util.VALIDATE_INPUT_BAD
+		else:
+			return Util.VALIDATE_INPUT_OK
+	
+	def create_user_callback(cls, input_data):
+		sys.stderr.write("create_user_callback\n")
+		sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
+		return "0"
 
 	def create_page(user, pagenumber):
 		if pagenumber == "77a":
