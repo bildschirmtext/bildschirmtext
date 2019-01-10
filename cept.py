@@ -27,6 +27,8 @@ class Cept(bytearray):
 				s2.extend(Cept.g2code('H', mode) + b'U') # &Uuml;
 			elif ord(c) == 0xdf:
 				s2.extend(Cept.g2code('{', mode))        # &szlig;
+			elif ord(c) == 0x0a:
+				s2.extend(b'\r\n')                       # \n
 			else:
 				s2.append(ord(c))
 		return s2

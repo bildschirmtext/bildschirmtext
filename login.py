@@ -157,14 +157,34 @@ class Login_UI:
 		data_cept.extend(Cept.repeat("Q", 40))
 		return (meta, data_cept)
 
+	def notifications(user):
+		if user.user_id == "0":
+			return (
+				"Als Gastbenutzer können Sie beliebige\n"
+				"Bildschirmtext-Inhalte abrufen.\n"
+				"Um Ihren eigenen Zugang einzurichten,\n"
+				"mit dem Sie auch Mitteilungen versenden\n"
+				"und empfangen können, drücken Sie jetzt\n"
+				"bitte die 7."
+			)
+		if user.messaging.has_new_messages():
+			return "Neue Mitteilungen mit 8"
+		else:
+			return ""
+
 	def create_start(user):
+		links = { "#": "0" }
+		
+		if user.messaging.has_new_messages():
+			links["8"] = "88"
+
+		if user.user_id == "0":
+			links["7"] = "77"
+
 		meta = {
 			"include": "a",
 			"clear_screen": True,
-			"links": {
-				"#": "0",
-				"8": "8"
-			},
+			"links": links,
 			"publisher_color": 7
 		}
 
@@ -177,6 +197,16 @@ class Login_UI:
 		else:
 			last_date = "--.--.----"
 			last_time = "--:--"
+
+		user_name = ""
+		if user.salutation:
+			user_name += user.salutation + "\n"
+		if user.first_name:
+			user_name += user.first_name + "\n"
+		if user.last_name:
+			user_name += user.last_name + "\n"
+
+		notifications = Login_UI.notifications(user)
 
 		data_cept = bytearray()
 		data_cept.extend(Cept.clear_screen())
@@ -219,17 +249,12 @@ class Login_UI:
 		data_cept.extend(b'\r\n\n')
 		data_cept.extend(Cept.from_str("Guten Tag"))
 		data_cept.extend(b'\r\n')
-		data_cept.extend(Cept.from_str(user.salutation))
+		data_cept.extend(Cept.from_str(user_name))
 		data_cept.extend(b'\r\n')
-		data_cept.extend(Cept.from_str(user.first_name))
-		data_cept.extend(b'\r\n')
-		data_cept.extend(Cept.from_str(user.last_name))
-		data_cept.extend(b'\r\n\n\n')
 		data_cept.extend(Cept.set_fg_color_simple(3))
-		if user.messaging.has_new_messages():
-			data_cept.extend(Cept.from_str("Neue Mitteilungen mit 8"))
+		data_cept.extend(Cept.from_str(notifications))
 		data_cept.extend(Cept.set_fg_color_simple(7))
-		data_cept.extend(b'\r\n\n\n\n')
+		data_cept.extend(Cept.set_cursor(19, 1))
 		data_cept.extend(Cept.from_str("Sie benutzten Bildschirmtext zuletzt"))
 		data_cept.extend(b'\r\n')
 		data_cept.extend(Cept.from_str("am "))
