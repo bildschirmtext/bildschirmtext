@@ -464,7 +464,11 @@ def handle_inputs(inputs):
 def wait_for_dial_command():
 	s = ""
 	while True:
-		c = sys.stdin.read(1)
+		c = sys.stdin.buffer.read(1)
+		if c and c[0] <= 0x7f:
+			c = chr(c[0])
+		else:
+			c = chr(0)
 		sys.stdout.write(c)
 		sys.stdout.flush()
 		if ord(c) == 10 or ord(c) == 13:
@@ -472,7 +476,7 @@ def wait_for_dial_command():
 			if re.search("^AT *(X\d)? *D", s):
 				break
 			s = ""
-		else:
+		elif ord(c) >= 0x20:
 			s += c
 #		sys.stderr.write("'")
 #		for cc in s:

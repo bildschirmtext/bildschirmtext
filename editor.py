@@ -227,7 +227,11 @@ class Editor:
 				c = inject_char
 				inject_char = None
 			else:
-				c = sys.stdin.read(1)
+				c = sys.stdin.buffer.read(1)
+				if c and c[0] <= 0x7f:
+					c = chr(c[0])
+				else:
+					c = chr(0)
 			sys.stderr.write("In: " + hex(ord(c)) + "\n")
 
 			if self.command_mode and ord(c) == Cept.ini() and self.string[-1:] == chr(Cept.ini()):
