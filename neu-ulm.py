@@ -352,7 +352,7 @@ def confirm(inputs): # "send?" message
 	# TODO: use an editor for this, too!
 	seen_a_one = False
 	while True:
-		c = sys.stdin.read(1)
+		c = Util.read_char()
 		if c == "2":
 			return False
 			sys.stdout.write(c)
@@ -464,11 +464,7 @@ def handle_inputs(inputs):
 def wait_for_dial_command():
 	s = ""
 	while True:
-		c = sys.stdin.buffer.read(1)
-		if c and c[0] <= 0x7f:
-			c = chr(c[0])
-		else:
-			c = chr(0)
+		c = Util.readchar()
 		sys.stdout.write(c)
 		sys.stdout.flush()
 		if ord(c) == 10 or ord(c) == 13:

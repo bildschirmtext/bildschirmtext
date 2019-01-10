@@ -2,6 +2,7 @@ import sys
 import pprint
 
 from cept import Cept
+from util import Util
 
 '''
 	An Editor object is used for single or multi line text input. Every field on
@@ -227,11 +228,7 @@ class Editor:
 				c = inject_char
 				inject_char = None
 			else:
-				c = sys.stdin.buffer.read(1)
-				if c and c[0] <= 0x7f:
-					c = chr(c[0])
-				else:
-					c = chr(0)
+				c = Util.readchar()
 			sys.stderr.write("In: " + hex(ord(c)) + "\n")
 
 			if self.command_mode and ord(c) == Cept.ini() and self.string[-1:] == chr(Cept.ini()):

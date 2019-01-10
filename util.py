@@ -7,6 +7,16 @@ class Util:
 	VALIDATE_INPUT_BAD = 1
 	VALIDATE_INPUT_RESTART = 2
 
+	def readchar():
+		c = sys.stdin.buffer.read(1)
+		if not c:
+			sys.stderr.write("client disconnected, shutting down.\n")
+			exit(0)
+		if c[0] <= 0x7f:
+			return chr(c[0])
+		else:
+			return chr(0)
+
 	def create_system_message(code, price = 0):
 		text = ""
 		prefix = "SH"
@@ -51,7 +61,7 @@ class Util:
 		sys.stdout.buffer.write(Cept.sequence_end_of_page())
 		sys.stdout.flush()
 		while True:
-			c = sys.stdin.read(1)
+			c = Util.read_char()
 			if ord(c) == Cept.ter():
 				sys.stdout.write(c)
 				sys.stdout.flush()
