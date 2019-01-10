@@ -95,8 +95,9 @@ class Editor:
 	
 	def set_color(self):
 		cept_data = bytearray()
-		if self.fgcolor is not None and self.bgcolor is not None:
+		if self.fgcolor is not None:
 			cept_data.extend(Cept.set_fg_color(self.fgcolor))
+		if self.bgcolor is not None:
 			cept_data.extend(Cept.set_bg_color(self.bgcolor))
 		return cept_data
 
@@ -104,27 +105,33 @@ class Editor:
 		cept_data = bytearray(Cept.parallel_limited_mode())
 		cept_data.extend(Cept.hide_cursor())
 		cept_data.extend(Cept.set_cursor(self.line, self.column))
+		fill_with_clear_line = self.clear_line and self.width == 40# and self.height == 1
+		fill_with_spaces = self.clear_line and not fill_with_clear_line
 		for i in range(0, self.height):
-			l = self.__data[i]
+			l = self.__data[i].rstrip()
+
 			if self.type == "password":
-				l = "*" * len(l.rstrip())
+				l = "*" * len(l)
 			else:
-				if l[0] == chr(Cept.ini()):
+				if l.startswith(chr(Cept.ini())):
 					l = "*" + l[1:]
-			cept_data.extend(self.set_color())
-			if self.width == 40:
-				if self.clear_line:
-					# TODO: set line bg color
-					cept_data.extend(Cept.clear_line())
-				cept_data.extend(Cept.from_str(l))
-			else:
-				if self.clear_line:
-					cept_data.extend(Cept.from_str(l))
-				else:
-					cept_data.extend(Cept.from_str(l).rstrip())
+
+			if l:
+				cept_data.extend(self.set_color())
+
+			if fill_with_clear_line:
+				cept_data.extend(Cept.clear_line())
+				if self.bgcolor:
+					cept_data.extend(Cept.set_line_bg_color(self.bgcolor))
+
+			cept_data.extend(Cept.from_str(l))
+
+			if fill_with_spaces:
+				cept_data.extend(Cept.repeat(" ", self.width - len(l)))
+
 			if i != self.height - 1:
 				if self.column == 1:
-					if self.width != 40:
+					if self.width != 40 or fill_with_clear_line:
 						cept_data.extend(b'\n')
 				else:
 					cept_data.extend(Cept.set_cursor(self.line + i + 1, self.column))

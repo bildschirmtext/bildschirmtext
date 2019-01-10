@@ -280,6 +280,10 @@ class Cept(bytearray):
 		return bytes([0x1b, 0x23, 0x21, 0x50 + c])
 
 	@staticmethod
+	def set_line_bg_color(c):
+		return Cept.set_palette(c >> 3) + Cept.set_line_bg_color_simple(c & 7)
+
+	@staticmethod
 	def set_screen_bg_color_simple(c):
 		return bytes([0x1b, 0x23, 0x20, 0x50 + c])
 
