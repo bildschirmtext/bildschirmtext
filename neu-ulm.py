@@ -227,30 +227,30 @@ def create_page(pageid):
 		(meta, data_cept) = ret
 	else:
 		basedir = None
-		for dir in [ "", "hist/10/" ]:
+		data_cept = None
+		for dir in [ "", "hist/10/", "hist/11/" ]:
 			for i in reversed(range(0, len(pageid))):
 				testdir = PATH_DATA + dir + pageid[:i+1]
+				sys.stderr.write("testdir: '" + testdir + "'\n")
 				if os.path.isdir(testdir):
-					sys.stderr.write("testdir: '" + testdir + "'\n")
 					filename = pageid[i+1:]
 					sys.stderr.write("filename: '" + filename + "'\n")
 					basedir = testdir + "/"
 					break
 	
-		if basedir is None:
-			return None
-
-		filename_meta = basedir + filename + ".meta"
-		filename_cept = basedir + filename + ".cept"
-
-		if not os.path.isfile(filename_meta):
-			return None
-
-		with open(filename_meta) as f:
-			meta = json.load(f)
+			if basedir:
+				filename_meta = basedir + filename + ".meta"
+				filename_cept = basedir + filename + ".cept"
 		
-		with open(filename_cept, mode='rb') as f:
-			data_cept = f.read()
+				if os.path.isfile(filename_meta):
+					with open(filename_meta) as f:
+						meta = json.load(f)
+					with open(filename_cept, mode='rb') as f:
+						data_cept = f.read()
+					break
+	
+		if data_cept is None:
+			return None
 
 	with open(basedir + "a.glob") as f:
 		glob = json.load(f)
@@ -262,6 +262,7 @@ def create_page(pageid):
 		all_data.extend(Cept.serial_limited_mode())
 		all_data.extend(Cept.clear_screen())
 
+	sys.stderr.write("basedir: '" + filename + "'\n")
 	all_data.extend(create_preamble(basedir, meta))
 
 	if "cls2" in meta and meta["cls2"]:
