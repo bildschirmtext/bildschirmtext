@@ -12,12 +12,15 @@ from util import Util
 	
 	* An editor has a position, a size, a foreground and a background color. If
 	  the color properties are set, it will draw its own background.
-	* An editor can be given an list of legal inputs. There are two modes:
-	  If end_once_legal is True, as soon as a character is entered that makes
-	  the current contents of the editor illegal, the edit() method returns with
-	  the illegal string.
-	  If end_once_legal is False, characters that would make the input illegal
-	  are ignored.
+	* An editor can be given an list of legal inputs.
+	  If end_on_illegal_character is True, as soon as a character is entered
+	  that makes the current contents of the editor illegal, the edit() method
+	  returns the illegal string.
+	  If end_on_illegal_character is False, characters that would make the input
+	  illegal are ignored.
+	  If end_on_legal_string is True, the edit() method returns as soon as a
+	  legal string is completed.
+	  
 
 	## Command Mode
 
@@ -50,8 +53,8 @@ class Editor:
 	hint = None
 	type = None
 	legal_values = None
-	ignore_illegal_characters = True # False: return illegal string
-	end_once_legal = False
+	end_on_illegal_character = False
+	end_on_legal_string = False
 	clear_line = False
 	cursor_home = False
 	echo_ter = False
@@ -306,41 +309,39 @@ class Editor:
 					break
 				self.insert_control_character(c)
 			else: # ord(c) >= 0x20
-				is_legal = True
-				found = False
+				character_legal = True
+				string_legal = False
 				# CEPT doesn't have a concept of backspace, so the backspace key
 				# sends the sequence CSR_LEFT, SPACE, CSR_LEFT. It is very tricky
 				# to detect this properly, so we will just allow spaces in
 				# "number" and "alpha" input fields.
 				if self.type == "number" and not c.isdigit() and not c == " ":
-					is_legal = False
+					character_legal = False
 				elif self.type == "alpha" and not c.isalpha() and not c == " ":
-					is_legal = False
+					character_legal = False
 				elif self.legal_values:
-					found = False
-					is_legal = False
-					s = self.try_insert_character(c)
-					sys.stderr.write("self.__x:\n" + pprint.pformat(self.__x) + "\n")
-					sys.stderr.write("s:\n" + pprint.pformat(s) + "\n")
-					sys.stderr.write("self.legal_values:\n" + pprint.pformat(self.legal_values) + "\n")
+					s = self.try_insert_character(c).rstrip()
+					character_legal = False
 					for legal_input in self.legal_values:
 						if s == legal_input:
-							is_legal = True
-							found = True
+							character_legal = True
+							string_legal = True
+							sys.stderr.write("string_legal!\n")
 							break
 						elif legal_input.startswith(s):
-							is_legal = True
+							character_legal = True
+							sys.stderr.write("character_legal!\n")
 							break
-				if is_legal or not self.ignore_illegal_characters:
+				if character_legal or self.end_on_illegal_character:
 					if self.insert_character(c):
 						if self.type == "password":
 							sys.stdout.write("*")
 						else:
 							sys.stdout.buffer.write(Cept.from_str(c))
 						sys.stdout.flush()
-				if not is_legal and not self.ignore_illegal_characters:
+				if not character_legal and self.end_on_illegal_character:
 					break
-				if found and self.end_once_legal:
+				if string_legal and self.end_on_legal_string:
 					break
 			sys.stderr.write("self.__data:\n" + pprint.pformat(self.__data) + "\n")
 			sys.stderr.write("self.string:\n" + pprint.pformat(self.string) + "\n")
