@@ -115,7 +115,7 @@ class Historic_UI:
 		)
 		distribution = [ 9, 17 ]
 
-		start_page = [ "25096/0", "Amiga Demo Startseite" ]
+		start_page = [ "20096/1", "Amiga Demo Startseite" ]
 
 		pages = [
 			[ "1050", "Btx-Telex" ],
@@ -154,7 +154,7 @@ class Historic_UI:
 			"0": "78",
 			"10": Historic_UI.historic_link_from_str(start_page[0])
 		}
-		i = 10
+		i = 20
 		for page in pages:
 			links[str(i)] = Historic_UI.historic_link_from_str(page[0])
 			i += 1
