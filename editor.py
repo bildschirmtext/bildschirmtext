@@ -55,7 +55,7 @@ class Editor:
 	legal_values = None
 	end_on_illegal_character = False
 	end_on_legal_string = False
-	clear_line = False
+	clear_line = True
 	cursor_home = False
 	echo_ter = False
 	command_mode = False
@@ -262,7 +262,7 @@ class Editor:
 						editor.line = 24
 						editor.column = 1
 						editor.height = 1
-						editor.width = 40
+						editor.width = 20
 						editor.string = chr(Cept.ini())
 						editor.command_mode = True
 						editor.clear_line = True

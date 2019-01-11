@@ -386,7 +386,7 @@ def handle_inputs(inputs):
 		editor.type = input.get("type")
 		editor.cursor_home = input.get("cursor_home", False)
 		editor.legal_values = input.get("legal_values")
-		editor.clear_line = True
+		editor.clear_line = input.get("clear_line", True)
 		editor.end_on_illegal_character = input.get("end_on_illegal_character", False)
 		editor.end_on_legal_string = input.get("end_on_legal_string", False)
 		editor.echo_ter = input.get("echo_ter", False)
@@ -572,7 +572,8 @@ while True:
 					"line": 24,
 					"column": 1,
 					"height": 1,
-					"width": 40,
+					"width": 20,
+					"clear_line": False,
 					"legal_values": legal_values,
 					"end_on_illegal_character": True,
 					"end_on_legal_string": True,
