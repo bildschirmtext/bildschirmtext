@@ -620,8 +620,8 @@ class User_UI:
 	def create_page(user, pagenumber):
 		if pagenumber == "77a":
 			return User_UI.create_add_user()
-		elif re.search("^710\w$", pagenumber):
-			return User_UI.create_historic_overview(ord(pagenumber[3]) - ord('a'))
+		else:
+			return None
 
 
 

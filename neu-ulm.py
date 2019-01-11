@@ -61,6 +61,7 @@ from user import User_UI
 from messaging import Messaging
 from messaging import Messaging_UI
 from login import Login_UI
+from historic import Historic_UI
 
 # paths
 PATH_DATA = "data/"
@@ -214,6 +215,10 @@ def create_page(pageid):
 		# login
 		ret = Login_UI.create_page(user, pageid)
 		basedir = PATH_DATA + "00000/"
+	if not ret and (pageid.startswith("71") or pageid.startswith("78")):
+		# historic page overview
+		ret = Historic_UI.create_page(user, pageid)
+		basedir = PATH_DATA + "8/"
 	if not ret and pageid.startswith("7"):
 		# user management
 		ret = User_UI.create_page(user, pageid)
