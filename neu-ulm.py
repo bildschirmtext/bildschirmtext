@@ -222,25 +222,19 @@ def create_page(basepath, pageid):
 	if basedir is None:
 		return None
 
+	ret = None
 	# generated pages
-	sys.stderr.write("pageid[0]: '" + pageid[0] + "'\n")
 	if pageid.startswith("00000") or pageid == "9a":
 		# login
 		ret = Login_UI.create_page(user, pageid)
-		if ret is None:
-			return None
-		(meta, data_cept) = ret
-	elif pageid.startswith("7"):
+	if not ret and pageid.startswith("7"):
 		# user management
 		ret = User_UI.create_page(user, pageid)
-		if ret is None:
-			return None
-		(meta, data_cept) = ret
-	elif pageid.startswith("8"):
+	if not ret and pageid.startswith("8"):
 		# messaging
 		ret = Messaging_UI.create_page(user, pageid)
-		if ret is None:
-			return None
+
+	if ret:
 		(meta, data_cept) = ret
 	else:
 		filename_meta = basedir + filename + ".meta"
