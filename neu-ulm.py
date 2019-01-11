@@ -204,39 +204,42 @@ def create_preamble(basedir, meta):
 
 	return preamble
 
-def create_page(basepath, pageid):
+def create_page(pageid):
 	if pageid[-1:].isdigit():
 		pageid += "a"
-
-	basedir = None
-
-	for i in reversed(range(0, len(pageid))):
-		testdir = basepath + pageid[:i+1]
-		if os.path.isdir(testdir):
-			sys.stderr.write("testdir: '" + testdir + "'\n")
-			filename = pageid[i+1:]
-			sys.stderr.write("filename: '" + filename + "'\n")
-			basedir = testdir + "/"
-			break
-
-	if basedir is None:
-		return None
 
 	ret = None
 	# generated pages
 	if pageid.startswith("00000") or pageid == "9a":
 		# login
 		ret = Login_UI.create_page(user, pageid)
+		basedir = PATH_DATA + "00000/"
 	if not ret and pageid.startswith("7"):
 		# user management
 		ret = User_UI.create_page(user, pageid)
+		basedir = PATH_DATA + "7/"
 	if not ret and pageid.startswith("8"):
 		# messaging
 		ret = Messaging_UI.create_page(user, pageid)
+		basedir = PATH_DATA + "8/"
 
 	if ret:
 		(meta, data_cept) = ret
 	else:
+		basedir = None
+		for dir in [ "", "hist/10/" ]:
+			for i in reversed(range(0, len(pageid))):
+				testdir = PATH_DATA + dir + pageid[:i+1]
+				if os.path.isdir(testdir):
+					sys.stderr.write("testdir: '" + testdir + "'\n")
+					filename = pageid[i+1:]
+					sys.stderr.write("filename: '" + filename + "'\n")
+					basedir = testdir + "/"
+					break
+	
+		if basedir is None:
+			return None
+
 		filename_meta = basedir + filename + ".meta"
 		filename_cept = basedir + filename + ".cept"
 
@@ -529,7 +532,7 @@ while True:
 			add_to_history = False
 		elif desired_pageid:
 			sys.stderr.write("showing page: '" + desired_pageid + "'\n")
-			ret = create_page(PATH_DATA, desired_pageid)
+			ret = create_page(desired_pageid)
 	
 			success = ret is not None
 			if success:
