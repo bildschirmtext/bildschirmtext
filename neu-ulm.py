@@ -73,9 +73,6 @@ last_filename_include = ""
 last_filename_palette = ""
 links = {}
 
-def format_currency(price):
-	return "DM  %d" % int(price / 100) + ",%02d" % int(price % 100)
-
 def headerfooter(pageid, publisher_name, publisher_color):
 	hide_header_footer = len(publisher_name) == 0
 	hide_price = False
@@ -157,7 +154,7 @@ def headerfooter(pageid, publisher_name, publisher_color):
 	if not hide_header_footer and not hide_price:
 		hf.extend(Cept.set_cursor(1, 31))
 		hf.extend(b'  ')
-		hf.extend(Cept.from_str(format_currency(0)))
+		hf.extend(Cept.from_str(Util.format_currency(0)))
 
 	hf.extend(Cept.cursor_home())
 	hf.extend(Cept.set_palette(0))
@@ -352,7 +349,7 @@ def confirm(inputs): # "send?" message
 	# TODO: use an editor for this, too!
 	seen_a_one = False
 	while True:
-		c = Util.read_char()
+		c = Util.readchar()
 		if c == "2":
 			return False
 			sys.stdout.write(c)

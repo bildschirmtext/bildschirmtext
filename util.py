@@ -17,6 +17,9 @@ class Util:
 		else:
 			return chr(0)
 
+	def format_currency(price):
+		return "DM  %d" % int(price / 100) + ",%02d" % int(price % 100)
+
 	def create_system_message(code, price = 0):
 		text = ""
 		prefix = "SH"
@@ -27,7 +30,7 @@ class Util:
 		elif code == 44:
 			text = "Absenden? Ja:19 Nein:2         "
 		elif code == 47:
-			text = "Absenden für " + format_currency(price) + "? Ja:19 Nein:2"
+			text = "Absenden für " + Util.format_currency(price) + "? Ja:19 Nein:2"
 		elif code == 55:
 			text = "Eingabe wird bearbeitet        "
 		elif code == 73:
@@ -61,7 +64,7 @@ class Util:
 		sys.stdout.buffer.write(Cept.sequence_end_of_page())
 		sys.stdout.flush()
 		while True:
-			c = Util.read_char()
+			c = Util.readchar()
 			if ord(c) == Cept.ter():
 				sys.stdout.write(c)
 				sys.stdout.flush()
