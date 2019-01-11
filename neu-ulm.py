@@ -262,7 +262,6 @@ def create_page(pageid):
 		all_data.extend(Cept.serial_limited_mode())
 		all_data.extend(Cept.clear_screen())
 
-	sys.stderr.write("basedir: '" + filename + "'\n")
 	all_data.extend(create_preamble(basedir, meta))
 
 	if "cls2" in meta and meta["cls2"]:
