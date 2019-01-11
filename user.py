@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import time
+import re
 import pprint
 
 from cept import Cept
@@ -168,6 +169,31 @@ class User_UI:
 		data_cept.extend(Cept.set_palette(0))
 		data_cept.extend(Cept.code_9e())
 		data_cept.extend(b'\n\r')
+		data_cept.extend(Cept.set_line_bg_color_simple(4))
+		data_cept.extend(b'\n')
+		data_cept.extend(Cept.set_line_bg_color_simple(4))
+		data_cept.extend(Cept.set_palette(1))
+		data_cept.extend(Cept.double_height())
+		data_cept.extend(b'\r')
+		data_cept.extend(Cept.from_str(title))
+		data_cept.extend(b'\n\r')
+		data_cept.extend(Cept.set_palette(0))
+		data_cept.extend(Cept.normal_size())
+		data_cept.extend(Cept.code_9e())
+		data_cept.extend(Cept.set_fg_color_simple(7))
+		return data_cept
+
+	def create_title2(title):
+		data_cept = bytearray(Cept.set_cursor(2, 1))
+		data_cept.extend(Cept.set_palette(1))
+		data_cept.extend(Cept.set_screen_bg_color_simple(4))
+		data_cept.extend(
+			b'\x1b\x28\x40'           # load G0 into G0
+			b'\x0f'                   # G0 into left charset
+		)
+		data_cept.extend(Cept.parallel_mode())
+		data_cept.extend(Cept.set_palette(0))
+		data_cept.extend(Cept.code_9e())
 		data_cept.extend(Cept.set_line_bg_color_simple(4))
 		data_cept.extend(b'\n')
 		data_cept.extend(Cept.set_line_bg_color_simple(4))
@@ -479,9 +505,123 @@ class User_UI:
 			Util.wait_for_ter()
 			return "77"
 
+	def historic_link_from_str(s):
+		return s.replace("/", "")
+
+	def historic_pretty_link_from_str(s):
+		s = "*" + s.split("/")[0] + "#"
+		if len(s) >= 8:
+			return s + " "
+		else:
+			return (s + " " * 5)[:8]
+
+	def historic_line(page, index):
+		link = User_UI.historic_pretty_link_from_str(page[0])
+		data_cept = bytearray()
+		data_cept.extend(Cept.from_str(link))
+		data_cept.extend(Cept.from_str((page[1] + "." * 29)[:38 - len(link)]))
+		data_cept.extend(Cept.from_str(str(index)))
+		return data_cept
+
+	def create_historic_overview(index):
+		name = "Amiga Demo"
+		description = (
+			"Der Amiga BTX Software-Decoder wurde mit"
+			"Dumps von 113 BTX-Seiten aus 32\n"
+			"Programmen ausgeliefert, sowie 56 eigens"
+			"gestalteten Seiten zum Thema BTX.\n"
+			"Die Seiten stammen vom April 1989."
+		)
+		distribution = [ 9, 17 ]
+
+		start_page = [ "25096/0", "Amiga Demo Startseite" ]
+
+		pages = [
+			[ "1050", "Btx-Telex" ],
+			[ "1188", "Teleauskunft" ],
+			[ "1692", "Cityruf" ],
+			[ "20000", "Deutsche Bundespost" ],
+			[ "20096", "Commodore" ],
+			[ "20511/223", "Kölner Stadtanzeiger" ],
+			[ "21212", "Verbraucher-Zentrale NRW" ],
+			[ "25800/0000", "Deutsche Bundesbahn" ],
+			[ "30003", "Formel Eins" ],
+			[ "30711", "Btx Südwest Datenbank GmbH" ],
+			[ "33033", "Eden" ],
+			[ "34034", "Frankfurter Allg. Zeitung" ],
+			[ "34344", "Neue Mediengesellschaft Ulm" ],
+			[ "35853", "ABIDA GmbH" ],
+			[ "40040/200", "Axel Springer Verlag" ],
+			[ "44479", "DIMDI" ],
+			[ "50257", "Computerwelt Btx-Info-Dienst" ],
+			[ "54004/04", "ÖVA Versicherungen" ],
+			[ "57575", "Lotto Toto" ],
+			[ "64064", "Markt & Technik" ],
+			[ "65432/0", "ADAC" ],
+			[ "67007", "Rheinpfalz Verlag/Druckerei" ],
+			[ "201474/75", "Rhein-Neckar-Zeitung" ],
+#			[ "208585", "eba Pressebüro und Verlag [BROKEN]" ],
+			[ "208888", "Neue Mediengesellschaft Ulm" ],
+			[ "402060", "AUTO & BTX WOLFSBURG" ],
+			[ "50707545", "CHIP Magazin" ],
+			[ "86553222", "Chaos Computer Club" ],
+			[ "505050035", "Steinfels Sprachreisen" ],
+			[ "920492040092", "Wolfgang Fritsch (BHP)" ]
+		]
+
+		links = { "10": User_UI.historic_link_from_str(start_page[0])}
+		i = 10
+		for page in pages:
+			links[str(i)] = User_UI.historic_link_from_str(page[0])
+			i += 1
+
+		meta = {
+			"publisher_name": "!BTX",
+			"include": "a",
+			"clear_screen": True,
+			"links": links,
+			"publisher_color": 7
+		}
+		sys.stderr.write("meta: " + pprint.pformat(meta) + "\n")
+		
+		data_cept = bytearray()
+		data_cept.extend(User_UI.create_title2("Historische Seiten: " + name))
+		data_cept.extend(b"\r\n")
+
+		if not index:
+			data_cept.extend(Cept.from_str(description))
+			data_cept.extend(b"\r\n\n")
+			data_cept.extend(User_UI.historic_line(start_page, 10))
+			data_cept.extend(b"\n")
+
+		start_with = 0
+		if index:
+			for i in range(0, index):
+				start_with += distribution[i]
+
+		if index >= len(distribution):
+			end = len(pages)
+		else:
+			end = start_with + distribution[index]
+		for i in range(start_with, end):
+			data_cept.extend(User_UI.historic_line(pages[i], i + 20))
+
+		data_cept.extend(Cept.set_cursor(23, 1))
+		data_cept.extend(Cept.set_palette(0))
+		data_cept.extend(Cept.set_line_bg_color_simple(4))
+		data_cept.extend(Cept.from_str("0 Zurück"))
+		
+		if index < len(distribution):
+			data_cept.extend(Cept.set_cursor(23, 33))
+			data_cept.extend(Cept.from_str("Weiter #"))
+
+		return (meta, Cept.compress(data_cept))
+
 	def create_page(user, pagenumber):
 		if pagenumber == "77a":
 			return User_UI.create_add_user()
+		elif re.search("^710\w$", pagenumber):
+			return User_UI.create_historic_overview(ord(pagenumber[3]) - ord('a'))
 
 
 
