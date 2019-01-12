@@ -91,7 +91,12 @@ class Historic_UI:
 		return s.replace("/", "")
 
 	def historic_pretty_link_from_str(s):
-		s = "*" + s.split("/")[0] + "#"
+		split = s.split("/")
+		if split[0] == "00000":
+			s = split[1]
+		else:
+			s = split[0]
+		s = "*" + s + "#"
 		if len(s) >= 8:
 			return s + " "
 		else:
@@ -159,11 +164,13 @@ class Historic_UI:
 				"ausgeliefert. Die Seiten stammen vom\n"
 				"November 1993."
 			)
-			distribution = [ 11 ]
+			distribution = [ 12 ]
 	
 			start_page = None
 	
 			pages = [
+				[ "00000/88", "Teleauskunft" ],
+				[ "00000/1188", "Mitteilungsdienst" ],
 				[ "20111/1", "Vobis Microcomputer AG" ],
 				[ "20111/11020", "- Übersicht 486" ],
 				[ "20111/1102030", "- 486 DX-50 " ],

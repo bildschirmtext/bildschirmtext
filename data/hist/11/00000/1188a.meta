@@ -1,0 +1,10 @@
+{
+"include": "1188a",
+"palette": "1188a",
+"clear_screen": false,
+"set_cursor": true,
+"cls2": true,
+"parallel_mode": true,
+"publisher_color": 15,
+"links": { "0": "711" }
+}

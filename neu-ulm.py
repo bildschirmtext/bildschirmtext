@@ -263,19 +263,22 @@ def create_page(pageid):
 
 	all_data = bytearray(Cept.hide_cursor())
 
-	if "clear_screen" in meta and meta["clear_screen"]:
+	if meta.get("clear_screen", False):
 		all_data.extend(Cept.serial_limited_mode())
 		all_data.extend(Cept.clear_screen())
 
 	all_data.extend(create_preamble(basedir, meta))
 
-	if "cls2" in meta and meta["cls2"]:
+	if meta.get("cls2", False):
 		all_data.extend(Cept.serial_limited_mode())
 		all_data.extend(Cept.clear_screen())
 
 	# header
 	hf = headerfooter(pageid, meta["publisher_name"], meta["publisher_color"])
 	all_data.extend(hf)
+
+	if meta.get("parallel_mode", False):
+		all_data.extend(Cept.parallel_mode())
 
 	# payload
 	all_data.extend(data_cept)

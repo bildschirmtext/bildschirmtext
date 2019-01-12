@@ -1,0 +1,9 @@
+{
+"include": "88a",
+"palette": "88a",
+"clear_screen": false,
+"set_cursor": true,
+"parallel_mode": false,
+"publisher_color": 1,
+"links": { "0": "711" }
+}
