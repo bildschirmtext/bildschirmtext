@@ -41,7 +41,7 @@ Die 35 Dateien sind entstanden, indem die 21 Originaldateien an allen Vorkommnis
 Die Originaldateien haben Timestamps von Anfang November 1993.
 
 * Alle Dateien sind vollständige Dumps einer Seite (inkl. DRC, Palette).
-* Sie haben keine Remote-Echo Zeichen am Anfang und enden auf 0x1A.
+* Sie haben teilweise Remote-Echo Zeichen am Anfang und enden auf 0x1A.
 * Die Dateinamen weisen auf den Namen des Programms hin.
 
 ## 1994: MacBTX 1&1
