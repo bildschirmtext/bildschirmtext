@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-int debug = 1;
+int debug = 0;
 int verbose = 0;
 int create_files = 1;
 
@@ -129,6 +129,34 @@ print_palette(FILE *f, uint8_t *p, int c)
 	fprintf(f, "\n]\n");
 }
 
+void
+create_filesnames(
+	char *in_name,
+	int index,
+	char *filename_globals,
+	char *filename_palette,
+	char *filename_include,
+	char *filename_payload
+)
+{
+	strcpy(filename_globals, in_name);
+	strcpy(filename_palette, in_name);
+	strcpy(filename_include, in_name);
+	strcpy(filename_payload, in_name);
+
+	if (index > 1) {
+		sprintf(filename_globals + strlen(in_name), "-%d", index);
+		sprintf(filename_palette + strlen(in_name), "-%d", index);
+		sprintf(filename_include + strlen(in_name), "-%d", index);
+		sprintf(filename_payload + strlen(in_name), "-%d", index);
+	}
+
+	strcpy(filename_globals + strlen(filename_globals), ".glob");
+	strcpy(filename_palette + strlen(filename_palette), ".pal");
+	strcpy(filename_include + strlen(filename_include), ".inc");
+	strcpy(filename_payload + strlen(filename_payload), ".cept");
+}
+
 int
 main(int argc, char **argv)
 {
@@ -143,20 +171,6 @@ main(int argc, char **argv)
 	char filename_palette[256];
 	char filename_include[256];
 	char filename_payload[256];
-	strcpy(filename_globals, argv[1]);
-	strcpy(filename_globals + strlen(argv[1]), ".glob");
-	strcpy(filename_palette, argv[1]);
-	strcpy(filename_palette + strlen(argv[1]), ".pal");
-	strcpy(filename_include, argv[1]);
-	strcpy(filename_include + strlen(argv[1]), ".inc");
-	strcpy(filename_payload, argv[1]);
-	strcpy(filename_payload + strlen(argv[1]), ".cept");
-
-	FILE *file_globals;
-	if (create_files) {
-		file_globals = fopen(filename_globals, "w");
-		fprintf(file_globals, "{\n");
-	}
 
 	FILE *f = fopen(argv[1], "r");
 	uint8_t buffer[10*1024];
@@ -166,35 +180,54 @@ main(int argc, char **argv)
 
 	uint8_t *p = buffer;
 
-	// skip remote echo of previous user entry that
-	// ended up in the dump
-	while ((*p >= '0' && *p <= '9') || *p == '#' || *p == ' ' || *p == 8 || *p == 0xbe || *p == 0xff || *p == 0x18 || *p == '+') {
-		p++;
+	bool first = true;
+	int index = 0;
+
+	FILE *file_globals;
+
+again:
+	index++;
+
+	create_filesnames(argv[1], index, filename_globals, filename_palette, filename_include, filename_payload);
+
+	if (create_files) {
+		file_globals = fopen(filename_globals, "w");
+		fprintf(file_globals, "{\n");
 	}
-
-	const uint8_t data1[] = { 0x14 };
-
-	if (!memcmp(p, data1, sizeof(data1))) {
-		if (debug) printf("HIDE_CURSOR detected.\n");
-		p += sizeof(data1);
-	} else {
-		printf("ERROR: HIDE_CURSOR not detected.\n");
-		print_hex(p, 32);
-		return 1;
-	}
-
+	
 	const uint8_t data2[] = {
 		0x1f,0x2f,0x43,                          // serial limited mode
 		0x0c,                                    // clear screen
 	};
 
-	if (!memcmp(p, data2, sizeof(data2))) {
-		printf("\"clear_screen\": true,\n");
-		p += sizeof(data2);
-	} else {
-		printf("\"clear_screen\": false,\n");
-	}
+	if (first) {
+		// skip remote echo of previous user entry that
+		// ended up in the dump
+		while ((*p >= '0' && *p <= '9') || *p == '#' || *p == ' ' || *p == 8 || *p == 0xbe || *p == 0xff || *p == 0x18 || *p == '+') {
+			p++;
+		}
+		
+		const uint8_t data1[] = { 0x14 };
+		
+		if (!memcmp(p, data1, sizeof(data1))) {
+			if (debug) printf("HIDE_CURSOR detected.\n");
+			p += sizeof(data1);
+		} else {
+			printf("ERROR: HIDE_CURSOR not detected.\n");
+			print_hex(p, 32);
+			return 1;
+		}
+		
+		if (!memcmp(p, data2, sizeof(data2))) {
+			printf("\"clear_screen\": true,\n");
+			p += sizeof(data2);
+		} else {
+			printf("\"clear_screen\": false,\n");
+		}
 
+		first = false;
+	}
+	
 	const uint8_t data2b[] = {
 		0x1f,0x2f,0x41,                          // serial mode
 		0x1f,0x2f,0x40,0x58,                     // service break to row 24
@@ -223,8 +256,6 @@ main(int argc, char **argv)
 		0x53,0x48,0x32,0x39,0x31,                // "SH291"
 		0x1f,0x2f,0x4f,                          // service break back
 	};
-
-again:
 
 	if (!memcmp(p, data2b, sizeof(data2b))) {
 		if (verbose) {
