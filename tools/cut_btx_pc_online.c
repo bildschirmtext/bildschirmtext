@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-int debug = 0;
+int debug = 1;
 int verbose = 0;
 int create_files = 1;
 
@@ -168,7 +168,7 @@ main(int argc, char **argv)
 
 	// skip remote echo of previous user entry that
 	// ended up in the dump
-	while ((*p >= '0' && *p <= '9') || *p == '#' || *p == ' ' || *p == 8 || *p == 0xbe || *p == 0xff) {
+	while ((*p >= '0' && *p <= '9') || *p == '#' || *p == ' ' || *p == 8 || *p == 0xbe || *p == 0xff || *p == 0x18 || *p == '+') {
 		p++;
 	}
 
@@ -196,6 +196,21 @@ main(int argc, char **argv)
 	}
 
 	const uint8_t data2b[] = {
+		0x1f,0x2f,0x41,                          // serial mode
+		0x1f,0x2f,0x40,0x58,                     // service break to row 24
+		0x18,                                    // clear line
+		0x53,0x65,0x69,0x74,0x65,0x20,0x77,0x69, // "Seite wi"
+		0x72,0x64,0x20,0x61,0x75,0x66,0x67,0x65, // "rd aufge"
+		0x62,0x61,0x75,0x74,0x20,0x20,0x20,0x20, // "baut    "
+		0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20, // "        "
+		0x20,0x20,0x20,                          // "   "
+		0x98,                                    // hide
+		0x08,                                    // cursor left
+		0x53,0x48,0x32,0x39,0x31,                // "SH291"
+		0x1f,0x2f,0x4f,                          // service break back
+	};
+
+	const uint8_t data2b_alt[] = {
 		0x1f,0x2f,0x40,0x58,                     // service break to row 24
 		0x18,                                    // clear line
 		0x53,0x65,0x69,0x74,0x65,0x20,0x77,0x69, // "Seite wi"
@@ -216,6 +231,11 @@ again:
 			printf("\"sh291\": true,\n");
 		}
 		p += sizeof(data2b);
+	} else if (!memcmp(p, data2b_alt, sizeof(data2b_alt))) {
+		if (verbose) {
+			printf("\"sh291\": true,\n");
+		}
+		p += sizeof(data2b_alt);
 	} else {
 		if (verbose) {
 			printf("\"sh291\": false,\n");
@@ -224,12 +244,16 @@ again:
 
 	const uint8_t data2c[] = {
 		0x1f,0x26,0x20,                          // start defining colors
-		0x1f,0x26,0x31,0x36,                     // define colors 16+
+		0x1f,0x26                                // define colors 16+
+		//0x31,0x36 usually these bytes follow: "16"
 	};
 
 	if (!memcmp(p, data2c, sizeof(data2c))) {
 		if (debug) printf("INCLUDE1 detected.\n");
 		p += sizeof(data2c);
+
+		int start_color = (p[0] - '0') * 10 + p[1] - '0';
+		p += 2;
 
 		uint8_t *p_old = p;
 		while (*p != 0x1f) {
@@ -238,7 +262,11 @@ again:
 
 		if (create_files) {
 			f = fopen(filename_palette, "w");
-			fprintf(f, "{\n\"palette\": ");
+			fprintf(f, "{\n");
+			if (start_color != 16) {
+				fprintf(f, "\"start_color\": %d,\n", start_color);
+			}
+			fprintf(f, "\"palette\": ");
 			print_palette(f, p_old, p - p_old);
 			fprintf(f, "}\n");
 			fclose(f);
@@ -291,16 +319,31 @@ again:
 		0x08,                                     // cursor left
 	};
 
+	const uint8_t data5_alt[] = {
+		0x1f,0x2f,0x41,                           // serial mode
+		0x1f,0x58,0x41,                           // set cursor to line 24, column 1
+		0x9b,0x31,0x40,                           // select palette #1
+		0x80,                                     // set fg color to #0
+		0x08,                                     // cursor left
+		0x9d,                                     // Hintergrundfarbe setzen bzw. inverse Polarität
+		0x08,                                     // cursor left
+	};
+
 	found = 0;
 	p_old = p;
 	do {
-
+		// sometimes this causes false positives :(
+		// turn off if the file doesn't decode correctly
 		if (!memcmp(p, data4, sizeof(data4))) {
 			found = 1;
 			break;
 		}
 		if (!memcmp(p, data5, sizeof(data5))) {
 			found = 2;
+			break;
+		}
+		if (!memcmp(p, data5_alt, sizeof(data5_alt))) {
+			found = 3;
 			break;
 		}
 		p++;
@@ -334,6 +377,10 @@ again:
 		printf("\"cls2\": false,\n");
 		if (debug) printf("HEADER1 detected.\n");
 		p += sizeof(data5);
+	} else if (found == 3) {
+		printf("\"cls2\": false,\n");
+		if (debug) printf("HEADER1_ALT detected.\n");
+		p += sizeof(data5_alt);
 	} else {
 		printf("ERROR: CLS/HEADER1 not detected.\n");
 		print_hex(p, 32);
@@ -482,8 +529,8 @@ again:
 		return 1;
 	}
 
-	printf("\"links\": ");
-	p = print_links(p);
+//	printf("\"links\": ");
+//	p = print_links(p);
 
 	const uint8_t data10[] = {
 //		0x39,                                     // "9"
@@ -544,7 +591,7 @@ again:
 		p += sizeof(data10);
 	} else {
 		printf("ERROR: FOOTER1 not detected.\n");
-		print_hex(p, 32);
+		print_hex(p_old, 32);
 		return 1;
 	}
 
@@ -657,6 +704,13 @@ again:
 		0x1a,                                     // end of page
 	};
 
+	const uint8_t data11b_alt[] = {
+		0x1f,0x58,0x41,                           // set cursor to x=24 y=1
+		0x11,                                     // show cursor
+		0x1c,                                     // TER
+		0x1a,                                     // end of page
+	};
+
 	if (!memcmp(p, data11, sizeof(data11))) {
 		if (debug) printf("FOOTER4 detected.\n");
 		p += sizeof(data11);
@@ -671,14 +725,22 @@ again:
 		goto again;
 	}
 
-	if (!memcmp(p, data5, sizeof(data5))) {
+	if (!memcmp(p, data2c, sizeof(data2c))) {
 		printf("again2: yes\n");
+		goto again;
+	}
+
+	if (!memcmp(p, data5, sizeof(data5))) {
+		printf("again3: yes\n");
 		goto again;
 	}
 
 	if (!memcmp(p, data11b, sizeof(data11b))) {
 		if (debug) printf("FOOTER5 detected.\n");
 		p += sizeof(data11b);
+	} else if (!memcmp(p, data11b_alt, sizeof(data11b_alt))) {
+		if (debug) printf("FOOTER5_ALT detected.\n");
+		p += sizeof(data11b_alt);
 	} else {
 		printf("ERROR: FOOTER5 not detected.\n");
 		print_hex(p, 32);
