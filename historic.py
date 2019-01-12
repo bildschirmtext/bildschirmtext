@@ -54,6 +54,7 @@ class Historic_UI:
 			"links": {
 				"0": "0",
 				"11": "711",
+				"12": "711",
 				"#": "711"
 			},
 			"publisher_color": 7
@@ -72,7 +73,7 @@ class Historic_UI:
 			"1989: Amiga BTX Terminal..............11"
 			"1989: C64 BTX Demo (64'er 1/90).......--"
 			"1991: BTX-VTX Manager v1.2............--"
-			"1993: PC online 1&1...................--"
+			"1993: PC online 1&1...................12"
 			"1994: MacBTX 1&1......................--"
 			"1995: BTXTEST.........................--"
 			"1996: RUN_ME..........................--"
@@ -104,56 +105,75 @@ class Historic_UI:
 		data_cept.extend(Cept.from_str(str(index)))
 		return data_cept
 
-	def create_historic_overview(index):
-		name = "Amiga Demo"
-		description = (
-			"Der Amiga BTX Software-Decoder wurde mit"
-			"Dumps von 113 BTX-Seiten aus 32\n"
-			"Programmen ausgeliefert, sowie 56 eigens"
-			"gestalteten Seiten zum Thema BTX.\n"
-			"Die Seiten stammen vom April 1989."
-		)
-		distribution = [ 9, 17 ]
-
-		start_page = [ "20096/1", "Amiga Demo Startseite" ]
-
-		pages = [
-			[ "1050", "Btx-Telex" ],
-			[ "1188", "Teleauskunft" ],
-			[ "1692", "Cityruf" ],
-			[ "20000", "Deutsche Bundespost" ],
-			[ "20096", "Commodore" ],
-			[ "20511/223", "Kölner Stadtanzeiger" ],
-			[ "21212", "Verbraucher-Zentrale NRW" ],
-			[ "25800/0000", "Deutsche Bundesbahn" ],
-			[ "30003", "Formel Eins" ],
-			[ "30711", "Btx Südwest Datenbank GmbH" ],
-			[ "33033", "Eden" ],
-			[ "34034", "Frankfurter Allg. Zeitung" ],
-			[ "34344", "Neue Mediengesellschaft Ulm" ],
-			[ "35853", "ABIDA GmbH" ],
-			[ "40040/200", "Axel Springer Verlag" ],
-			[ "44479", "DIMDI" ],
-			[ "50257", "Computerwelt Btx-Info-Dienst" ],
-			[ "54004/04", "ÖVA Versicherungen" ],
-			[ "57575", "Lotto Toto" ],
-			[ "64064", "Markt & Technik" ],
-			[ "65432/0", "ADAC" ],
-			[ "67007", "Rheinpfalz Verlag/Druckerei" ],
-			[ "201474/75", "Rhein-Neckar-Zeitung" ],
-#			[ "208585", "eba Pressebüro und Verlag [BROKEN]" ],
-			[ "208888", "Neue Mediengesellschaft Ulm" ],
-			[ "402060", "AUTO & BTX WOLFSBURG" ],
-			[ "50707545", "CHIP Magazin" ],
-			[ "86553222", "Chaos Computer Club" ],
-			[ "505050035", "Steinfels Sprachreisen" ],
-			[ "920492040092", "Wolfgang Fritsch (BHP)" ]
-		]
+	def create_historic_overview(collection, index):
+		if collection == 10:
+			name = "Amiga Demo"
+			description = (
+				"Der Amiga BTX Software-Decoder wurde mit"
+				"Dumps von 113 BTX-Seiten aus 32\n"
+				"Programmen ausgeliefert, sowie 56 eigens"
+				"gestalteten Seiten zum Thema BTX.\n"
+				"Die Seiten stammen vom April 1989."
+			)
+			distribution = [ 9, 17 ]
+	
+			start_page = [ "20096/1", "Amiga Demo Startseite" ]
+	
+			pages = [
+				[ "1050", "Btx-Telex" ],
+				[ "1188", "Teleauskunft" ],
+				[ "1692", "Cityruf" ],
+				[ "20000", "Deutsche Bundespost" ],
+				[ "20096", "Commodore" ],
+				[ "20511/223", "Kölner Stadtanzeiger" ],
+				[ "21212", "Verbraucher-Zentrale NRW" ],
+				[ "25800/0000", "Deutsche Bundesbahn" ],
+				[ "30003", "Formel Eins" ],
+				[ "30711", "Btx Südwest Datenbank GmbH" ],
+				[ "33033", "Eden" ],
+				[ "34034", "Frankfurter Allg. Zeitung" ],
+				[ "34344", "Neue Mediengesellschaft Ulm" ],
+				[ "35853", "ABIDA GmbH" ],
+				[ "40040/200", "Axel Springer Verlag" ],
+				[ "44479", "DIMDI" ],
+				[ "50257", "Computerwelt Btx-Info-Dienst" ],
+				[ "54004/04", "ÖVA Versicherungen" ],
+				[ "57575", "Lotto Toto" ],
+				[ "64064", "Markt & Technik" ],
+				[ "65432/0", "ADAC" ],
+				[ "67007", "Rheinpfalz Verlag/Druckerei" ],
+				[ "201474/75", "Rhein-Neckar-Zeitung" ],
+	#			[ "208585", "eba Pressebüro und Verlag [BROKEN]" ],
+				[ "208888", "Neue Mediengesellschaft Ulm" ],
+				[ "402060", "AUTO & BTX WOLFSBURG" ],
+				[ "50707545", "CHIP Magazin" ],
+				[ "86553222", "Chaos Computer Club" ],
+				[ "505050035", "Steinfels Sprachreisen" ],
+				[ "920492040092", "Wolfgang Fritsch (BHP)" ]
+			]
+		elif collection == 11:
+			name = "PC online 1&1"
+			description = (
+				"Der PC online 1&1 Decoder wurde mit\n"
+				"von 35 BTX-Seiten aus 15 Programmen\n"
+				"ausgeliefert. Die Seiten stammen vom\n"
+				"November 1993."
+			)
+			distribution = [ ]
+	
+			start_page = None
+	
+			pages = [
+				[ "25800", "Deutsche Bundesbahn" ],
+			]
+		else:
+			return None
 
 		links = {
 			"0": "78",
-			"10": Historic_UI.historic_link_from_str(start_page[0])
 		}
+		if start_page:
+			links["10"] = Historic_UI.historic_link_from_str(start_page[0])
 		i = 20
 		for page in pages:
 			links[str(i)] = Historic_UI.historic_link_from_str(page[0])
@@ -174,6 +194,7 @@ class Historic_UI:
 		if not index:
 			data_cept.extend(Cept.from_str(description))
 			data_cept.extend(b"\r\n\n")
+		if start_page:
 			data_cept.extend(Historic_UI.historic_line(start_page, 10))
 			data_cept.extend(b"\n")
 
@@ -197,7 +218,7 @@ class Historic_UI:
 	def create_page(user, pagenumber):
 		if pagenumber == "78a":
 			return Historic_UI.create_historic_main_page()
-		elif re.search("^711\w$", pagenumber):
-			return Historic_UI.create_historic_overview(ord(pagenumber[3]) - ord('a'))
+		elif re.search("^7\d\d\w$", pagenumber):
+			return Historic_UI.create_historic_overview(int(pagenumber[1:3]), ord(pagenumber[3]) - ord('a'))
 		else:
 			return None

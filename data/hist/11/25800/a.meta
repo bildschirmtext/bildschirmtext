@@ -1,0 +1,10 @@
+{
+	"include": "a",
+	"palette": "a",
+	"clear_screen": true,
+	"set_cursor": false,
+	"cls2": true,
+	"publisher_color": 15,
+	"autoplay": true,
+	"links": { "0": "0" }
+}
