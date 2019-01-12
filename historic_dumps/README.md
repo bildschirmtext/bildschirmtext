@@ -36,7 +36,9 @@ Die 11 Dateien haben Timestamps von Mai bzw. Juli 1991
 
 ## 1993: PC online 1&1
 
-Die 21 Dateien haben Timestamps von Anfang November 1993.
+Die 35 Dateien sind entstanden, indem die 21 Originaldateien an allen Vorkommnissen des Codes 0x1A geschnitten und Duplikate entfernt wurden.
+
+Die Originaldateien haben Timestamps von Anfang November 1993.
 
 * Alle Dateien sind vollständige Dumps einer Seite (inkl. DRC, Palette).
 * Sie haben keine Remote-Echo Zeichen am Anfang und enden auf 0x1A.
