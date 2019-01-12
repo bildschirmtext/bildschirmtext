@@ -226,11 +226,13 @@ class Cept(bytearray):
 		return bytes([ord(c), 0x12, 0x40 + n - 1])
 
 	@staticmethod
-	def define_palette(palette):
+	def define_palette(palette, start_color):
 		cept = bytearray(
 			b'\x1f\x26\x20'			  # start defining colors
-			b'\x1f\x26\x31\x36'		  # define colors 16+
+			b'\x1f\x26'		          # define colors
 		)
+		cept.append(0x30 + int(start_color / 10))
+		cept.append(0x30 + int(start_color % 10))
 	
 		for hexcolor in palette:
 			r = int(hexcolor[1:3], 16)

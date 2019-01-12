@@ -179,7 +179,7 @@ def create_preamble(basedir, meta):
 			last_filename_palette = filename_palette
 			with open(filename_palette) as f:
 				palette = json.load(f)
-			palette_data = Cept.define_palette(palette["palette"])
+			palette_data = Cept.define_palette(palette["palette"], palette.get("start_color", 16))
 			preamble += palette_data
 		else:
 			sys.stderr.write("skipping palette\n")
@@ -288,7 +288,7 @@ def create_page(pageid):
 	all_data.extend(Cept.sequence_end_of_page())
 
 	inputs = meta.get("inputs")
-	return (all_data, meta["links"], inputs)
+	return (all_data, meta["links"], inputs, meta.get("autoplay", False))
 
 
 def login(input_data):
@@ -541,7 +541,7 @@ while True:
 	
 			success = ret is not None
 			if success:
-				(page_cept_data, links, inputs) = ret
+				(page_cept_data, links, inputs, autoplay) = ret
 			error = 0 if success else 100
 		else:
 			error = 100
@@ -569,32 +569,36 @@ while True:
 
 	desired_pageid = None
 
-	if inputs is None:
-		legal_values = list(links.keys())
-		if "#" in legal_values:
-			legal_values.remove("#")
-		inputs = {
-			"fields": [
-				{
-					"name": "$navigation",
-					"line": 24,
-					"column": 1,
-					"height": 1,
-					"width": 20,
-					"clear_line": False,
-					"legal_values": legal_values,
-					"end_on_illegal_character": True,
-					"end_on_legal_string": True,
-					"echo_ter": True
-				}
-			],
-			"confirm": False,
-			"no_55": True
-		}
-
-	input_data = handle_inputs(inputs)
-
-	sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
+	if autoplay:
+		sys.stderr.write("autoplay!\n")
+		input_data = { "$navigation" : "" }
+	else:
+		if inputs is None:
+			legal_values = list(links.keys())
+			if "#" in legal_values:
+				legal_values.remove("#")
+			inputs = {
+				"fields": [
+					{
+						"name": "$navigation",
+						"line": 24,
+						"column": 1,
+						"height": 1,
+						"width": 20,
+						"clear_line": False,
+						"legal_values": legal_values,
+						"end_on_illegal_character": True,
+						"end_on_legal_string": True,
+						"echo_ter": True
+					}
+				],
+				"confirm": False,
+				"no_55": True
+			}
+	
+		input_data = handle_inputs(inputs)
+	
+		sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
 
 	error = 0
 	desired_pageid = input_data.get("$command")
