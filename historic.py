@@ -159,15 +159,44 @@ class Historic_UI:
 				"ausgeliefert. Die Seiten stammen vom\n"
 				"November 1993."
 			)
-			distribution = [ ]
+			distribution = [ 11 ]
 	
 			start_page = None
 	
 			pages = [
+				[ "20111/1", "Vobis Microcomputer AG" ],
+				[ "20111/11020", "- Übersicht 486" ],
+				[ "20111/1102030", "- 486 DX-50 " ],
+				[ "20111/110203010", "- 486 DX-50 Details" ],
+				[ "21199", "Microsoft" ],
+				[ "21199/1362", "- Produkte" ],
 				[ "25800", "Deutsche Bundesbahn" ],
+				[ "28000/101", "Postbank" ],
+				[ "34561/10", "1&1 Telekommunkation" ],
+				[ "34561/99", "- Forum [a-b]" ],
+				[ "37107/2154", "WDR Computer-Club" ],
+				[ "46801/8149999999", "Handelsblatt" ],
+				[ "49498/0004902", "bhv Computerbücher" ],
+				[ "49498/000490201", "- Neuheiten" ],
+				[ "50000", "Deutsche Lufthansa" ],
+				[ "52800", "IBM Deutschland" ],
+				[ "52800/03", "- IBM Personal Systeme" ],
+				[ "52800/31", "- HelpClubShop [a-c]" ],
+				[ "58587/003", " ITZ Schulungen" ],
+				[ "69010", "Deutscher Ind. Handelstag" ],
+				[ "353535/00", "START Tourismus" ],
+				[ "353535/01240", "- Veranstalter" ],
+				[ "353535/01640", "- Reiseinformationen" ]
 			]
 		else:
 			return None
+
+		start_with = 0
+		if index:
+			for i in range(0, index):
+				if i >= len(distribution):
+					return None
+				start_with += distribution[i]
 
 		links = {
 			"0": "78",
@@ -194,14 +223,9 @@ class Historic_UI:
 		if not index:
 			data_cept.extend(Cept.from_str(description))
 			data_cept.extend(b"\r\n\n")
-		if start_page:
-			data_cept.extend(Historic_UI.historic_line(start_page, 10))
-			data_cept.extend(b"\n")
-
-		start_with = 0
-		if index:
-			for i in range(0, index):
-				start_with += distribution[i]
+			if start_page:
+				data_cept.extend(Historic_UI.historic_line(start_page, 10))
+				data_cept.extend(b"\n")
 
 		if index >= len(distribution):
 			end = len(pages)

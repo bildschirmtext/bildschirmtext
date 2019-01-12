@@ -505,6 +505,8 @@ for arg in sys.argv[1:]:
 
 current_pageid = None
 page_cept_data = b''
+autoplay = False
+inputs = {}
 history = []
 error = 0
 
