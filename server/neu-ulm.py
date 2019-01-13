@@ -64,7 +64,7 @@ from login import Login_UI
 from historic import Historic_UI
 
 # paths
-PATH_DATA = "data/"
+PATH_DATA = "../data/"
 
 user = None
 

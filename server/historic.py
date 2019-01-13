@@ -96,17 +96,12 @@ class Historic_UI:
 			s = split[1]
 		else:
 			s = split[0]
-		s = "*" + s + "#"
-		if len(s) >= 8:
-			return s + " "
-		else:
-			return (s + " " * 5)[:8]
+		return "(*" + s + "#)"
 
 	def historic_line(page, index):
 		link = Historic_UI.historic_pretty_link_from_str(page[0])
 		data_cept = bytearray()
-		data_cept.extend(Cept.from_str(link))
-		data_cept.extend(Cept.from_str((page[1] + "." * 29)[:38 - len(link)]))
+		data_cept.extend(Cept.from_str((page[1] + " " + link + "." * 29)[:38]))
 		data_cept.extend(Cept.from_str(str(index)))
 		return data_cept
 

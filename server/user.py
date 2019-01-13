@@ -8,9 +8,9 @@ import pprint
 from cept import Cept
 from util import Util
 
-PATH_USERS = "users/"
-PATH_SECRETS = "secrets/"
-PATH_STATS = "stats/"
+PATH_USERS = "../users/"
+PATH_SECRETS = "../secrets/"
+PATH_STATS = "../stats/"
 
 # Currently, this only holds the last use
 class Stats():

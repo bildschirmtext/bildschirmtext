@@ -8,7 +8,7 @@ import datetime
 from cept import Cept
 from user import User
 
-PATH_MESSAGES = "messages/"
+PATH_MESSAGES = "../messages/"
 
 class Message:
 	dict = None
