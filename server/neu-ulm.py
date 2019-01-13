@@ -214,9 +214,6 @@ def create_preamble(basedir, meta):
 	return preamble
 
 def create_page(pageid):
-	if pageid[-1:].isdigit():
-		pageid += "a"
-
 	ret = None
 	# generated pages
 	if pageid.startswith("00000") or pageid == "9a":
@@ -531,17 +528,26 @@ while True:
 	if user is not None:
 		user.stats.update()
 
+	if desired_pageid and desired_pageid[-1:].isdigit():
+		desired_pageid += "a"
+
 	if error == 0:
 		add_to_history = True
-	
+
+		# *# back
 		if desired_pageid == "":
 			if len(history) < 2:
-				is_back = False
 				sys.stderr.write("ERROR: No history.\n")
 				error = 10
 			else:
 				desired_pageid = history[-2]
 				history = history[:-2]
+				 # if we're navigating back across page numbers...
+				if desired_pageid[:-1] != current_pageid[:-1]:
+					# if previous page was sub-page, keep going back until "a"
+					while desired_pageid[-1:] != "a":
+						desired_pageid = history[-1]
+						history = history[:-1]
 	
 		if desired_pageid == "09": # hard reload
 			sys.stderr.write("hard reload\n")
@@ -645,7 +651,4 @@ while True:
 		else:
 			error = 100
 			desired_pageid = None
-			
-		
-		
-	
+
