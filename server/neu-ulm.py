@@ -63,6 +63,8 @@ from messaging import Messaging_UI
 from login import Login_UI
 from historic import Historic_UI
 
+from cm.makePage import CM
+
 # paths
 PATH_DATA = "../data/"
 
@@ -246,12 +248,16 @@ def create_page(pageid):
 			if basedir:
 				filename_meta = basedir + filename + ".meta"
 				filename_cept = basedir + filename + ".cept"
-		
+				filename_cm = basedir + filename + ".cm"
+
 				if os.path.isfile(filename_meta):
 					with open(filename_meta) as f:
 						meta = json.load(f)
-					with open(filename_cept, mode='rb') as f:
-						data_cept = f.read()
+					if os.path.isfile(filename_cept):
+						with open(filename_cept, mode='rb') as f:
+							data_cept = f.read()
+					elif os.path.isfile(filename_cm):
+						data_cept = CM.read(filename_cm)
 					break
 	
 		if data_cept is None:

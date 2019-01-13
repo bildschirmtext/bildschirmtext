@@ -12,58 +12,29 @@ Dabei kommt ein relativ einfaches Suchen-und-Ersetzen-System zum Einsatz,
 keine komplexen Tags im Stil von HTML mit Beginn und Ende
 '''
 
-import getopt
 import sys
 import os
 
-import tagliste
-import drcs
+import cm.tagliste
+import cm.drcs
 
-# Kommandozeilenparameter verarbeiten:
+class CM:
+	def read(infilename):
+		# Eingabedaten lesen:
+		with open(infilename, 'rb') as infile:
+			indata = infile.read()
 
-def OptionsError():
-    """ nicht alle Parameter wurden angegeben; zeigt diese an und beendet Programm """
-    print("Aufrufparamter:\n -i <Eingabedatei>\n -o <Ausgabedatei>")
-    sys.exit()
+		# Daten verarbeiten:
+		outdata = indata.replace(b'\x0a',b'')
 
-infilename = None
-outfilename = None
+		for el in cm.tagliste.liste:
+			old = b'<' + el[0] + b'>'
+			# 'new' ist el[1]
+			outdata = outdata.replace(old, el[1])
 
-try:
-    opts, args = getopt.gnu_getopt(sys.argv[1:], 'i:o:')
-except getopt.GetoptError as err:
-    OptionsError()
+		for el in cm.drcs.liste:
+			old = b'<' + el[0] + b'>'
+			# 'new' ist el[1]
+			outdata = outdata.replace(old, el[1])
 
-for opt, arg in opts:
-    if opt == "-i":
-        infilename = arg
-    if opt == "-o":
-        outfilename = arg
-
-if not infilename or not outfilename:
-    OptionsError()
-
-# Eingabedaten lesen:
-with open(infilename, 'rb') as infile:
-    indata = infile.read()
-
-# Daten verarbeiten:
-outdata = indata.replace(b'\x0a',b'')
-
-for el in tagliste.liste:
-    old = b'<' + el[0] + b'>'
-    # 'new' ist el[1]
-    outdata = outdata.replace(old, el[1])
-
-for el in drcs.liste:
-    old = b'<' + el[0] + b'>'
-    # 'new' ist el[1]
-    outdata = outdata.replace(old, el[1])
-
-# Ausgabedatei öffnen und Daten schreiben:
-outfile = open(outfilename, 'wb')
-outfile.write(outdata)
-
-# Wir sind fertig:
-outfile.close()
-
+		return bytearray(outdata)
