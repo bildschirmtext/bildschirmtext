@@ -1,0 +1,23 @@
+<ResetPar><Creset><Calt2><reset_12x10_4c><Dcolorstart><Dcolorpyramide><Dpyramide><Dstart_12x10_2c><Dellipse>
+<A>11 19211a<A>22 19212a<A>33 19213a<A>44 19214a<A>55 19215a<A>66 19216a<A>77 19217a<A>88 19218a<A>90 0a</A>
+<go><01><01><cls><ColTab2><Sc1><ColTab0><black>Stadtbibliothek Karlsruhe
+<go><02><01><DRCinG3><black><Rwhite><2w><G3>0<G3>2<norm> <black>Stadt Karlsruhe
+<go><03><01><Rwhite><black><2w><G3>4<G3>6<norm> Stadtbibliothek <go><03><35><2h><black>*<red>1921<black>#
+
+<go><05><01> <rep><09><ColTab2><yellow>Herzlich Willkommen!<ColTab0>
+
+<go><07><01><blue>Aktuell <white><G3>.<rep><29> <yellow>1
+<go><09><01><black>Standorte und <uml>Offnungszeiten <white><G3>.<rep><08> <yellow>2
+<black>Bibliotheksausweis <white><G3>.<rep><18> <yellow>3
+
+<go><12><01><yellow><uml>Uber uns:<br>
+<black>Stadtbibliothek im Neuen St<uml>andehaus <white><G3>.<G3>. <yellow>4
+<black>Bibliotheksp<uml>adagogik <white><G3>.<rep><16> <yellow>5
+
+<go><16><01><yellow>Unsere Angebote:<br>
+<black>Online-Medien <white><G3>.<rep><23> <yellow>6
+<black>Zeitschriften <white><G3>.<rep><23> <yellow>7
+<black>Vitrine <white><G3>.<rep><29> <yellow>8
+
+<go><23><01><Rwhite><ColTab1><yellow>0<ColTab0><black> <G3>. Zur<uml>uck
+<go><24><36><white>1921a<black></CEPT>

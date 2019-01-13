@@ -1,0 +1,23 @@
+<ResetPar><Creset><Calt2><reset_12x10_4c><Dcolorstart><Dcolorpyramide><Dpyramide><Dstart_12x10_2c><Dellipse>
+<A>10 19212a<A>2# 1921291a</A>
+<go><01><01><cls><ColTab2><Sc1><ColTab0><black>Stadtbibliothek Karlsruhe
+<go><02><01><DRCinG3><black><Rwhite><2w><G3>0<G3>2<norm> <black>Stadt Karlsruhe
+<go><03><01><Rwhite><black><2w><G3>4<G3>6<norm> Stadtbibliothek 
+<go><05><01>
+<yellow>Medienbus Haltestellen Mi-Fr<black><br>
+<br>
+Rintheim, Hirtenweg,<br>
+Ecke Mannheimer Stra<sz>e  Mi 13.30 - 14.30
+R<uml>uppurr, Tulpenstra<sz>e   Mi 15.00 - 16:15
+R<uml>uppurr, Rastatter Str. Mi 16.30 - 17.30
+Gr<uml>unwettersbach, Heinz-Barth-Schule,<br>
+Esslinger Stra<sz>e        Do 12.30 - 14.00
+Palmbach, Talstra<sz>e     Do 14.30 - 15.15
+NW-Stadt, Landauer Str. Do 16.00 - 17.30
+Weiherfeld-Dammerstock, Links der Alb,<br>
+Ecke Belchenstra<sz>e      Fr 13.30 - 15.00
+Oberreut, Rudolf-Breitscheid-<br>
+Stra<sz>e                  Fr 15.30 - 16.30
+Bulach, St.-Georg-Str.  Fr 16.45 - 17.30
+<go><23><01><Rwhite><ColTab1><yellow>0<ColTab0><black> <G3>. Zur<uml>uck <rep><20>Mo-Di <G3>. <ColTab1><yellow>#<ColTab0><black>
+<go><24><33><white>1921292a<black></CEPT>
