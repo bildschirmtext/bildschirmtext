@@ -144,6 +144,8 @@ Die Startseite des Amiga-BTX-Demos erreicht man mit `*200960#`. Über sie sind a
 
 # Tools
 
+Die Tools im `tools` Verzeichnis werden mit `make` gebaut.
+
 ## decode_cept
 
 `decode_cept` zeigt den Inhalt einer CEPT-Codierten Datei side-by-side sowohl als Hex als auch mit der Beschreibung der Codes an. Hier ein Ausschnitt aus einer Ausgabe:
@@ -155,13 +157,9 @@ Die Startseite des Amiga-BTX-Demos erreicht man mit `*200960#`. Über sie sind a
 	1b 7c                    # G3 into right charset
 	[...]
 
-Das Tool wird mit `make decode_cept` gebaut.
-
 ## cut_btx
 
 `cut_btx` zerlegt die Dateien des Amiga-Dumps in .glob, .meta, .pal, .inc und .cept-Dateien. Da alle Dateien des Amiga-Dumps bereits konveriert sind, und andere Dumps wohl leicht anderen Code der Post benutzen (weil die Dumps aus einer anderen Zeit stammen), muß es erst für andere Dumps angepasst werden.
-
-Das Tool wird mit `make cut_btx` gebaut.
 
 # Danksagung und verwandte Projekte
 

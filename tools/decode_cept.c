@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -42,6 +43,39 @@ decode_col(uint8_t c)
 	return col;
 }
 
+void
+print_palette(char *s, uint8_t *p, int c)
+{
+	uint8_t *q = p;
+	bool first = true;
+	for (; q < p + c;) {
+		if (!first) {
+			sprintf(s, ", ");
+			s += strlen(s);
+		}
+		first = false;
+		int r3 = (q[0] >> 5) & 1;
+		int g3 = (q[0] >> 4) & 1;
+		int b3 = (q[0] >> 3) & 1;
+		int r2 = (q[0] >> 2) & 1;
+		int g2 = (q[0] >> 1) & 1;
+		int b2 = (q[0] >> 0) & 1;
+		int r1 = (q[1] >> 5) & 1;
+		int g1 = (q[1] >> 4) & 1;
+		int b1 = (q[1] >> 3) & 1;
+		int r0 = (q[1] >> 2) & 1;
+		int g0 = (q[1] >> 1) & 1;
+		int b0 = (q[1] >> 0) & 1;
+		int r = (r0 | (r1 << 1) | (r2 << 2) | (r3 << 3));
+		int g = (g0 | (g1 << 1) | (g2 << 2) | (g3 << 3));
+		int b = (b0 | (b1 << 1) | (b2 << 2) | (b3 << 3));
+//		sprintf(s, "\"#%02x%02x%02x\"", r << 4, g << 4, b << 4);
+		sprintf(s, "\"#%x%x%x\"", r, g, b);
+		s += strlen(s);
+		q += 2;
+	}
+}
+
 int
 main(int argc, char **argv)
 {
@@ -53,7 +87,7 @@ main(int argc, char **argv)
 	while (p < buffer + total_length) {
 		int l = 1;
 		char *d = "";
-		char tmpstr[80];
+		char tmpstr[150];
 		if (is_printable(p[0]) && p[1] == 0x12 && p[2] >= 0x41) {
 			l = 3;
 			snprintf(tmpstr, sizeof(tmpstr), "repeat '%c' %d times", p[0] < 0x80 ? p[0] : '.', p[2] - 0x40);
@@ -213,13 +247,16 @@ main(int argc, char **argv)
 			d = "reset palette";
 		} else if (p[0] == 0x1F && p[1] == 0x26 && (p[2] & 0xF0) == 0x30 && (p[3] & 0xF0) == 0x30) {
 			l = 4;
-			snprintf(tmpstr, sizeof(tmpstr), "define colors %c%c+", p[2], p[3]);
 			d = tmpstr;
 			uint8_t *q = p + 4;
+			uint8_t *q_old = q;
 			while (*q != 0x1f) {
 				q++;
 				l++;
 			}
+			snprintf(tmpstr, sizeof(tmpstr), "define colors %c%c+: ", p[2], p[3]);
+			char *s = tmpstr + strlen(tmpstr);
+			print_palette(s, q_old, q - q_old);
 		} else if (p[0] == 0x1F && p[1] == 0x26 && (p[2] & 0xF0) == 0x30) {
 			l = 3;
 			snprintf(tmpstr, sizeof(tmpstr), "define DRC color %i", p[2] - 0x30);
