@@ -45,8 +45,8 @@ class Cept(bytearray):
 		if s1[0] == 0x19:
 			if len(s1) == 1:
 				return None
-			sys.stderr.write("s1[1]: " + pprint.pformat(s1[1]) + "\n")
-			sys.stderr.write("len(s1): " + pprint.pformat(len(s1)) + "\n")
+#			sys.stderr.write("s1[1]: " + pprint.pformat(s1[1]) + "\n")
+#			sys.stderr.write("len(s1): " + pprint.pformat(len(s1)) + "\n")
 			if s1[1] == ord('H'): # "¨" prefix
 				if len(s1) == 2: # not complete
 					return None
@@ -235,9 +235,16 @@ class Cept(bytearray):
 		cept.append(0x30 + int(start_color % 10))
 	
 		for hexcolor in palette:
-			r = int(hexcolor[1:3], 16)
-			g = int(hexcolor[3:5], 16)
-			b = int(hexcolor[5:7], 16)
+			if len(hexcolor) == 7:
+				r = int(hexcolor[1:3], 16)
+				g = int(hexcolor[3:5], 16)
+				b = int(hexcolor[5:7], 16)
+			elif len(hexcolor) == 4:
+				r = int(hexcolor[1:2], 16) << 4
+				g = int(hexcolor[2:3], 16) << 4
+				b = int(hexcolor[3:4], 16) << 4
+			else:
+				sys.stderr.write("incorrect palette encoding.\n")
 			r0 = (r >> 4) & 1
 			r1 = (r >> 5) & 1
 			r2 = (r >> 6) & 1

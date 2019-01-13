@@ -72,8 +72,8 @@ user = None
 
 # globals
 
-last_filename_include = ""
 last_filename_palette = ""
+last_filename_include = ""
 links = {}
 
 def headerfooter(pageid, publisher_name, publisher_color):
@@ -547,7 +547,10 @@ while True:
 			sys.stderr.write("hard reload\n")
 			desired_pageid = history[-1]
 			add_to_history = False
-	
+			# force load palette and include
+			last_filename_palette = ""
+			last_filename_include = ""
+
 		if desired_pageid == "00": # re-send CEPT data of current page
 			sys.stderr.write("resend\n")
 			error = 0
