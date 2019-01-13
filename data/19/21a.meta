@@ -1,5 +1,7 @@
 {
-    "clear_screen": true,
+	"include": "a",
+	"palette": "a",
+	"clear_screen": false,
     "links": {
 		"1": "19211",
 		"2": "19212",

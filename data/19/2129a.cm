@@ -1,6 +1,4 @@
-<ResetPar><Creset><Calt2><reset_12x10_4c><Dcolorstart><Dcolorpyramide><Dpyramide><Dstart_12x10_2c><Dellipse>
-<A>:0 19212a<A>11 1921291a<A>22 1921292a</A>
-<go><01><01><cls><ColTab2><Sc1><ColTab0><black>Stadtbibliothek Karlsruhe
+<ResetPar><ColTab2><Sc1>
 <go><02><01><DRCinG3><black><Rwhite><2w><G3>0<G3>2<norm> <black>Stadt Karlsruhe
 <go><03><01><Rwhite><black><2w><G3>4<G3>6<norm> Stadtbibliothek
 <go><05><01>
@@ -19,4 +17,3 @@ medienbus@kultur.karlsruhe.de<br>
 Haltestellen Mo-Di <white><G3>.<rep><18> <yellow>1<black>
 Haltestellen Mi-Fr <white><G3>.<rep><18> <yellow>2<black>
 <go><23><01><Rwhite><ColTab1><yellow>0<ColTab0><black> <G3>. Zur<uml>uck
-<go><24><34><white>192129a<black></CEPT>

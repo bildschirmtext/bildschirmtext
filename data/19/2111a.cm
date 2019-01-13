@@ -1,6 +1,4 @@
-<ResetPar><Creset><Calt2><reset_12x10_4c><Dcolorstart><Dcolorpyramide><Dpyramide><Dstart_12x10_2c><Dellipse>
-<A>10 19211a</A>
-<go><01><01><cls><ColTab2><Sc1><ColTab0><black>Stadtbibliothek Karlsruhe
+<ResetPar><ColTab2><Sc1>
 <go><02><01><DRCinG3><black><Rwhite><2w><G3>0<G3>2<norm> <black>Stadt Karlsruhe <rep><10><red>Wissen am
 <go><03><01><Rwhite><black><2w><G3>4<G3>6<norm> Stadtbibliothek <rep><09><red>Donnerstag
 <go><05><01><yellow>Jeden Donnerstag um <blue>17 Uhr
@@ -21,4 +19,3 @@
 <br>
 <yellow>Die Teilnahme ist kostenlos.
 <go><23><01><Rwhite><ColTab1><yellow>0<ColTab0><black> <G3>. Zur<uml>uck
-<go><24><34><white>192111a<black></CEPT>

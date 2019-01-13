@@ -1,6 +1,4 @@
-<ResetPar><Creset><Calt2><reset_12x10_4c><Dcolorstart><Dcolorpyramide><Dpyramide><Dstart_12x10_2c><Dellipse>
-<A>10 19212a<A>2# 1921291a</A>
-<go><01><01><cls><ColTab2><Sc1><ColTab0><black>Stadtbibliothek Karlsruhe
+<ResetPar><ColTab2><Sc1>
 <go><02><01><DRCinG3><black><Rwhite><2w><G3>0<G3>2<norm> <black>Stadt Karlsruhe
 <go><03><01><Rwhite><black><2w><G3>4<G3>6<norm> Stadtbibliothek 
 <go><05><01>
@@ -20,4 +18,3 @@ Oberreut, Rudolf-Breitscheid-<br>
 Stra<sz>e                  Fr 15.30 - 16.30
 Bulach, St.-Georg-Str.  Fr 16.45 - 17.30
 <go><23><01><Rwhite><ColTab1><yellow>0<ColTab0><black> <G3>. Zur<uml>uck <rep><20>Mo-Di <G3>. <ColTab1><yellow>#<ColTab0><black>
-<go><24><33><white>1921292a<black></CEPT>

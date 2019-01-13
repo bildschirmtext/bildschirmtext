@@ -1,6 +1,4 @@
-<ResetPar><Creset><Calt2><reset_12x10_4c><Dcolorstart><Dcolorpyramide><Dpyramide><Dstart_12x10_2c><Dellipse>
-<A>11 192111a<A>22 192112a<A>33 192113a<A>50 1921a</A>
-<go><01><01><cls><ColTab2><Sc1><ColTab0><black>Stadtbibliothek Karlsruhe
+<ResetPar><ColTab2><Sc1>
 <go><02><01><DRCinG3><black><Rwhite><2w><G3>0<G3>2<norm> <black>Stadt Karlsruhe
 <go><03><01><Rwhite><black><2w><G3>4<G3>6<norm> Stadtbibliothek <rep><12><2h><red>Aktuell
 <go><05><01><blue>Termine und Veranstaltungen
@@ -10,4 +8,3 @@
 <go><11><01><yellow>Termine:<br>
 <black>Blickkontakt Frau u. Beruf Sa. 14.7. <white><G3>. <yellow>3
 <go><23><01><Rwhite><ColTab1><yellow>0<ColTab0><black> <G3>. Zur<uml>uck
-<go><24><35><white>19211a<black></CEPT>

@@ -190,10 +190,16 @@ def create_preamble(basedir, meta):
 
 	if "include" in meta:
 		filename_include = basedir + meta["include"] + ".inc"
+		filename_include_cm = basedir + meta["include"] + ".inc.cm"
 		if filename_include != last_filename_include:
 			last_filename_include = filename_include
-			with open(filename_include, mode='rb') as f:
-				data_include = f.read()
+			if os.path.isfile(filename_include):
+				with open(filename_include, mode='rb') as f:
+					data_include = f.read()
+			elif os.path.isfile(filename_include_cm):
+				data_include = CM.read(filename_include_cm)
+			else:
+				sys.stderr.write("include file not found.\n")
 			# palette definition has to end with 0x1f; add one if
 			# the include data doesn't start with one
 			if data_include[0] != 0x1f:

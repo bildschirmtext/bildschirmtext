@@ -1,6 +1,4 @@
-<ResetPar><Creset><Calt2><reset_12x10_4c><Dcolorstart><Dcolorpyramide><Dpyramide><Dstart_12x10_2c><Dellipse>
-<A>10 1921a</A>
-<go><01><01><cls><ColTab2><Sc1><ColTab0><black>Stadtbibliothek Karlsruhe
+<ResetPar><ColTab2><Sc1>
 <go><02><01><DRCinG3><black><Rwhite><2w><G3>0<G3>2<norm> <black>Stadt Karlsruhe <rep><09><red>Vitrine im
 <go><03><01><Rwhite><black><2w><G3>4<G3>6<norm> Stadtbibliothek <rep><07><red>Schaufenster
 <go><05><01>
@@ -15,4 +13,3 @@ Ausstellungsfrist entliehen werden.<br>
 Vormerkungen sind jederzeit m<uml>oglich.
 
 <go><23><01><Rwhite><ColTab1><yellow>0<ColTab0><black> <G3>. Zur<uml>uck
-<go><24><35><white>19218a<black></CEPT>
