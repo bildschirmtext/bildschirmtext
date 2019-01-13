@@ -53,8 +53,8 @@ class Historic_UI:
 			"clear_screen": True,
 			"links": {
 				"0": "0",
+				"10": "710",
 				"11": "711",
-				"12": "711",
 				"#": "711"
 			},
 			"publisher_color": 7
@@ -70,10 +70,10 @@ class Historic_UI:
 			"Software-BTX-Decoderprogrammen.\n"
 			"\n"
 			"1988: C64 BTX Demo (Input 64 12/88)...--"
-			"1989: Amiga BTX Terminal..............11"
+			"1989: Amiga BTX Terminal..............10"
 			"1989: C64 BTX Demo (64'er 1/90).......--"
 			"1991: BTX-VTX Manager v1.2............--"
-			"1993: PC online 1&1...................12"
+			"1993: PC online 1&1...................11"
 			"1994: MacBTX 1&1......................--"
 			"1995: BTXTEST.........................--"
 			"1996: RUN_ME..........................--"
