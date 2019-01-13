@@ -160,7 +160,7 @@ class Historic_UI:
 			name = "PC online 1&1"
 			description = (
 				"Der PC online 1&1 Decoder wurde mit\n"
-				"von 35 BTX-Seiten aus 15 Programmen\n"
+				"von 25 BTX-Seiten aus 15 Programmen\n"
 				"ausgeliefert. Die Seiten stammen vom\n"
 				"November 1993."
 			)
