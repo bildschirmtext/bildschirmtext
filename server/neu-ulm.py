@@ -47,6 +47,7 @@
 
 import sys
 import os
+import select
 import re
 import json
 import time
@@ -75,6 +76,13 @@ user = None
 last_filename_palette = ""
 last_filename_include = ""
 links = {}
+
+baud = 0
+chunk_size = 16
+
+# how many seconds does pal/char transmission have to take
+# until we show the SH291 message
+SH291_THRESHOLD_SEC = 2
 
 def headerfooter(pageid, publisher_name, publisher_color):
 	hide_header_footer = len(publisher_name) == 0
@@ -208,7 +216,8 @@ def create_preamble(basedir, meta):
 	else:
 		last_filename_include = ""
 
-	if len(preamble) > 600: # > 4 seconds @ 1200 baud
+	b = baud if baud else 1200
+	if len(preamble) > (b/9) * SH291_THRESHOLD_SEC:
 		preamble = Util.create_system_message(291) + preamble
 
 	return preamble
@@ -241,7 +250,6 @@ def create_page(pageid):
 		for dir in [ "", "hist/10/", "hist/11/" ]:
 			for i in reversed(range(0, len(pageid))):
 				testdir = PATH_DATA + dir + pageid[:i+1]
-				sys.stderr.write("testdir: '" + testdir + "'\n")
 				if os.path.isdir(testdir):
 					filename = pageid[i+1:]
 					sys.stderr.write("filename: '" + filename + "'\n")
@@ -270,37 +278,41 @@ def create_page(pageid):
 		glob = json.load(f)
 	meta.update(glob) # combine dicts, glob overrides meta
 
-	all_data = bytearray(Cept.hide_cursor())
+	cept_1 = bytearray()
+
+	cept_1.extend(Cept.hide_cursor())
 
 	if meta.get("clear_screen", False):
-		all_data.extend(Cept.serial_limited_mode())
-		all_data.extend(Cept.clear_screen())
+		cept_1.extend(Cept.serial_limited_mode())
+		cept_1.extend(Cept.clear_screen())
 
-	all_data.extend(create_preamble(basedir, meta))
+	cept_1.extend(create_preamble(basedir, meta))
+
+	cept_2 = bytearray()
 
 	if meta.get("cls2", False):
-		all_data.extend(Cept.serial_limited_mode())
-		all_data.extend(Cept.clear_screen())
+		cept_2.extend(Cept.serial_limited_mode())
+		cept_2.extend(Cept.clear_screen())
 
 	# header
 	hf = headerfooter(pageid, meta["publisher_name"], meta["publisher_color"])
-	all_data.extend(hf)
+	cept_2.extend(hf)
 
 	if meta.get("parallel_mode", False):
-		all_data.extend(Cept.parallel_mode())
+		cept_2.extend(Cept.parallel_mode())
 
 	# payload
-	all_data.extend(data_cept)
+	cept_2.extend(data_cept)
 
-	all_data.extend(Cept.serial_limited_mode())
+	cept_2.extend(Cept.serial_limited_mode())
 
 	# footer
-	all_data.extend(hf)
+	cept_2.extend(hf)
 
-	all_data.extend(Cept.sequence_end_of_page())
+	cept_2.extend(Cept.sequence_end_of_page())
 
 	inputs = meta.get("inputs")
-	return (all_data, meta["links"], inputs, meta.get("autoplay", False))
+	return (cept_1, cept_2, meta["links"], inputs, meta.get("autoplay", False))
 
 
 def login(input_data):
@@ -495,12 +507,27 @@ def wait_for_dial_command():
 #				sys.stderr.write(cc)
 #		sys.stderr.write("'\n")
 
+def send(cept_data):
+	global baud
+	global chunk_size
+
+	for i in range(0, int(len(cept_data) / chunk_size)):
+		sys.stdout.buffer.write(cept_data[i * chunk_size : (i + 1) * chunk_size])
+		if baud:
+			time.sleep(chunk_size/(baud/9))
+		sys.stdout.flush()
+		sys.stderr.write(".")
+		sys.stderr.flush()
+		if select.select([sys.stdin,],[],[],0.0)[0]:
+			sys.stderr.write("BREAK\n")
+			return False
+	sys.stderr.write("OK\n")
+	return True
+
+
 # MAIN
 
 sys.stderr.write("Neu-Ulm running.\n")
-
-# TODO: command line option to log in a user
-# TODO: command line option to navigate to a specific page
 
 desired_pageid = "00000" # login page
 compress = False
@@ -512,11 +539,14 @@ for arg in sys.argv[1:]:
 		user = User.login(arg[7:], "1", None, True)
 	elif arg.startswith("--page="):
 		desired_pageid = arg[7:]
+	elif arg.startswith("--baud="):
+		baud = int(arg[7:])
 	elif arg == "--compress":
 		compress = True
 
 current_pageid = None
-page_cept_data = b''
+page_cept_data_1 = b''
+page_cept_data_2 = b''
 autoplay = False
 inputs = {}
 history = []
@@ -548,7 +578,7 @@ while True:
 					while desired_pageid[-1:] != "a":
 						desired_pageid = history[-1]
 						history = history[:-1]
-	
+
 		if desired_pageid == "09": # hard reload
 			sys.stderr.write("hard reload\n")
 			desired_pageid = history[-1]
@@ -567,16 +597,24 @@ while True:
 	
 			success = ret is not None
 			if success:
-				(page_cept_data, links, inputs, autoplay) = ret
+				(page_cept_data_1, page_cept_data_2, links, inputs, autoplay) = ret
 			error = 0 if success else 100
 		else:
 			error = 100
 
 	if error == 0:
 		if (compress):
-			page_cept_data = Cept.compress(page_cept_data)
-		sys.stdout.buffer.write(page_cept_data)
-		sys.stdout.flush()
+			page_cept_data_1 = Cept.compress(page_cept_data_1)
+			page_cept_data_2 = Cept.compress(page_cept_data_2)
+		sys.stderr.write("Sending pal/char: ")
+		if send(page_cept_data_1): # send palette and charset
+			sys.stderr.write("Sending text: ")
+			send(page_cept_data_2) # if user didn't interrupt, send page text
+		else:
+			# user interrupted palette/charset, so the decoder state is undefined
+			last_filename_palette = ""
+			last_filename_include = ""
+
 		# showing page worked
 		current_pageid = desired_pageid
 		if add_to_history:
