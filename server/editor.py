@@ -166,24 +166,36 @@ class Editor:
 		else:
 			return False
 
+	last_c = ""
+
+	def insert_carriage_return(self):
+		if self.__x != 0:
+			self.__x = 0
+			if self.column == 1:
+				sys.stdout.write("\r")
+			else:
+				sys.stdout.buffer.write(Cept.set_cursor(self.line + self.__y, self.column))
+			sys.stdout.buffer.write(self.set_color())
+			sys.stdout.flush()
+
+	def insert_line_feed(self):
+		if self.__y < self.height - 1:
+			self.__y += 1
+			sys.stdout.write("\n")
+			sys.stdout.flush()
+
 	def insert_control_character(self, c):
-		if c == "\b": # left
+		if c == "\r": # enter
+			# some terminals send CR/LF, others just CR, so we have to do
+			# the work on CR, and ignore LF if it was preceded by a CR
+			self.insert_carriage_return()
+			self.insert_line_feed()
+		elif c == "\n": # down
+			if self.last_c != "\r": # see above
+				self.insert_line_feed()
+		elif c == "\b": # left
 			if self.__x > 0:
 				self.__x -= 1
-				sys.stdout.write(c)
-				sys.stdout.flush()
-		elif c == "\r":
-			if self.__x != 0:
-				self.__x = 0
-				if self.column == 1:
-					sys.stdout.write(c)
-				else:
-					sys.stdout.buffer.write(Cept.set_cursor(self.line + self.__y, self.column))
-				sys.stdout.buffer.write(self.set_color())
-				sys.stdout.flush()
-		elif c == "\n": # down
-			if self.__y < self.height - 1:
-				self.__y += 1
 				sys.stdout.write(c)
 				sys.stdout.flush()
 		elif c == "\x0b": # up
@@ -196,6 +208,7 @@ class Editor:
 				self.__x += 1
 				sys.stdout.write(c)
 				sys.stdout.flush()
+		self.last_c = c
 
 	def edit(self, skip_entry = False):
 		start = True
