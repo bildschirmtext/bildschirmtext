@@ -188,6 +188,7 @@ def create_preamble(basedir, meta):
 		if filename_palette != last_filename_palette:
 			last_filename_palette = filename_palette
 			with open(filename_palette) as f:
+				sys.stderr.write("loading: '" + filename_palette + "'\n")
 				palette = json.load(f)
 			palette_data = Cept.define_palette(palette["palette"], palette.get("start_color", 16))
 			preamble += palette_data
@@ -204,6 +205,7 @@ def create_preamble(basedir, meta):
 			if os.path.isfile(filename_include):
 				with open(filename_include, mode='rb') as f:
 					data_include = f.read()
+					sys.stderr.write("loading: '" + filename_include + "'\n")
 			elif os.path.isfile(filename_include_cm):
 				data_include = CM.read(filename_include_cm)
 			else:
@@ -511,7 +513,7 @@ def send(cept_data):
 	global baud
 	global chunk_size
 
-	for i in range(0, int(len(cept_data) / chunk_size)):
+	for i in range(0, int(len(cept_data) / chunk_size) + 1):
 		sys.stdout.buffer.write(cept_data[i * chunk_size : (i + 1) * chunk_size])
 		if baud:
 			time.sleep(chunk_size/(baud/9))
