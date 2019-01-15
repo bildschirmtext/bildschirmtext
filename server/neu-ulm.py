@@ -63,6 +63,7 @@ from messaging import Messaging
 from messaging import Messaging_UI
 from login import Login_UI
 from historic import Historic_UI
+from wikipedia import Wikipedia_UI
 
 from cm.makePage import CM
 
@@ -243,6 +244,10 @@ def create_page(pageid):
 		# messaging
 		ret = Messaging_UI.create_page(user, pageid)
 		basedir = PATH_DATA + "8/"
+	if not ret and pageid.startswith("555"):
+		# wikipedia
+		ret = Wikipedia_UI.create_page(pageid)
+		basedir = PATH_DATA + "555/"
 
 	if ret:
 		(meta, data_cept) = ret
@@ -632,6 +637,7 @@ while True:
 		showing_message = True
 	
 	sys.stderr.write("history: " + pprint.pformat(history) + "\n")
+	sys.stderr.write("links: " + pprint.pformat(links) + "\n")
 
 	desired_pageid = None
 

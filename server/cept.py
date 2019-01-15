@@ -30,8 +30,18 @@ class Cept(bytearray):
 				s2.extend(Cept.g2code('{', mode))        # ß
 			elif ord(c) == 0x0a:
 				s2.extend(b'\r\n')                       # \n
-			else:
+			elif ord(c) == 0x201e:
+				s2.extend(b'"')
+			elif ord(c) == 0x201c:
+				s2.extend(b'"')
+			elif ord(c) == 0x2018:
+				s2.extend(b'"')
+			elif ord(c) == 0x201a:
+				s2.extend(b'"')
+			elif ord(c) < 256:
 				s2.append(ord(c))
+			else:
+				s2.append(ord('?')) # non-Latin-1
 		return s2
 
 	def code_to_str(s1):
@@ -335,7 +345,15 @@ class Cept(bytearray):
 	@staticmethod
 	def double_height():
 		return b'\x8d'
-		
+
+	@staticmethod
+	def underline_off():
+		return b'\x99'
+
+	@staticmethod
+	def underline_on():
+		return b'\x9a'
+
 	@staticmethod
 	def hide_text():
 		return b'\x98'
