@@ -220,9 +220,15 @@ class Cept_page:
 		return int(self.y / self.lines_per_sheet)
 
 	# API
+	def number_of_sheets(self):
+		return self.current_sheet() + 1
+
+	# API
 	def cept_for_sheet(self, sheet_number):
 		data_cept = bytearray()
 		lines = self.lines_cept[sheet_number * self.lines_per_sheet : (sheet_number + 1) * self.lines_per_sheet]
+		if not lines:
+			return None
 		for line in lines:
 			data_cept.extend(line)
 		# fill page with blank lines

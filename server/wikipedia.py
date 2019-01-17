@@ -172,6 +172,9 @@ class Wikipedia_UI:
 
 		# create one page
 
+		if sheet_number > page.number_of_sheets() - 1:
+			return None
+
 		meta = {
 			"publisher_color": 0
 		}
@@ -180,6 +183,8 @@ class Wikipedia_UI:
 			meta["links"] = {}
 		else:
 			meta["links"] = links_for_page[sheet_number]
+
+		meta["links"]["0"] = "555"
 
 		if len(wiki_link_targets) < sheet_number + 1:
 			links_for_this_page = {}
@@ -207,11 +212,6 @@ class Wikipedia_UI:
 			data_cept.extend(b'\r\n')
 			data_cept.extend(Cept.normal_size())
 			data_cept.extend(b'\n')
-			# print navigation
-			data_cept.extend(Cept.set_cursor(23, 1))
-			data_cept.extend(Cept.set_line_bg_color(0))
-			data_cept.extend(Cept.set_fg_color(7))
-			data_cept.extend(Cept.from_str("0 < Back                        # > Next"))
 		else:
 			# on sheets b+, we need to clear the image area
 			if image_url:
@@ -219,10 +219,27 @@ class Wikipedia_UI:
 					data_cept.extend(Cept.set_cursor(3 + i, 41 - len(image_chars[0])))
 					data_cept.extend(Cept.repeat(" ", len(image_chars[0])))
 
+		# print navigation
+		# * on sheet 0, so we don't have to print it again on later sheets
+		# * on the last sheet, because it doesn't show the "#" text
+		# * on the second last sheet, because navigating back from the last one needs to show "#" again
+		if sheet_number == 0 or sheet_number >= page.number_of_sheets() - 2:
+			data_cept.extend(Cept.set_cursor(23, 1))
+			data_cept.extend(Cept.set_line_bg_color(0))
+			data_cept.extend(Cept.set_fg_color(7))
+			data_cept.extend(Cept.from_str("0 < Back"))
+			s = "# > Next"
+			data_cept.extend(Cept.set_cursor(23, 41 - len(s)))
+			if sheet_number == page.number_of_sheets() - 1:
+				data_cept.extend(Cept.repeat(" ", len(s)))
+			else:
+				data_cept.extend(Cept.from_str(s))
+
 		data_cept.extend(Cept.set_cursor(5, 1))
 
 		# add text
 		data_cept.extend(page.cept_for_sheet(sheet_number))
+		sys.stderr.write("page.cept_for_sheet(sheet_number): " + pprint.pformat(page.cept_for_sheet(sheet_number)) + "\n")
 
 		# transfer image on first sheet
 		if is_first_page and image_url:
