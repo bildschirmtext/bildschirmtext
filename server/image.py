@@ -4,7 +4,6 @@ import math
 import sys
 from cept import Cept
 import urllib.request
-from io import BytesIO
 
 num_dcrs = 46
 
@@ -50,14 +49,41 @@ class Image_UI:
 			for base_x in range(0, res_x * 6, 6):
 				for bitno in range(0, 4):
 					data_drcs.extend([0x30 + bitno])
+					data_drcs_block = bytearray()
 					for y in range(0, 10):
 						byte = 0
 						for x in range(0, 6):
 							byte <<= 1
 							byte |= (image.getpixel((base_x + x, base_y + y)) >> bitno) & 1
 						byte |= 0x40
-						data_drcs.append(byte)
+						data_drcs_block.append(byte)
 
+					# compression
+					if data_drcs_block == bytearray(b'@@@@@@@@@@'):
+						data_drcs_block = bytearray(b'\x20')
+					elif data_drcs_block == bytearray(b'\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f'):
+						data_drcs_block = bytearray(b'\x2f')
+					else:
+						y1 = 0
+						max = 10
+						while True:
+							l = 0
+							for y2 in range(y1 + 1, max):
+								if data_drcs_block[y2] != data_drcs_block[y1]:
+									break
+								l += 1
+							if l:
+								data_drcs_block = data_drcs_block[:y1 + 1] + bytes([0x20 + l]) + data_drcs_block[y1 + l + 1:]
+								y1 += 1
+								max -= l - 1
+							y1 += 1
+							if y1 == max:
+								break
+
+#					sys.stderr.write("data_drcs_block: " + pprint.pformat(data_drcs_block) + "\n")
+					data_drcs.extend(data_drcs_block)
+
+		sys.stderr.write("DRCs compressed " + str(40 * res_x * res_y) + " down to " + str(len(data_drcs)) + "\n")
 
 		# create characters to print
 		data_chars = []
@@ -71,8 +97,9 @@ class Image_UI:
 
 	def create_image_page():
 #		filename = "/Users/mist/Desktop/RGB_24bits_palette_sample_image.jpg"
-		filename = "/Users/mist/Desktop/Lenna_(test_image).png"
-		filename = "/Users/mist/Desktop/Wikipedia_logo_593.jpg"
+#		filename = "/Users/mist/Desktop/Lenna_(test_image).png"
+#		filename = "/Users/mist/Desktop/Wikipedia_logo_593.jpg"
+		filename = "/Users/mist/Desktop/220px-C64c_system.jpg"
 
 		(palette, drcs, chars) = Image_UI.cept_from_image(filename)
 
