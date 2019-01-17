@@ -304,7 +304,10 @@ class Wikipedia_UI:
 		data_cept.extend(b'\n')
 		data_cept.extend(Cept.set_cursor(18, 1))
 		data_cept.extend(Cept.set_fg_color(0))
-		data_cept.extend(Cept.from_str("Wikipedia Search:"))
+		data_cept.extend(Cept.from_str("Wikipedia Search: "))
+		# trick: show cursor now so that user knows they can enter text, even though more
+		# data is loading
+		data_cept.extend(Cept.show_cursor())
 
 		(palette, drcs, chars) = Image_UI.cept_from_image(basedir + "wikipedia.png")
 
