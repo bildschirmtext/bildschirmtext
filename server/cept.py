@@ -32,39 +32,12 @@ class Cept_page:
 #		self.data_cept.extend(Cept.from_str(s))
 #		self.x += len(s)
 
-	def create_new_line(self):
-		self.lines_cept.append(self.data_cept)
-		self.init_new_line()
-
-	def set_italics_on(self):
-		self.italics = True
-		self.dirty = True
-		return
-
-	def set_italics_off(self):
-		self.italics = False
-		self.dirty = True
-		return
-
-	def set_bold_on(self):
-		self.bold = True
-		self.dirty = True
-		return
-
-	def set_bold_off(self):
-		self.bold = False
-		self.dirty = True
-		return
-
-	def set_link_on(self):
-		self.link = True
-		self.dirty = True
-		return
-
-	def set_link_off(self):
-		self.link = False
-		self.dirty = True
-		return
+	def print_newline(self):
+		if self.x == 0 and self.y % self.lines_per_page == 0:
+			# no empty first lines
+			return
+		self.data_cept.extend(Cept.repeat(" ", 40 - self.x))
+		self.create_new_line()
 
 	def resend_attributes(self):
 #		sys.stderr.write("self.italics: " + pprint.pformat(["self.italics: ",self.italics , self.bold , self.link]) + "\n")
@@ -80,13 +53,6 @@ class Cept_page:
 			self.data_cept.extend(Cept.underline_off())
 		self.dirty = False
 
-	def newline(self):
-		if self.x == 0 and self.y % self.lines_per_page == 0:
-			# no empty first lines
-			return
-		self.data_cept.extend(Cept.repeat(" ", 40 - self.x))
-		self.create_new_line()
-
 	def add_string(self, s):
 		if self.dirty:
 			self.resend_attributes()
@@ -95,8 +61,52 @@ class Cept_page:
 		sys.stderr.write("adding: '" + pprint.pformat(s) + "'\n")
 		sys.stderr.write("self.data_cept: " + pprint.pformat(self.data_cept) + "\n")
 
+	# API
+	def create_new_line(self):
+		self.lines_cept.append(self.data_cept)
+		self.init_new_line()
+
+	# API
+	def set_italics_on(self):
+		self.italics = True
+		self.dirty = True
+
+	# API
+	def set_italics_off(self):
+		self.italics = False
+		self.dirty = True
+
+	# API
+	def set_bold_on(self):
+		self.bold = True
+		self.dirty = True
+
+	# API
+	def set_bold_off(self):
+		self.bold = False
+		self.dirty = True
+
+	# API
+	def set_link_on(self):
+		self.link = True
+		self.dirty = True
+
+	# API
+	def set_link_off(self):
+		self.link = False
+		self.dirty = True
+
+	# API
 	def print(self, s):
-		s = s.replace("\n", "")
+		if s == "":
+			return
+
+		components = s.split("\n")
+		if len(components) > 1:
+			for s in components:
+				self.print(s)
+				self.print_newline()
+
 		sys.stderr.write("s: " + pprint.pformat(s) + "\n")
 		while s:
 			index = s.find(" ")
@@ -106,13 +116,15 @@ class Cept_page:
 			else:
 				ends_in_space = True
 
-			sys.stderr.write("decide self.x: " + pprint.pformat(self.x) + "\n")
-			sys.stderr.write("decide index: " + pprint.pformat(index) + "\n")
+#			sys.stderr.write("decide self.x: " + pprint.pformat(self.x) + "\n")
+#			sys.stderr.write("decide index: " + pprint.pformat(index) + "\n")
 			if index == 0 and self.x == 0:
+#				sys.stderr.write("A\n")
 				# starts with space and we're at the start of a line
 				# -> skip space
 				pass
 			elif index + self.x > 40:
+#				sys.stderr.write("B\n")
 				# word doesn't fit, print it (plus the space)
 				# into a new line
 				if self.link:
@@ -126,31 +138,32 @@ class Cept_page:
 				if ends_in_space:
 					self.x += 1
 			elif ends_in_space and index + self.x + 1 == 40:
+#				sys.stderr.write("C\n")
 				# space in last column
 				# -> just print it, cursor will be in new line
 				self.add_string(s[:index + 1])
 				self.create_new_line()
 			elif not ends_in_space and index + self.x == 40:
+#				sys.stderr.write("D\n")
 				# character in last column, not followed by a space
 				# -> just print it, cursor will be in new line
 				self.add_string(s[:index])
 				self.create_new_line()
 			elif ends_in_space and index + self.x == 40:
+#				sys.stderr.write("E\n")
 				# character in last column, followed by space
 				# -> omit the space, cursor will be in new line
 				self.add_string(s[:index])
 				self.create_new_line()
 			else:
+#				sys.stderr.write("F\n")
 				self.add_string(s[:index + 1])
 				self.x += len(s[:index + 1])
 				if self.x == 40:
 					self.create_new_line()
 			s = s[index + 1:]
 
-	def add_line(self, s):
-		self.data_cept.extend(Cept.from_str(s))
-		self.create_new_line()
-
+	# API
 	def print_heading(self, level, s):
 		if level == 2:
 			if (self.y + 1) % self.lines_per_page == 0 or (self.y + 2) % self.lines_per_page == 0:

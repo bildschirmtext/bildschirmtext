@@ -2,12 +2,17 @@ import sys
 import re
 import json
 import pprint
+import urllib.parse
 import urllib.request
 
 from bs4 import BeautifulSoup
 
 from cept import Cept
 from cept import Cept_page
+
+WIKI_PREFIX = "https://de.wikipedia.org/"
+WIKI_PREFIX_W = WIKI_PREFIX + "w/"
+WIKI_PREFIX_WIKI = WIKI_PREFIX + "wiki/"
 
 class Wikipedia_UI:
 	def insert_toc(soup, w, link_index, last_page, current_page):
@@ -20,12 +25,13 @@ class Wikipedia_UI:
 					link_index = 10
 
 				level = int(t1.name[1])
-				indent = (level - 2) * "  "
-				entry = indent + t1.contents[0].get_text()
+				# non-breaking space, otherwise it will be filtered at the beginning of lines
+				indent = (level - 2) * "\xa0\xa0"
+				entry = indent + t1.contents[0].get_text().replace("\n", "")
 				padded = entry + ("." * 36)
 				padded = padded[:36]
 				sys.stderr.write("len(padded): '" + pprint.pformat(len(padded)) + "'\n")
-				w.add_line(padded + "[" + str(link_index) + "]")
+				w.print(padded + "[" + str(link_index) + "]")
 				page_and_link_index_for_link.append((current_page, link_index))
 				link_index += 1
 		return (link_index, last_page, current_page, page_and_link_index_for_link)
@@ -33,7 +39,7 @@ class Wikipedia_UI:
 
 	def get_wikipedia_pageid_for_name(cls, target_name):
 		sys.stderr.write("NAME: " + pprint.pformat(target_name) + "\n")
-		url = "https://de.wikipedia.org/w/api.php?action=query&titles=" + target_name + "&format=json"
+		url = WIKI_PREFIX_W + "api.php?action=query&titles=" + target_name + "&format=json"
 		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
 		contents = urllib.request.urlopen(url).read()
 		j = json.loads(contents)
@@ -52,7 +58,7 @@ class Wikipedia_UI:
 	def create_wiki_page(wiki_id, subpage):
 		sys.stderr.write("wiki_id: " + pprint.pformat(wiki_id) + "\n")
 		sys.stderr.write("subpage: " + pprint.pformat(subpage) + "\n")
-		url = "https://de.wikipedia.org/w/api.php?action=parse&prop=text&pageid=" + str(wiki_id) + "&format=json"
+		url = WIKI_PREFIX_W + "api.php?action=parse&prop=text&pageid=" + str(wiki_id) + "&format=json"
 		sys.stderr.write("LINK: " + pprint.pformat(url) + "\n")
 		contents = urllib.request.urlopen(url).read()
 		j = json.loads(contents)
@@ -124,16 +130,16 @@ class Wikipedia_UI:
 #				print("<p>")
 				for t2 in t1.children:
 					if t2.name is None:
-						w.print(t2)
+						w.print(t2.replace("\n", ""))
 					elif t2.name == "span":
-						w.print(t2.get_text())
+						w.print(t2.get_text().replace("\n", ""))
 					elif t2.name == "i":
 						w.set_italics_on()
-						w.print(t2.get_text())
+						w.print(t2.get_text().replace("\n", ""))
 						w.set_italics_off()
 					elif t2.name == "b":
 						w.set_bold_on()
-						w.print(t2.get_text())
+						w.print(t2.get_text().replace("\n", ""))
 						w.set_bold_off()
 					elif t2.name == "a":
 						if t2["href"].startswith("/wiki/"): # ignore external links
@@ -148,7 +154,7 @@ class Wikipedia_UI:
 								wiki_link_targets.append({})
 							wiki_link_targets[current_page][link_index] = t2["href"][6:]
 
-							link_text = t2.get_text() + " [" + str(link_index) + "]"
+							link_text = t2.get_text().replace("\n", "") + " [" + str(link_index) + "]"
 							w.set_link_on()
 							w.print(link_text)
 							link_index += 1
@@ -156,18 +162,17 @@ class Wikipedia_UI:
 					else:
 						pass
 		#				print("UNKNOWN TAG: " + t2.name)
-				w.newline()
-				w.newline()
+				w.print("\n")
 
 				if first_paragraph:
 					first_paragraph = False
 					(link_index, last_page, current_page, page_and_link_index_for_link) = Wikipedia_UI.insert_toc(soup, w, link_index, last_page, current_page)
 					sys.stderr.write("page_and_link_index_for_link: " + pprint.pformat(page_and_link_index_for_link) + "\n")
-					w.newline()
+					w.print("\n")
 
 			elif t1.name in ["h2", "h3", "h4", "h5", "h6"]:
 				level = int(t1.name[1])
-				w.print_heading(level, t1.contents[0].get_text())
+				w.print_heading(level, t1.contents[0].get_text().replace("\n", ""))
 				sys.stderr.write("HEADING page " + str(current_page) + ": " + pprint.pformat(t1.contents[0].get_text()) + "\n")
 				if page_and_link_index_for_link: # only if there is a TOC
 					(link_page, link_name) = page_and_link_index_for_link[link_count]
@@ -222,8 +227,66 @@ class Wikipedia_UI:
 
 		return (meta, data_cept)
 
+	def create_search_page():
+		meta = {
+			"clear_screen": True,
+			"links": {
+				"0": "0"
+			},
+			"inputs": {
+				"fields": [
+					{
+						"name": "search",
+						"line": 13,
+						"column": 19,
+						"height": 1,
+						"width": 20,
+						"bgcolor": 0,
+						"fgcolor": 15
+					}
+				],
+				"confirm": False,
+				"target": "call:Wikipedia_UI.search"
+			},
+			"publisher_color": 0
+		}
+
+		data_cept = bytearray()
+		data_cept.extend(Cept.parallel_mode())
+		data_cept.extend(Cept.set_screen_bg_color(7))
+		data_cept.extend(Cept.set_cursor(2, 1))
+		data_cept.extend(Cept.set_line_bg_color(0))
+		data_cept.extend(b'\n')
+		data_cept.extend(Cept.set_line_bg_color(0))
+		data_cept.extend(Cept.double_height())
+		data_cept.extend(Cept.set_fg_color(7))
+		data_cept.extend(Cept.from_str("Wikipedia - The Free Encyclopedia"))
+		data_cept.extend(b'\r\n')
+		data_cept.extend(Cept.normal_size())
+		data_cept.extend(b'\n')
+		data_cept.extend(Cept.set_cursor(13, 1))
+		data_cept.extend(Cept.set_fg_color(0))
+		data_cept.extend(Cept.from_str("Wikipedia Search:"))
+
+		return (meta, data_cept)
+
+	def search(cls, s):
+		sys.stderr.write("s: " + pprint.pformat(s) + "\n")
+		url = WIKI_PREFIX_W + "api.php?action=opensearch&search=" + urllib.parse.quote_plus(s["search"]) + "&format=json"
+		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
+		contents = urllib.request.urlopen(url).read()
+		j = json.loads(contents)
+#		sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
+		links = j[3]
+		first_link = j[3][0]
+		first_name = first_link[len(WIKI_PREFIX_WIKI):]
+		sys.stderr.write("LINK: " + pprint.pformat(first_name) + "\n")
+		return Wikipedia_UI.get_wikipedia_pageid_for_name(None, first_name)
+
 	def create_page(pageid):
-		if pageid.startswith("555"):
+		if pageid == "555a":
+			return Wikipedia_UI.create_search_page()
+		elif pageid.startswith("555"):
 			return Wikipedia_UI.create_wiki_page(int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
 		else:
 			return None
