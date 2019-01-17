@@ -375,7 +375,9 @@ Für X ist jener ASCII-Wert einzusetzen, unter dem das neue DRC gespeichert werd
 
 #### a) 2-Farben-DRC
 
-Im 2-Farb-Modus (q=1) entspricht jeder gesetzte Bildpunkt im Datenbyte einem Farbpunkt (Vordergrundfarbe) am Bildschirm. Jedes 0-Bit im Datenbyte entspricht einem Farbpunkt in der Hintergrundfarbe am Bildschirm. Bei den 4- und 16-Farben-DRCs wird es etwas komplizierter. Hier sind mehrere Datenblöcke für die Beschreibung nötig:
+Im 2-Farb-Modus (q=1) entspricht jeder gesetzte Bildpunkt im Datenbyte einem Farbpunkt (Vordergrundfarbe) am Bildschirm. Jedes 0-Bit im Datenbyte entspricht einem Farbpunkt in der Hintergrundfarbe am Bildschirm.
+
+Bei den 4- und 16-Farben-DRCs wird es etwas komplizierter. Hier sind mehrere Datenblöcke für die Beschreibung nötig:
 
 #### b) 4-Farben-DRC
 
@@ -383,7 +385,9 @@ Für jeden Bildpunkt wird eine 2-Bit-Farbinformation benötigt (Farbe 0 bis 3). 
 
 #### c) 16-Farben-DRC
 
-Hier benötigt jeder Bildpunkt eine 4-Bit-Farbinformation für die 16 Farben (0 bis F). Daher werden 4 Datenblöcke gebildet mit den Blockbezeichnern 30 bis 33. Jeder Block enthält pro Bildpunkt ein Farbbit, beginnend mit dem höchstwertigen Bit. Nach dem letzten Datenblock eines DRCs können weitere Datenblöcke folgen, die automatisch den folgenden ASCII-Codepositionen zugeordnet werden. Zu beachten ist, daß die hochauflösenden Farb-DRCs (12x10-4-Farben und 6x10-16-Farben) zwei ASCII-Codepositionen belegen! Das bedeutet, daß diese DRCs zB. unter den ASCII-Codes 21, 23, 25, ... gespeichert werden. Zur Vereinfachung der Codierung von DRCs und um mit möglichst wenigen Datenbytes auszukommen, wurden folgende Sonderbytes eingeführt, die statt eines Datenbytes eingesetzt werden dürfen: 
+Hier benötigt jeder Bildpunkt eine 4-Bit-Farbinformation für die 16 Farben (0 bis F). Daher werden 4 Datenblöcke gebildet mit den Blockbezeichnern 30 bis 33. Jeder Block enthält pro Bildpunkt ein Farbbit, beginnend mit dem höchstwertigen Bit.
+
+Nach dem letzten Datenblock eines DRCs können weitere Datenblöcke folgen, die automatisch den folgenden ASCII-Codepositionen zugeordnet werden. Zu beachten ist, daß die hochauflösenden Farb-DRCs (12x10-4-Farben und 6x10-16-Farben) zwei ASCII-Codepositionen belegen! Das bedeutet, daß diese DRCs zB. unter den ASCII-Codes 21, 23, 25, ... gespeichert werden. Zur Vereinfachung der Codierung von DRCs und um mit möglichst wenigen Datenbytes auszukommen, wurden folgende Sonderbytes eingeführt, die statt eines Datenbytes eingesetzt werden dürfen:
 
 	20    Rest des Datenblocks mit "0" füllen
 	21    ganze Zeile wiederholen
@@ -396,9 +400,9 @@ Hier benötigt jeder Bildpunkt eine 4-Bit-Farbinformation für die 16 Farben (0 
 	28    ganze Zeile 8x wiederholen
 	29    ganze Zeile 9x wiederholen
 	2A    ganze Zeile 10x wiederholen
-	2C    ganze Zeile Bit *0* füllen
-	2D    ganze Zeile nit *1* füllen
-	2E    Rest des blocks nit letzter ganzer Zeile füllen
+	2C    ganze Zeile mit *0* füllen
+	2D    ganze Zeile mit *1* füllen
+	2E    Rest des Blocks mit letzter ganzer Zeile füllen
 	2F    Rest des Datenblocks Bit *1* füllen
 
 ### 13.) Farbwahl für 4-Farben-DRCs
