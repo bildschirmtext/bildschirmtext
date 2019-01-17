@@ -22,14 +22,17 @@ class Image_UI:
 		res_x = math.floor(num_dcrs / res_y)
 		sys.stderr.write("char resolution: " + str(res_x) + "*" + str(res_y) + "\n")
 
+		# remove alpha
+		if image.mode == "RGBA":
+			background = Image.new("RGB", image.size, (255, 255, 255))
+			background.paste(image, mask=image.split()[3])
+			image = background
+
 		# resample
 		image = image.resize((res_x * 6, res_y * 10), resample = Image.LANCZOS)
 
 		# convert to 16 custom colors
-		try:
-			image = image.quantize(colors = 16, method = 1)
-		except:
-			image = image.quantize(colors = 16, method = 2)
+		image = image.quantize(colors = 16, method = 1)
 
 		# create array with palette
 		p = image.getpalette()
