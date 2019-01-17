@@ -677,23 +677,32 @@ while True:
 
 	if desired_pageid is None:
 		val = input_data["$navigation"]
-		if val in links:
+		val_or_hash = val if val else "#"
+		if val_or_hash in links:
 			# link
-			desired_pageid = links[val]
-		elif not val:
-			if links.get("#"):
-				# #-link
-				sys.stderr.write("Cept.ter")
-				desired_pageid = links["#"]
-			else:
-				# next sub-page
-				if current_pageid[-1:].isdigit():
-					desired_pageid = current_pageid + "b"
-				elif current_pageid[-1:] >= "a" and current_pageid[-1:] <= "y":
-					desired_pageid = current_pageid[:-1] + chr(ord(current_pageid[-1:]) + 1)
+			desired_pageid = links[val_or_hash]
+			if desired_pageid.startswith("call:"):
+				call = desired_pageid[5:]
+				colon = call.find(":")
+				if colon > 0:
+					target = call[:colon]
+					arg = call[colon + 1:]
 				else:
-					error = 101
-					desired_pageid = None
+					target = call
+					arg = None
+				(cls, method) = target.split(".")
+				module = globals()[cls]()
+				func = getattr(module, method)
+				desired_pageid = func(arg)
+		elif not val:
+			# next sub-page
+			if current_pageid[-1:].isdigit():
+				desired_pageid = current_pageid + "b"
+			elif current_pageid[-1:] >= "a" and current_pageid[-1:] <= "y":
+				desired_pageid = current_pageid[:-1] + chr(ord(current_pageid[-1:]) + 1)
+			else:
+				error = 101
+				desired_pageid = None
 		else:
 			error = 100
 			desired_pageid = None

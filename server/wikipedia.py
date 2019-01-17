@@ -221,7 +221,7 @@ class Wikipedia_UI:
 		return (link_index, last_page, current_page, page_and_link_index_for_link)
 		pageid
 
-	def get_wikipedia_pageid_for_name(target_name):
+	def get_wikipedia_pageid_for_name(cls, target_name):
 		sys.stderr.write("NAME: " + pprint.pformat(target_name) + "\n")
 		url = "https://de.wikipedia.org/w/api.php?action=query&titles=" + target_name + "&format=json"
 		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
@@ -237,7 +237,7 @@ class Wikipedia_UI:
 #		if not pageid:
 		pageid = list(pages.keys())[0]
 		sys.stderr.write("pageid: " + pprint.pformat(pageid) + "\n")
-		return pageid
+		return "555" + str(pageid)
 
 	def create_wiki_page(wiki_id, subpage):
 		sys.stderr.write("wiki_id: " + pprint.pformat(wiki_id) + "\n")
@@ -381,11 +381,7 @@ class Wikipedia_UI:
 		links_for_this_page = wiki_link_targets[subpage]
 
 		for l in links_for_this_page.keys():
-			wikipedia_pageid = Wikipedia_UI.get_wikipedia_pageid_for_name(links_for_this_page[l])
-			sys.stderr.write("wikipedia_pageid: " + pprint.pformat(wikipedia_pageid) + "\n")
-			sys.stderr.write("str(l): " + pprint.pformat(str(l)) + "\n")
-			if wikipedia_pageid: # ignore wiki pages that can't be found
-				meta["links"][str(l)] = "555" + str(wikipedia_pageid)
+			meta["links"][str(l)] = "call:Wikipedia_UI.get_wikipedia_pageid_for_name:" + str(links_for_this_page[l])
 
 		str_wikipedia = "Wikipedia"
 
