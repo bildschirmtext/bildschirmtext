@@ -107,7 +107,7 @@ class Image_UI:
 		data_cept.extend(Cept.define_palette(palette))
 		data_cept.extend(drcs)
 
-		data_cept.extend(Cept.set_cursor(3,1))
+		data_cept.extend(Cept.set_cursor(3, 1))
 		data_cept.extend(Cept.load_g0_drcs())
 		for l in chars:
 			data_cept.extend(l)

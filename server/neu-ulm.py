@@ -247,8 +247,8 @@ def create_page(pageid):
 		basedir = PATH_DATA + "8/"
 	if not ret and pageid.startswith("555"):
 		# wikipedia
-		ret = Wikipedia_UI.create_page(pageid)
 		basedir = PATH_DATA + "555/"
+		ret = Wikipedia_UI.create_page(pageid, basedir)
 	if not ret and pageid.startswith("666"):
 		# images
 		ret = Image_UI.create_page(pageid)

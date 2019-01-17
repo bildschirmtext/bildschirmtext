@@ -265,7 +265,7 @@ class Wikipedia_UI:
 
 		return (meta, data_cept)
 
-	def create_search_page():
+	def create_search_page(basedir):
 		meta = {
 			"clear_screen": True,
 			"links": {
@@ -275,7 +275,7 @@ class Wikipedia_UI:
 				"fields": [
 					{
 						"name": "search",
-						"line": 13,
+						"line": 18,
 						"column": 19,
 						"height": 1,
 						"width": 20,
@@ -302,9 +302,22 @@ class Wikipedia_UI:
 		data_cept.extend(b'\r\n')
 		data_cept.extend(Cept.normal_size())
 		data_cept.extend(b'\n')
-		data_cept.extend(Cept.set_cursor(13, 1))
+		data_cept.extend(Cept.set_cursor(18, 1))
 		data_cept.extend(Cept.set_fg_color(0))
 		data_cept.extend(Cept.from_str("Wikipedia Search:"))
+
+		(palette, drcs, chars) = Image_UI.cept_from_image(basedir + "wikipedia.png")
+
+		data_cept.extend(Cept.define_palette(palette))
+		data_cept.extend(drcs)
+
+		y = 6
+		for l in chars:
+			data_cept.extend(Cept.set_cursor(y, int((41 - 2 * len(chars[0])) / 2)))
+			data_cept.extend(Cept.load_g0_drcs())
+			data_cept.extend(Cept.double_size())
+			data_cept.extend(l)
+			y += 2
 
 		return (meta, data_cept)
 
@@ -321,9 +334,9 @@ class Wikipedia_UI:
 		sys.stderr.write("LINK: " + pprint.pformat(first_name) + "\n")
 		return Wikipedia_UI.get_wikipedia_pageid_for_name(None, first_name)
 
-	def create_page(pageid):
+	def create_page(pageid, basedir):
 		if pageid == "555a":
-			return Wikipedia_UI.create_search_page()
+			return Wikipedia_UI.create_search_page(basedir)
 		elif pageid.startswith("555"):
 			return Wikipedia_UI.create_wiki_page(int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
 		else:
