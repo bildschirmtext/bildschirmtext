@@ -10,8 +10,8 @@ class Cept_page:
 	bold = False
 	link = False
 	dirty = False
-	title_width = 0
-	title_height = 0
+	title_image_width = 0
+	title_image_height = 0
 	lines_per_page = 17
 
 	def __init__(self):
@@ -60,8 +60,8 @@ class Cept_page:
 			self.resend_attributes()
 		self.data_cept.extend(Cept.from_str(s))
 #		sys.stderr.write("before self.x: " + pprint.pformat(self.x) + "\n")
-		sys.stderr.write("adding: '" + pprint.pformat(s) + "'\n")
-		sys.stderr.write("self.data_cept: " + pprint.pformat(self.data_cept) + "\n")
+#		sys.stderr.write("adding: '" + pprint.pformat(s) + "'\n")
+#		sys.stderr.write("self.data_cept: " + pprint.pformat(self.data_cept) + "\n")
 
 	# API
 	def create_new_line(self):
@@ -109,7 +109,7 @@ class Cept_page:
 				self.print(s)
 				self.print_newline()
 
-		sys.stderr.write("s: " + pprint.pformat(s) + "\n")
+#		sys.stderr.write("s: " + pprint.pformat(s) + "\n")
 		while s:
 			index = s.find(" ")
 			if index < 0:
@@ -118,8 +118,8 @@ class Cept_page:
 			else:
 				ends_in_space = True
 
-			if self.y < self.title_height:
-				line_width = 40 - self.title_width
+			if self.y < self.title_image_height:
+				line_width = 40 - self.title_image_width
 			else:
 				line_width = 40
 

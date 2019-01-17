@@ -17,12 +17,12 @@ WIKI_PREFIX_W = WIKI_PREFIX + "w/"
 WIKI_PREFIX_WIKI = WIKI_PREFIX + "wiki/"
 
 class Wikipedia_UI:
-	def insert_toc(soup, w, link_index, last_page, current_page):
+	def insert_toc(soup, page, link_index, last_page, current_page):
 		page_and_link_index_for_link = []
 		for t1 in soup.contents[0].children:
 			if t1.name in ["h2", "h3", "h4", "h5", "h6"]:
 				last_page = current_page
-				current_page = int(w.y / w.lines_per_page)
+				current_page = int(page.y / page.lines_per_page)
 				if current_page != last_page:
 					link_index = 10
 
@@ -32,8 +32,7 @@ class Wikipedia_UI:
 				entry = indent + t1.contents[0].get_text().replace("\n", "")
 				padded = entry + ("." * 36)
 				padded = padded[:36]
-				sys.stderr.write("len(padded): '" + pprint.pformat(len(padded)) + "'\n")
-				w.print(padded + "[" + str(link_index) + "]")
+				page.print(padded + "[" + str(link_index) + "]")
 				page_and_link_index_for_link.append((current_page, link_index))
 				link_index += 1
 		return (link_index, last_page, current_page, page_and_link_index_for_link)
@@ -57,49 +56,30 @@ class Wikipedia_UI:
 		sys.stderr.write("pageid: " + pprint.pformat(pageid) + "\n")
 		return "555" + str(pageid)
 
-	def create_wiki_page(wiki_id, subpage):
-		sys.stderr.write("wiki_id: " + pprint.pformat(wiki_id) + "\n")
-		sys.stderr.write("subpage: " + pprint.pformat(subpage) + "\n")
+	def create_wiki_page(wiki_id, sheet_number):
+		is_first_page = sheet_number == 0
+
+		# get HTML from server
 		url = WIKI_PREFIX_W + "api.php?action=parse&prop=text&pageid=" + str(wiki_id) + "&format=json"
-		sys.stderr.write("LINK: " + pprint.pformat(url) + "\n")
 		contents = urllib.request.urlopen(url).read()
 		j = json.loads(contents)
-#		sys.stderr.write("LINK: " + pprint.pformat(j) + "\n")
-
-
-		is_first_page = subpage == 0
-
-		meta = {
-			"publisher_color": 0
-		}
-
-		meta["clear_screen"] = is_first_page
-
-		links_for_page = []
-
-		#pprint.pprint(j)
 
 		title = j["parse"]["title"]
 		html = j["parse"]["text"]["*"]
-		#html = html.replace("\n", "")
-		#print(html)
-		#exit(1)
 
 		soup = BeautifulSoup(html, 'html.parser')
 
-		# extract URL to first image
-		first_image_url = None
+		# extract URL of first image
+		image_url = None
 		for x in soup.contents[0].findAll('img'):
-			sys.stderr.write("img: " + pprint.pformat(x) + "\n")
 			if x.get("class") == ["thumbimage"]:
-				first_image_url = "https:" + x.get("src")
-				sys.stderr.write("first_image_url: " + pprint.pformat(first_image_url) + "\n")
-				(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(first_image_url)
+				image_url = "https:" + x.get("src")
+				(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(image_url)
 				break
 
-		# div are usually boxes
+		# div are usually boxes -> remove
 		[x.extract() for x in soup.contents[0].findAll('div')]
-		# tables are usually boxes, (but not always!)
+		# tables are usually boxes, (but not always!) -> remove
 		[x.extract() for x in soup.contents[0].findAll('table')]
 
 		# remove "[edit]" links
@@ -116,28 +96,26 @@ class Wikipedia_UI:
 		for x in soup.findAll("sup"):
 			x.extract()
 
-		#print(soup.prettify())
-		#exit(1)
+		page = Cept_page()
 
-		w = Cept_page()
-		if first_image_url is not None:
-			w.title_width = len(image_chars[0])
-			w.title_height = len(image_chars) - 2 # image draws 2 characters into title area
-		w.lines_cept = []
+		# tell page renderer to leave room for the image in the top right of the first sheet
+		if image_url is not None:
+			page.title_image_width = len(image_chars[0])
+			page.title_image_height = len(image_chars) - 2 # image draws 2 characters into title area
 
-#		sys.stderr.write("SOUP : " + pprint.pformat(soup.prettify()) + "\n")
+		# XXX why is this necessary???
+		page.lines_cept = []
 
 		link_index = 10
 		current_page = 0
 		last_page = 0
 		link_count = 0
 		wiki_link_targets = []
+		links_for_page = []
 
 		first_paragraph = True
 
 		for t1 in soup.contents[0].children:
-		#	pprint.pprint("XXXXX" + str(t1) + "\n\n\n")
-		#	pprint.pprint(["name: ", t1.name])
 			if t1.name == "p":
 				# XXX move this up with the filters
 				if t1.get_text().replace("\n", "") == "":
@@ -145,21 +123,21 @@ class Wikipedia_UI:
 #				print("<p>")
 				for t2 in t1.children:
 					if t2.name is None:
-						w.print(t2.replace("\n", ""))
+						page.print(t2.replace("\n", ""))
 					elif t2.name == "span":
-						w.print(t2.get_text().replace("\n", ""))
+						page.print(t2.get_text().replace("\n", ""))
 					elif t2.name == "i":
-						w.set_italics_on()
-						w.print(t2.get_text().replace("\n", ""))
-						w.set_italics_off()
+						page.set_italics_on()
+						page.print(t2.get_text().replace("\n", ""))
+						page.set_italics_off()
 					elif t2.name == "b":
-						w.set_bold_on()
-						w.print(t2.get_text().replace("\n", ""))
-						w.set_bold_off()
+						page.set_bold_on()
+						page.print(t2.get_text().replace("\n", ""))
+						page.set_bold_off()
 					elif t2.name == "a":
 						if t2["href"].startswith("/wiki/"): # ignore external links
 							last_page = current_page
-							current_page = int(w.y / w.lines_per_page)
+							current_page = int(page.y / page.lines_per_page)
 							if current_page != last_page:
 								link_index = 10
 								# TODO: this breaks if the link
@@ -170,24 +148,24 @@ class Wikipedia_UI:
 							wiki_link_targets[current_page][link_index] = t2["href"][6:]
 
 							link_text = t2.get_text().replace("\n", "") + " [" + str(link_index) + "]"
-							w.set_link_on()
-							w.print(link_text)
+							page.set_link_on()
+							page.print(link_text)
 							link_index += 1
-							w.set_link_off()
+							page.set_link_off()
 					else:
 						pass
 		#				print("UNKNOWN TAG: " + t2.name)
-				w.print("\n")
+				page.print("\n")
 
 				if first_paragraph:
 					first_paragraph = False
-					(link_index, last_page, current_page, page_and_link_index_for_link) = Wikipedia_UI.insert_toc(soup, w, link_index, last_page, current_page)
+					(link_index, last_page, current_page, page_and_link_index_for_link) = Wikipedia_UI.insert_toc(soup, page, link_index, last_page, current_page)
 					sys.stderr.write("page_and_link_index_for_link: " + pprint.pformat(page_and_link_index_for_link) + "\n")
-					w.print("\n")
+					page.print("\n")
 
 			elif t1.name in ["h2", "h3", "h4", "h5", "h6"]:
 				level = int(t1.name[1])
-				w.print_heading(level, t1.contents[0].get_text().replace("\n", ""))
+				page.print_heading(level, t1.contents[0].get_text().replace("\n", ""))
 				sys.stderr.write("HEADING page " + str(current_page) + ": " + pprint.pformat(t1.contents[0].get_text()) + "\n")
 				if page_and_link_index_for_link: # only if there is a TOC
 					(link_page, link_name) = page_and_link_index_for_link[link_count]
@@ -197,23 +175,27 @@ class Wikipedia_UI:
 					links_for_page[link_page][str(link_name)] = "555" + str(wiki_id) + chr(0x61 + current_page)
 
 
-		sys.stderr.write("wiki_link_targets: " + pprint.pformat(wiki_link_targets) + "\n")
+#		sys.stderr.write("wiki_link_targets: " + pprint.pformat(wiki_link_targets) + "\n")
 
 
 		# create one page
 
-		if len(links_for_page) < subpage + 1:
+		meta = {
+			"publisher_color": 0
+		}
+
+		if len(links_for_page) < sheet_number + 1:
 			meta["links"] = {}
 		else:
-			meta["links"] = links_for_page[subpage]
+			meta["links"] = links_for_page[sheet_number]
 
 
-		links_for_this_page = wiki_link_targets[subpage]
+		links_for_this_page = wiki_link_targets[sheet_number]
 
 		for l in links_for_this_page.keys():
 			meta["links"][str(l)] = "call:Wikipedia_UI.get_wikipedia_pageid_for_name:" + str(links_for_this_page[l])
 
-		str_wikipedia = "Wikipedia"
+		meta["clear_screen"] = is_first_page
 
 		data_cept = bytearray()
 		data_cept.extend(Cept.parallel_mode())
@@ -229,14 +211,14 @@ class Wikipedia_UI:
 		data_cept.extend(Cept.normal_size())
 		data_cept.extend(b'\n')
 
-		if not is_first_page and first_image_url:
+		if not is_first_page and image_url:
 			# clear image
 			for i in range(0, 2):
 				data_cept.extend(Cept.set_cursor(3 + i, 41 - len(image_chars[0])))
 				data_cept.extend(Cept.repeat(" ", len(image_chars[0])))
 
 		i = 2
-		for line in w.lines_cept[subpage * w.lines_per_page:(subpage + 1) * w.lines_per_page]:
+		for line in page.lines_cept[sheet_number * page.lines_per_page:(sheet_number + 1) * page.lines_per_page]:
 			sys.stderr.write("line " + str(i) + ": " + pprint.pformat(line) + "\n")
 			data_cept.extend(line)
 			i += 1
@@ -246,7 +228,7 @@ class Wikipedia_UI:
 		data_cept.extend(Cept.set_fg_color(7))
 		data_cept.extend(Cept.from_str("0 < Back                        # > Next"))
 
-		if is_first_page and first_image_url:
+		if is_first_page and image_url:
 			for y in range(0, len(image_chars)):
 				data_cept.extend(Cept.set_cursor(3 + y, 41 - len(image_chars[0])))
 				data_cept.extend(Cept.set_bg_color(15))
