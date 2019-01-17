@@ -12,7 +12,8 @@ class Cept_page:
 	dirty = False
 	title_image_width = 0
 	title_image_height = 0
-	lines_per_page = 17
+	lines_per_sheet = 17
+	prev_sheet = None
 
 	def __init__(self):
 		self.x = 0
@@ -23,11 +24,11 @@ class Cept_page:
 		self.data_cept = bytearray()
 		self.data_cept.extend(Cept.clear_line())
 #		sys.stderr.write("self.y: '" + pprint.pformat(self.y) + "'\n")
-#		sys.stderr.write("self.y % lines_per_page: '" + pprint.pformat(self.y % lines_per_page) + "'\n")
+#		sys.stderr.write("self.y % lines_per_sheet: '" + pprint.pformat(self.y % lines_per_sheet) + "'\n")
 		self.x = 0
 		self.y += 1
 
-		if (self.y % self.lines_per_page) == 0:
+		if (self.y % self.lines_per_sheet) == 0:
 			self.resend_attributes()
 
 #		s = str(self.y) + " "
@@ -35,7 +36,7 @@ class Cept_page:
 #		self.x += len(s)
 
 	def print_newline(self):
-		if self.x == 0 and self.y % self.lines_per_page == 0:
+		if self.x == 0 and self.y % self.lines_per_sheet == 0:
 			# no empty first lines
 			return
 		self.data_cept.extend(Cept.repeat(" ", 40 - self.x))
@@ -63,51 +64,10 @@ class Cept_page:
 #		sys.stderr.write("adding: '" + pprint.pformat(s) + "'\n")
 #		sys.stderr.write("self.data_cept: " + pprint.pformat(self.data_cept) + "\n")
 
-	# API
-	def create_new_line(self):
-		self.lines_cept.append(self.data_cept)
-		self.init_new_line()
 
-	# API
-	def set_italics_on(self):
-		self.italics = True
-		self.dirty = True
-
-	# API
-	def set_italics_off(self):
-		self.italics = False
-		self.dirty = True
-
-	# API
-	def set_bold_on(self):
-		self.bold = True
-		self.dirty = True
-
-	# API
-	def set_bold_off(self):
-		self.bold = False
-		self.dirty = True
-
-	# API
-	def set_link_on(self):
-		self.link = True
-		self.dirty = True
-
-	# API
-	def set_link_off(self):
-		self.link = False
-		self.dirty = True
-
-	# API
-	def print(self, s):
+	def print_internal(self, s):
 		if s == "":
 			return
-
-		components = s.split("\n")
-		if len(components) > 1:
-			for s in components:
-				self.print(s)
-				self.print_newline()
 
 #		sys.stderr.write("s: " + pprint.pformat(s) + "\n")
 		while s:
@@ -171,9 +131,60 @@ class Cept_page:
 			s = s[index + 1:]
 
 	# API
+	def create_new_line(self):
+		self.lines_cept.append(self.data_cept)
+		self.init_new_line()
+
+	# API
+	def set_italics_on(self):
+		self.italics = True
+		self.dirty = True
+
+	# API
+	def set_italics_off(self):
+		self.italics = False
+		self.dirty = True
+
+	# API
+	def set_bold_on(self):
+		self.bold = True
+		self.dirty = True
+
+	# API
+	def set_bold_off(self):
+		self.bold = False
+		self.dirty = True
+
+	# API
+	def set_link_on(self):
+		self.link = True
+		self.dirty = True
+
+	# API
+	def set_link_off(self):
+		self.link = False
+		self.dirty = True
+
+	# API
+	def print(self, s, ignore_lf = False):
+		self.prev_sheet = self.current_sheet()
+
+		components = s.split("\n")
+		if len(components) > 1:
+			for s in components:
+				self.print_internal(s)
+				if not ignore_lf:
+					self.print_newline()
+		else:
+			self.print_internal(s)
+
+
+	# API
 	def print_heading(self, level, s):
+		self.prev_sheet = self.current_sheet()
+
 		if level == 2:
-			if (self.y + 1) % self.lines_per_page == 0 or (self.y + 2) % self.lines_per_page == 0:
+			if (self.y + 1) % self.lines_per_sheet == 0 or (self.y + 2) % self.lines_per_sheet == 0:
 				# don't draw double height title into
 				# the last line or the one above
 				self.data_cept.extend(b'\n')
@@ -191,7 +202,7 @@ class Cept_page:
 			self.create_new_line()
 			self.create_new_line()
 		else:
-			if (self.y + 1) % self.lines_per_page == 0:
+			if (self.y + 1) % self.lines_per_sheet == 0:
 				# don't draw title into the last line
 				self.data_cept.extend(b'\n')
 				self.create_new_line()
@@ -204,6 +215,21 @@ class Cept_page:
 			self.create_new_line()
 		return
 
+	# API
+	def current_sheet(self):
+		return int(self.y / self.lines_per_sheet)
+
+	# API
+	def cept_for_sheet(self, sheet_number):
+		data_cept = bytearray()
+		lines = self.lines_cept[sheet_number * self.lines_per_sheet : (sheet_number + 1) * self.lines_per_sheet]
+		for line in lines:
+			data_cept.extend(line)
+		# fill page with blank lines
+		for i in range(0, self.lines_per_sheet - len(lines)):
+			data_cept.extend(b'\n')
+			data_cept.extend(Cept.clear_line())
+		return data_cept
 
 class Cept(bytearray):
 

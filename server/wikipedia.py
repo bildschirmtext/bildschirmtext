@@ -17,13 +17,11 @@ WIKI_PREFIX_W = WIKI_PREFIX + "w/"
 WIKI_PREFIX_WIKI = WIKI_PREFIX + "wiki/"
 
 class Wikipedia_UI:
-	def insert_toc(soup, page, link_index, last_page, current_page):
+	def insert_toc(soup, page, link_index):
 		page_and_link_index_for_link = []
 		for t1 in soup.contents[0].children:
 			if t1.name in ["h2", "h3", "h4", "h5", "h6"]:
-				last_page = current_page
-				current_page = int(page.y / page.lines_per_page)
-				if current_page != last_page:
+				if page.current_sheet() != page.prev_sheet:
 					link_index = 10
 
 				level = int(t1.name[1])
@@ -33,9 +31,9 @@ class Wikipedia_UI:
 				padded = entry + ("." * 36)
 				padded = padded[:36]
 				page.print(padded + "[" + str(link_index) + "]")
-				page_and_link_index_for_link.append((current_page, link_index))
+				page_and_link_index_for_link.append((page.current_sheet(), link_index))
 				link_index += 1
-		return (link_index, last_page, current_page, page_and_link_index_for_link)
+		return (link_index, page_and_link_index_for_link)
 		pageid
 
 	def get_wikipedia_pageid_for_name(cls, target_name):
@@ -71,30 +69,34 @@ class Wikipedia_UI:
 
 		# extract URL of first image
 		image_url = None
-		for x in soup.contents[0].findAll('img'):
-			if x.get("class") == ["thumbimage"]:
-				image_url = "https:" + x.get("src")
+		for tag in soup.contents[0].findAll('img'):
+			if tag.get("class") == ["thumbimage"]:
+				image_url = "https:" + tag.get("src")
 				(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(image_url)
 				break
 
 		# div are usually boxes -> remove
-		[x.extract() for x in soup.contents[0].findAll('div')]
+		[tag.extract() for tag in soup.contents[0].findAll('div')]
 		# tables are usually boxes, (but not always!) -> remove
-		[x.extract() for x in soup.contents[0].findAll('table')]
+		[tag.extract() for tag in soup.contents[0].findAll('table')]
 
 		# remove "[edit]" links
-		for x in soup.contents[0].findAll('span'):
-			if x.get("class") in [["mw-editsection"], ["mw-editsection-bracket"]]:
-				x.extract()
+		for tag in soup.contents[0].findAll('span'):
+			if tag.get("class") in [["mw-editsection"], ["mw-editsection-bracket"]]:
+				tag.extract()
 
 		# remove citations
-		for x in soup.findAll("a"):
-			if x.get("href").startswith("#cite_note"):
-				x.extract()
+		for tag in soup.findAll("a"):
+			if tag.get("href").startswith("#cite_note"):
+				tag.extract()
 
 		# remove everything subscript: citation text, citation needed...
-		for x in soup.findAll("sup"):
-			x.extract()
+		for tag in soup.findAll("sup"):
+			tag.extract()
+
+		for tag in soup.findAll("p"):
+			if tag.get_text().replace("\n", "") == "":
+				tag.extract()
 
 		page = Cept_page()
 
@@ -107,8 +109,6 @@ class Wikipedia_UI:
 		page.lines_cept = []
 
 		link_index = 10
-		current_page = 0
-		last_page = 0
 		link_count = 0
 		wiki_link_targets = []
 		links_for_page = []
@@ -117,62 +117,54 @@ class Wikipedia_UI:
 
 		for t1 in soup.contents[0].children:
 			if t1.name == "p":
-				# XXX move this up with the filters
-				if t1.get_text().replace("\n", "") == "":
-					continue
-#				print("<p>")
 				for t2 in t1.children:
 					if t2.name is None:
-						page.print(t2.replace("\n", ""))
+						page.print(t2, True)
 					elif t2.name == "span":
-						page.print(t2.get_text().replace("\n", ""))
+						page.print(t2.get_text(), True)
 					elif t2.name == "i":
 						page.set_italics_on()
-						page.print(t2.get_text().replace("\n", ""))
+						page.print(t2.get_text(), True)
 						page.set_italics_off()
 					elif t2.name == "b":
 						page.set_bold_on()
-						page.print(t2.get_text().replace("\n", ""))
+						page.print(t2.get_text(), True)
 						page.set_bold_off()
-					elif t2.name == "a":
-						if t2["href"].startswith("/wiki/"): # ignore external links
-							last_page = current_page
-							current_page = int(page.y / page.lines_per_page)
-							if current_page != last_page:
-								link_index = 10
-								# TODO: this breaks if the link
-								# goes across two pages!
+					elif t2.name == "a" and t2["href"].startswith("/wiki/"): # ignore external links
+						if page.current_sheet() != page.prev_sheet:
+							link_index = 10
+							# TODO: this breaks if the link
+							# goes across two pages!
 
-							while len(wiki_link_targets) < current_page + 1:
-								wiki_link_targets.append({})
-							wiki_link_targets[current_page][link_index] = t2["href"][6:]
+						while len(wiki_link_targets) < page.current_sheet() + 1:
+							wiki_link_targets.append({})
+						wiki_link_targets[page.current_sheet()][link_index] = t2["href"][6:]
 
-							link_text = t2.get_text().replace("\n", "") + " [" + str(link_index) + "]"
-							page.set_link_on()
-							page.print(link_text)
-							link_index += 1
-							page.set_link_off()
+						link_text = t2.get_text().replace("\n", "") + " [" + str(link_index) + "]"
+						page.set_link_on()
+						page.print(link_text)
+						link_index += 1
+						page.set_link_off()
 					else:
 						pass
-		#				print("UNKNOWN TAG: " + t2.name)
 				page.print("\n")
 
 				if first_paragraph:
 					first_paragraph = False
-					(link_index, last_page, current_page, page_and_link_index_for_link) = Wikipedia_UI.insert_toc(soup, page, link_index, last_page, current_page)
-					sys.stderr.write("page_and_link_index_for_link: " + pprint.pformat(page_and_link_index_for_link) + "\n")
+					(link_index, page_and_link_index_for_link) = Wikipedia_UI.insert_toc(soup, page, link_index)
+#					sys.stderr.write("page_and_link_index_for_link: " + pprint.pformat(page_and_link_index_for_link) + "\n")
 					page.print("\n")
 
 			elif t1.name in ["h2", "h3", "h4", "h5", "h6"]:
 				level = int(t1.name[1])
 				page.print_heading(level, t1.contents[0].get_text().replace("\n", ""))
-				sys.stderr.write("HEADING page " + str(current_page) + ": " + pprint.pformat(t1.contents[0].get_text()) + "\n")
+#				sys.stderr.write("HEADING page " + str(page.current_sheet()) + ": " + pprint.pformat(t1.contents[0].get_text()) + "\n")
 				if page_and_link_index_for_link: # only if there is a TOC
 					(link_page, link_name) = page_and_link_index_for_link[link_count]
 					link_count += 1
 					while len(links_for_page) < link_page + 1:
 						links_for_page.append({})
-					links_for_page[link_page][str(link_name)] = "555" + str(wiki_id) + chr(0x61 + current_page)
+					links_for_page[link_page][str(link_name)] = "555" + str(wiki_id) + chr(0x61 + page.current_sheet())
 
 
 #		sys.stderr.write("wiki_link_targets: " + pprint.pformat(wiki_link_targets) + "\n")
@@ -189,54 +181,61 @@ class Wikipedia_UI:
 		else:
 			meta["links"] = links_for_page[sheet_number]
 
-
-		links_for_this_page = wiki_link_targets[sheet_number]
+		if len(wiki_link_targets) < sheet_number + 1:
+			links_for_this_page = {}
+		else:
+			links_for_this_page = wiki_link_targets[sheet_number]
 
 		for l in links_for_this_page.keys():
 			meta["links"][str(l)] = "call:Wikipedia_UI.get_wikipedia_pageid_for_name:" + str(links_for_this_page[l])
 
 		meta["clear_screen"] = is_first_page
 
+		# print the page title (only on the first sheet)
 		data_cept = bytearray()
 		data_cept.extend(Cept.parallel_mode())
-		data_cept.extend(Cept.set_screen_bg_color(7))
-		data_cept.extend(Cept.set_cursor(2, 1))
-		data_cept.extend(Cept.set_line_bg_color(0))
-		data_cept.extend(b'\n')
-		data_cept.extend(Cept.set_line_bg_color(0))
-		data_cept.extend(Cept.double_height())
-		data_cept.extend(Cept.set_fg_color(7))
-		data_cept.extend(Cept.from_str(title[:39]))
-		data_cept.extend(b'\r\n')
-		data_cept.extend(Cept.normal_size())
-		data_cept.extend(b'\n')
 
-		if not is_first_page and image_url:
-			# clear image
-			for i in range(0, 2):
-				data_cept.extend(Cept.set_cursor(3 + i, 41 - len(image_chars[0])))
-				data_cept.extend(Cept.repeat(" ", len(image_chars[0])))
+		if is_first_page:
+			data_cept.extend(Cept.set_screen_bg_color(7))
+			data_cept.extend(Cept.set_cursor(2, 1))
+			data_cept.extend(Cept.set_line_bg_color(0))
+			data_cept.extend(b'\n')
+			data_cept.extend(Cept.set_line_bg_color(0))
+			data_cept.extend(Cept.double_height())
+			data_cept.extend(Cept.set_fg_color(7))
+			data_cept.extend(Cept.from_str(title[:39]))
+			data_cept.extend(b'\r\n')
+			data_cept.extend(Cept.normal_size())
+			data_cept.extend(b'\n')
+			# print navigation
+			data_cept.extend(Cept.set_cursor(23, 1))
+			data_cept.extend(Cept.set_line_bg_color(0))
+			data_cept.extend(Cept.set_fg_color(7))
+			data_cept.extend(Cept.from_str("0 < Back                        # > Next"))
+		else:
+			# on sheets b+, we need to clear the image area
+			if image_url:
+				for i in range(0, 2):
+					data_cept.extend(Cept.set_cursor(3 + i, 41 - len(image_chars[0])))
+					data_cept.extend(Cept.repeat(" ", len(image_chars[0])))
 
-		i = 2
-		for line in page.lines_cept[sheet_number * page.lines_per_page:(sheet_number + 1) * page.lines_per_page]:
-			sys.stderr.write("line " + str(i) + ": " + pprint.pformat(line) + "\n")
-			data_cept.extend(line)
-			i += 1
+		data_cept.extend(Cept.set_cursor(5, 1))
 
-		data_cept.extend(b'\n')
-		data_cept.extend(Cept.set_line_bg_color(0))
-		data_cept.extend(Cept.set_fg_color(7))
-		data_cept.extend(Cept.from_str("0 < Back                        # > Next"))
+		# add text
+		data_cept.extend(page.cept_for_sheet(sheet_number))
 
+		# transfer image on first sheet
 		if is_first_page and image_url:
+			# placeholder rectangle
 			for y in range(0, len(image_chars)):
 				data_cept.extend(Cept.set_cursor(3 + y, 41 - len(image_chars[0])))
 				data_cept.extend(Cept.set_bg_color(15))
 				data_cept.extend(Cept.repeat(" ", len(image_chars[0])))
-
+			# palette
 			data_cept.extend(Cept.define_palette(image_palette))
+			# DRCS
 			data_cept.extend(image_drcs)
-
+			# draw characters
 			i = 0
 			for l in image_chars:
 				data_cept.extend(Cept.set_cursor(3 + i, 41 - len(image_chars[0])))
