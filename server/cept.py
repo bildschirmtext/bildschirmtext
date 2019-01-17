@@ -10,6 +10,8 @@ class Cept_page:
 	bold = False
 	link = False
 	dirty = False
+	title_width = 0
+	title_height = 0
 	lines_per_page = 17
 
 	def __init__(self):
@@ -116,6 +118,11 @@ class Cept_page:
 			else:
 				ends_in_space = True
 
+			if self.y < self.title_height:
+				line_width = 40 - self.title_width
+			else:
+				line_width = 40
+
 #			sys.stderr.write("decide self.x: " + pprint.pformat(self.x) + "\n")
 #			sys.stderr.write("decide index: " + pprint.pformat(index) + "\n")
 			if index == 0 and self.x == 0:
@@ -123,7 +130,7 @@ class Cept_page:
 				# starts with space and we're at the start of a line
 				# -> skip space
 				pass
-			elif index + self.x > 40:
+			elif index + self.x > line_width:
 #				sys.stderr.write("B\n")
 				# word doesn't fit, print it (plus the space)
 				# into a new line
@@ -433,7 +440,7 @@ class Cept(bytearray):
 		return bytes([ord(c), 0x12, 0x40 + n - 1])
 
 	@staticmethod
-	def define_palette(palette, start_color):
+	def define_palette(palette, start_color = 16):
 		cept = bytearray(
 			b'\x1f\x26\x20'			  # start defining colors
 			b'\x1f\x26'		          # define colors
@@ -542,6 +549,14 @@ class Cept(bytearray):
 	@staticmethod
 	def double_height():
 		return b'\x8d'
+
+	@staticmethod
+	def double_width():
+		return b'\x8e'
+
+	@staticmethod
+	def double_size():
+		return b'\x8f'
 
 	@staticmethod
 	def underline_off():

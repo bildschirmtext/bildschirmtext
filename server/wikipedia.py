@@ -9,7 +9,9 @@ from bs4 import BeautifulSoup
 
 from cept import Cept
 from cept import Cept_page
+from image import Image_UI
 
+#WIKI_PREFIX = "https://en.wikipedia.org/"
 WIKI_PREFIX = "https://de.wikipedia.org/"
 WIKI_PREFIX_W = WIKI_PREFIX + "w/"
 WIKI_PREFIX_WIKI = WIKI_PREFIX + "wiki/"
@@ -85,6 +87,16 @@ class Wikipedia_UI:
 
 		soup = BeautifulSoup(html, 'html.parser')
 
+		# extract URL to first image
+		first_image_url = None
+		for x in soup.contents[0].findAll('img'):
+			sys.stderr.write("img: " + pprint.pformat(x) + "\n")
+			if x.get("class") == ["thumbimage"]:
+				first_image_url = "https:" + x.get("src")
+				sys.stderr.write("first_image_url: " + pprint.pformat(first_image_url) + "\n")
+				(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(first_image_url)
+				break
+
 		# div are usually boxes
 		[x.extract() for x in soup.contents[0].findAll('div')]
 		# tables are usually boxes, (but not always!)
@@ -108,6 +120,9 @@ class Wikipedia_UI:
 		#exit(1)
 
 		w = Cept_page()
+		if first_image_url is not None:
+			w.title_width = len(image_chars[0])
+			w.title_height = len(image_chars) - 2 # image draws 2 characters into title area
 		w.lines_cept = []
 
 #		sys.stderr.write("SOUP : " + pprint.pformat(soup.prettify()) + "\n")
@@ -214,6 +229,12 @@ class Wikipedia_UI:
 		data_cept.extend(Cept.normal_size())
 		data_cept.extend(b'\n')
 
+		if not is_first_page and first_image_url:
+			# clear image
+			for i in range(0, 2):
+				data_cept.extend(Cept.set_cursor(3 + i, 41 - len(image_chars[0])))
+				data_cept.extend(Cept.repeat(" ", len(image_chars[0])))
+
 		i = 2
 		for line in w.lines_cept[subpage * w.lines_per_page:(subpage + 1) * w.lines_per_page]:
 			sys.stderr.write("line " + str(i) + ": " + pprint.pformat(line) + "\n")
@@ -224,6 +245,23 @@ class Wikipedia_UI:
 		data_cept.extend(Cept.set_line_bg_color(0))
 		data_cept.extend(Cept.set_fg_color(7))
 		data_cept.extend(Cept.from_str("0 < Back                        # > Next"))
+
+		if is_first_page and first_image_url:
+			for y in range(0, len(image_chars)):
+				data_cept.extend(Cept.set_cursor(3 + y, 41 - len(image_chars[0])))
+				data_cept.extend(Cept.set_bg_color(15))
+				data_cept.extend(Cept.repeat(" ", len(image_chars[0])))
+
+			data_cept.extend(Cept.define_palette(image_palette))
+			data_cept.extend(image_drcs)
+
+			i = 0
+			for l in image_chars:
+				data_cept.extend(Cept.set_cursor(3 + i, 41 - len(image_chars[0])))
+				data_cept.extend(Cept.load_g0_drcs())
+				data_cept.extend(l)
+				data_cept.extend(b'\r\n')
+				i += 1
 
 		return (meta, data_cept)
 
