@@ -29,7 +29,7 @@ class Image_UI:
 			image = background
 
 		# resample
-		image = image.resize((res_x * 6, res_y * 10), resample = Image.LANCZOS)
+		image = image.resize((res_x * 6, res_y * 10), resample = Image.ANTIALIAS)
 
 		# convert to 16 custom colors
 		image = image.quantize(colors = 16, method = 1)
