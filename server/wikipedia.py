@@ -59,15 +59,13 @@ PAGEID_PREFIX = "555"
 
 wikipedias = {}
 
-class Wikipedia:
+class Wikipedia(MediaWiki):
 	wiki_url = None
 	lang = None
-	mediawiki = None
 
 	def __init__(self, lang):
-		self.wiki_url = "https://" + lang + ".wikipedia.org/"
+		super(Wikipedia, self).__init__("https://" + lang + ".wikipedia.org/")
 		self.lang = lang
-		self.mediawiki = MediaWiki(self.wiki_url)
 		wikipedias[lang] = self
 
 	def get(lang):
@@ -75,7 +73,6 @@ class Wikipedia:
 		if wikipedia:
 			return wikipedia
 		return Wikipedia(lang)
-
 
 
 class Wikipedia_UI:
@@ -98,45 +95,14 @@ class Wikipedia_UI:
 		return (link_index, page_and_link_index_for_link)
 
 	def get_pageid_for_title(lang, title):
-		mediawiki = Wikipedia.get(lang).mediawiki
+		mediawiki = Wikipedia.get(lang)
 		wikiid = mediawiki.wikiid_for_title(title)
 		if wikiid:
 			return PAGEID_PREFIX + str(wikiid)
 		else:
 			return None
 
-	def callback_get_pageid_for_title(cls, dummy, lang_title):
-		index = lang_title.find("/")
-		return Wikipedia_UI.get_pageid_for_title(lang_title[:index], lang_title[index + 1:])
-
-	def create_wiki_page(wikipedia, wikiid, sheet_number):
-		is_first_page = sheet_number == 0
-
-		mediawiki = wikipedia.mediawiki
-		# get HTML from server
-		(title, html) = mediawiki.html_for_wikiid(wikiid)
-
-		soup = BeautifulSoup(html, 'html.parser')
-
-		for tag in soup.contents[0].findAll('div'):
-			if tag.get("class") == ["redirectMsg"]:
-				sys.stderr.write("tag: " + pprint.pformat(tag) + "\n")
-				for tag in tag.findAll('a'):
-					link = tag.get("href")
-					title = link[6:]
-					sys.stderr.write("a: " + pprint.pformat(title) + "\n")
-					wikiid = Wikipedia_UI.get_pageid_for_title(lang, title)[len(PAGEID_PREFIX):]
-					sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
-					return Wikipedia_UI.create_wiki_page(wikiid, sheet_number)
-
-		# extract URL of first image
-		image_url = None
-		for tag in soup.contents[0].findAll('img'):
-			if tag.get("class") == ["thumbimage"]:
-				image_url = "https:" + tag.get("src")
-				(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(image_url)
-				break
-
+	def simplify_html(soup):
 		# div are usually boxes -> remove
 		[tag.extract() for tag in soup.contents[0].findAll('div')]
 		# tables are usually boxes, (but not always!) -> remove
@@ -159,6 +125,37 @@ class Wikipedia_UI:
 		for tag in soup.findAll("p"):
 			if tag.get_text().replace("\n", "") == "":
 				tag.extract()
+
+		return soup
+
+	def create_article_page(mediawiki, wikiid, sheet_number):
+		is_first_page = sheet_number == 0
+
+		# get HTML from server
+		(title, html) = mediawiki.html_for_wikiid(wikiid)
+
+		soup = BeautifulSoup(html, 'html.parser')
+
+		for tag in soup.contents[0].findAll('div'):
+			if tag.get("class") == ["redirectMsg"]:
+				sys.stderr.write("tag: " + pprint.pformat(tag) + "\n")
+				for tag in tag.findAll('a'):
+					link = tag.get("href")
+					title = link[6:]
+					sys.stderr.write("a: " + pprint.pformat(title) + "\n")
+					wikiid = Wikipedia_UI.get_pageid_for_title(lang, title)[len(PAGEID_PREFIX):]
+					sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
+					return Wikipedia_UI.create_article_page(wikiid, sheet_number)
+
+		# extract URL of first image
+		image_url = None
+		for tag in soup.contents[0].findAll('img'):
+			if tag.get("class") == ["thumbimage"]:
+				image_url = "https:" + tag.get("src")
+				(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(image_url)
+				break
+
+		soup = Wikipedia_UI.simplify_html(soup)
 
 		page = Cept_page()
 
@@ -259,7 +256,7 @@ class Wikipedia_UI:
 			links_for_this_page = wiki_link_targets[sheet_number]
 
 		for l in links_for_this_page.keys():
-			meta["links"][str(l)] = "call:Wikipedia_UI.callback_get_pageid_for_title:" + wikipedia.lang + "/" + str(links_for_this_page[l])
+			meta["links"][str(l)] = "call:Wikipedia_UI.callback_get_pageid_for_title:" + mediawiki.lang + "/" + str(links_for_this_page[l])
 
 		meta["clear_screen"] = is_first_page
 
@@ -390,8 +387,12 @@ class Wikipedia_UI:
 
 		return (meta, data_cept)
 
+	def callback_get_pageid_for_title(cls, dummy, lang_title):
+		index = lang_title.find("/")
+		return Wikipedia_UI.get_pageid_for_title(lang_title[:index], lang_title[index + 1:])
+
 	def callback_validate_search(cls, input_data, lang):
-		mediawiki = Wikipedia.get(lang).mediawiki
+		mediawiki = Wikipedia.get(lang)
 		pageid = mediawiki.title_for_search(input_data["search"])
 		if not pageid:
 			msg = Util.create_custom_system_message("Suchbegriff nicht gefunden! -> #")
@@ -403,7 +404,7 @@ class Wikipedia_UI:
 			return Util.VALIDATE_INPUT_OK
 
 	def callback_search(cls, s, lang):
-		mediawiki = Wikipedia.get(lang).mediawiki
+		mediawiki = Wikipedia.get(lang)
 		title = mediawiki.title_for_search(s["search"])
 		sys.stderr.write("TITLE: " + pprint.pformat(title) + "\n")
 		return Wikipedia_UI.get_pageid_for_title(lang, title)
@@ -413,7 +414,7 @@ class Wikipedia_UI:
 		if pageid == PAGEID_PREFIX + "a":
 			return Wikipedia_UI.create_search_page(wikipedia, basedir)
 		elif pageid.startswith(PAGEID_PREFIX):
-			return Wikipedia_UI.create_wiki_page(wikipedia, int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
+			return Wikipedia_UI.create_article_page(wikipedia, int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
 		else:
 			return None
 
