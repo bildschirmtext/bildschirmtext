@@ -10,12 +10,15 @@ num_dcrs = 46
 class Image_UI:
 
 	def cept_from_image(url):
+		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
 		if url.startswith("http://") or url.startswith("https://"):
 			image = Image.open(urllib.request.urlopen(url))
 		else:
 			image = Image.open(url)
 		image.load()
 		(width, height) = image.size
+		sys.stderr.write("resolution: " + str(width) + "*" + str(height) + "\n")
+		sys.stderr.write("mode: " + str(image.mode) + "\n")
 
 		# calculate character resolution
 		res_y = math.floor(math.sqrt(num_dcrs * height / width))
@@ -23,9 +26,10 @@ class Image_UI:
 		sys.stderr.write("char resolution: " + str(res_x) + "*" + str(res_y) + "\n")
 
 		# remove alpha
-		if image.mode == "RGBA":
+		if image.mode == "RGBA" or image.mode == "LA":
 			background = Image.new("RGB", image.size, (255, 255, 255))
-			background.paste(image, mask=image.split()[3])
+			index = 3 if image.mode == "RGBA" else 1
+			background.paste(image, mask=image.split()[index])
 			image = background
 
 		# resample
