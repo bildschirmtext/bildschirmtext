@@ -339,11 +339,11 @@ class Editor:
 						if s == legal_input:
 							character_legal = True
 							string_legal = True
-							sys.stderr.write("string_legal!\n")
+#							sys.stderr.write("string_legal!\n")
 							break
 						elif legal_input.startswith(s):
 							character_legal = True
-							sys.stderr.write("character_legal!\n")
+#							sys.stderr.write("character_legal!\n")
 							break
 				if character_legal or self.end_on_illegal_character:
 					if self.insert_character(c):
@@ -356,8 +356,8 @@ class Editor:
 					break
 				if string_legal and self.end_on_legal_string:
 					break
-			sys.stderr.write("self.__data:\n" + pprint.pformat(self.__data) + "\n")
-			sys.stderr.write("self.string:\n" + pprint.pformat(self.string) + "\n")
+#			sys.stderr.write("self.__data:\n" + pprint.pformat(self.__data) + "\n")
+#			sys.stderr.write("self.string:\n" + pprint.pformat(self.string) + "\n")
 
 		return (self.string, dct)
 

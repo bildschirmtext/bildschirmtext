@@ -29,7 +29,7 @@ class MediaWiki:
 			sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
 			contents = urllib.request.urlopen(url).read()
 			j = json.loads(contents)
-#			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
+			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
 			http_cache[url] = j
 		return j
 
@@ -42,6 +42,7 @@ class MediaWiki:
 		return links[0][len(self.wiki_url + "wiki/"):]
 
 	def wikiid_for_title(self, title):
+		title = title.split("#")[0] # we ignore links to sections
 		sys.stderr.write("title: " + pprint.pformat(title) + "\n")
 		j = self.fetch_json_from_server(self.wiki_url + "w/api.php?action=query&titles=" + title + "&format=json")
 		pages = j["query"]["pages"]
