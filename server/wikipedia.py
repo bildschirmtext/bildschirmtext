@@ -98,7 +98,7 @@ class Wikipedia_UI:
 				level = int(t1.name[1])
 				# non-breaking space, otherwise it will be filtered at the beginning of lines
 				indent = (level - 2) * "\xa0\xa0"
-				entry = indent + t1.contents[0].get_text().replace("\n", "")
+				entry = indent + t1.get_text().replace("\n", "")
 				padded = entry + ("." * 36)
 				padded = padded[:36]
 				page.print(padded + "[" + str(link_index) + "]")
