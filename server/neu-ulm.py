@@ -334,12 +334,27 @@ def login(input_data):
 	
 	return not user is None
 
-def validate_input(input_data, type, validate):
-	if validate and validate.startswith("call:"):
-		(cls, method) = validate[5:].split(".")
+def decode_call(s, arg1):
+	if s and s.startswith("call:"):
+		call = s[5:]
+		colon = call.find(":")
+		if colon > 0:
+			target = call[:colon]
+			arg2 = call[colon + 1:]
+		else:
+			target = call
+			arg2 = None
+		(cls, method) = target.split(".")
 		module = globals()[cls]()
 		func = getattr(module, method)
-		return func(input_data)
+		return func(arg1, arg2)
+	else:
+		return None
+
+def validate_input(input_data, type, validate):
+	ret = decode_call(validate, input_data)
+	if ret:
+		return ret
 
 	if type == "user_id":
 		if User.exists(input_data["user_id"]):
@@ -486,11 +501,10 @@ def handle_inputs(inputs):
 	if "target" in inputs:
 		if inputs["target"].startswith("page:"):
 			return { "$command": inputs["target"][5:] }
-		elif inputs["target"].startswith("call:"):
-			(cls, method) = inputs["target"][5:].split(".")
-			module = globals()[cls]()
-			func = getattr(module, method)
-			return { "$command": func(input_data) }
+
+		ret = decode_call(inputs["target"], input_data)
+		if ret:
+			return { "$command": ret }
 		else:
 			return None # error
 	else:
@@ -688,19 +702,7 @@ while True:
 		if val_or_hash in links:
 			# link
 			desired_pageid = links[val_or_hash]
-			if desired_pageid.startswith("call:"):
-				call = desired_pageid[5:]
-				colon = call.find(":")
-				if colon > 0:
-					target = call[:colon]
-					arg = call[colon + 1:]
-				else:
-					target = call
-					arg = None
-				(cls, method) = target.split(".")
-				module = globals()[cls]()
-				func = getattr(module, method)
-				desired_pageid = func(arg)
+			desired_pageid = decode_call(desired_pageid, None)
 		elif not val:
 			# next sub-page
 			if current_pageid[-1:].isdigit():

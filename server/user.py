@@ -231,7 +231,7 @@ class User_UI:
 						"bgcolor": 12,
 						"fgcolor": 3,
 						"type": "number",
-						"validate": "call:User_UI.validate_user_id"
+						"validate": "call:User_UI.callback_validate_user_id"
 					},
 					{
 						"name": "salutation",
@@ -251,7 +251,7 @@ class User_UI:
 						"height": 1,
 						"width": 20,
 						"bgcolor": 12,
-						"validate": "call:User_UI.validate_last_name",
+						"validate": "call:User_UI.callback_validate_last_name",
 						"fgcolor": 3
 					},
 					{
@@ -401,11 +401,11 @@ class User_UI:
 						"bgcolor": 12,
 						"fgcolor": 3,
 						"type": "password",
-						"validate": "call:User_UI.validate_password",
+						"validate": "call:User_UI.callback_validate_password",
 					},
 				],
 				"confirm": False,
-				"target": "call:User_UI.add_user_callback",
+				"target": "call:User_UI.callback_add_user",
 			},
 			"publisher_color": 7
 		}
@@ -449,7 +449,7 @@ class User_UI:
 		data_cept.extend(User_UI.line())
 		return (meta, data_cept)
 
-	def validate_user_id(cls, input_data):
+	def callback_validate_user_id(cls, input_data, dummy):
 		if User.exists(input_data["user_id"]):
 			msg = Util.create_custom_system_message("Teilnehmernummer bereits vergeben! -> #")
 			sys.stdout.buffer.write(msg)
@@ -459,7 +459,7 @@ class User_UI:
 		else:
 			return Util.VALIDATE_INPUT_OK
 
-	def validate_last_name(cls, input_data):
+	def callback_validate_last_name(cls, input_data, dummy):
 		if not input_data["last_name"]:
 			msg = Util.create_custom_system_message("Name darf nicht leer sein! -> #")
 			sys.stdout.buffer.write(msg)
@@ -469,7 +469,7 @@ class User_UI:
 		else:
 			return Util.VALIDATE_INPUT_OK
 
-	def validate_password(cls, input_data):
+	def callback_validate_password(cls, input_data, dummy):
 		if len(input_data["password"]) < 4:
 			msg = Util.create_custom_system_message("Kennwort muß mind. 4-stellig sein! -> #")
 			sys.stdout.buffer.write(msg)
@@ -479,7 +479,7 @@ class User_UI:
 		else:
 			return Util.VALIDATE_INPUT_OK
 
-	def add_user_callback(cls, input_data):
+	def callback_add_user(cls, input_data, dummy):
 		sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
 		if User.create(
 			input_data["user_id"],
