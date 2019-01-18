@@ -16,6 +16,8 @@ WIKI_PREFIX = "https://de.wikipedia.org/"
 WIKI_PREFIX_W = WIKI_PREFIX + "w/"
 WIKI_PREFIX_WIKI = WIKI_PREFIX + "wiki/"
 
+pageid_prefix = "555"
+
 class Wikipedia_UI:
 	def insert_toc(soup, page, link_index):
 		page_and_link_index_for_link = []
@@ -34,7 +36,6 @@ class Wikipedia_UI:
 				page_and_link_index_for_link.append((page.current_sheet(), link_index))
 				link_index += 1
 		return (link_index, page_and_link_index_for_link)
-		pageid
 
 	def get_wikipedia_pageid_for_name(cls, target_name):
 		sys.stderr.write("NAME: " + pprint.pformat(target_name) + "\n")
@@ -52,7 +53,7 @@ class Wikipedia_UI:
 #		if not pageid:
 		pageid = list(pages.keys())[0]
 		sys.stderr.write("pageid: " + pprint.pformat(pageid) + "\n")
-		return "555" + str(pageid)
+		return pageid_prefix + str(pageid)
 
 	def create_wiki_page(wiki_id, sheet_number):
 		is_first_page = sheet_number == 0
@@ -61,11 +62,23 @@ class Wikipedia_UI:
 		url = WIKI_PREFIX_W + "api.php?action=parse&prop=text&pageid=" + str(wiki_id) + "&format=json"
 		contents = urllib.request.urlopen(url).read()
 		j = json.loads(contents)
+#		sys.stderr.write("j: " + pprint.pformat(j) + "\n")
 
 		title = j["parse"]["title"]
 		html = j["parse"]["text"]["*"]
 
 		soup = BeautifulSoup(html, 'html.parser')
+
+		for tag in soup.contents[0].findAll('div'):
+			if tag.get("class") == ["redirectMsg"]:
+				sys.stderr.write("tag: " + pprint.pformat(tag) + "\n")
+				for tag in tag.findAll('a'):
+					link = tag.get("href")
+					page_name = link[6:]
+					sys.stderr.write("a: " + pprint.pformat(page_name) + "\n")
+					wiki_id = Wikipedia_UI.get_wikipedia_pageid_for_name(None, page_name)[len(pageid_prefix):]
+					sys.stderr.write("wiki_id: " + pprint.pformat(wiki_id) + "\n")
+					return Wikipedia_UI.create_wiki_page(wiki_id, sheet_number)
 
 		# extract URL of first image
 		image_url = None
@@ -164,7 +177,7 @@ class Wikipedia_UI:
 					link_count += 1
 					while len(links_for_page) < link_page + 1:
 						links_for_page.append({})
-					links_for_page[link_page][str(link_name)] = "555" + str(wiki_id) + chr(0x61 + page.current_sheet())
+					links_for_page[link_page][str(link_name)] = pageid_prefix + str(wiki_id) + chr(0x61 + page.current_sheet())
 
 
 #		sys.stderr.write("wiki_link_targets: " + pprint.pformat(wiki_link_targets) + "\n")
@@ -184,7 +197,7 @@ class Wikipedia_UI:
 		else:
 			meta["links"] = links_for_page[sheet_number]
 
-		meta["links"]["0"] = "555"
+		meta["links"]["0"] = pageid_prefix
 
 		if len(wiki_link_targets) < sheet_number + 1:
 			links_for_this_page = {}
@@ -336,9 +349,9 @@ class Wikipedia_UI:
 		return Wikipedia_UI.get_wikipedia_pageid_for_name(None, first_name)
 
 	def create_page(pageid, basedir):
-		if pageid == "555a":
+		if pageid == pageid_prefix + "a":
 			return Wikipedia_UI.create_search_page(basedir)
-		elif pageid.startswith("555"):
+		elif pageid.startswith(pageid_prefix):
 			return Wikipedia_UI.create_wiki_page(int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
 		else:
 			return None
