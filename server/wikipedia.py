@@ -288,9 +288,9 @@ class Wikipedia_UI:
 					{
 						"name": "search",
 						"line": 18,
-						"column": 19,
+						"column": 9,
 						"height": 1,
-						"width": 20,
+						"width": 31,
 						"bgcolor": 0,
 						"fgcolor": 15,
 						"validate": "call:Wikipedia_UI.validate_search"
@@ -317,7 +317,7 @@ class Wikipedia_UI:
 		data_cept.extend(b'\n')
 		data_cept.extend(Cept.set_cursor(18, 1))
 		data_cept.extend(Cept.set_fg_color(0))
-		data_cept.extend(Cept.from_str("Wikipedia Search: "))
+		data_cept.extend(Cept.from_str("Search: "))
 		# trick: show cursor now so that user knows they can enter text, even though more
 		# data is loading
 		data_cept.extend(Cept.show_cursor())
