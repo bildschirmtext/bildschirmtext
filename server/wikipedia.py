@@ -29,7 +29,7 @@ class MediaWiki:
 			sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
 			contents = urllib.request.urlopen(url).read()
 			j = json.loads(contents)
-			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
+#			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
 			http_cache[url] = j
 		return j
 
@@ -202,21 +202,24 @@ class Wikipedia_UI:
 						page.set_bold_on()
 						page.print(t2.get_text(), True)
 						page.set_bold_off()
-					elif t2.name == "a" and t2["href"].startswith("/wiki/"): # ignore external links
-						if page.current_sheet() != page.prev_sheet:
-							link_index = 10
-							# TODO: this breaks if the link
-							# goes across two pages!
+					elif t2.name == "a":
+						if t2["href"].startswith("/wiki/"): # links to different article
+							if page.current_sheet() != page.prev_sheet:
+								link_index = 10
+								# TODO: this breaks if the link
+								# goes across two pages!
 
-						while len(wiki_link_targets) < page.current_sheet() + 1:
-							wiki_link_targets.append({})
-						wiki_link_targets[page.current_sheet()][link_index] = t2["href"][6:]
+							while len(wiki_link_targets) < page.current_sheet() + 1:
+								wiki_link_targets.append({})
+							wiki_link_targets[page.current_sheet()][link_index] = t2["href"][6:]
 
-						link_text = t2.get_text().replace("\n", "") + " [" + str(link_index) + "]"
-						page.set_link_on()
-						page.print(link_text)
-						link_index += 1
-						page.set_link_off()
+							link_text = t2.get_text().replace("\n", "") + " [" + str(link_index) + "]"
+							page.set_link_on()
+							page.print(link_text)
+							link_index += 1
+							page.set_link_off()
+						else: # link to section or external link, just print the text
+							page.print(t2.get_text(), True)
 					else:
 						pass
 				page.print("\n")
