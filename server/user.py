@@ -60,8 +60,6 @@ class User():
 
 	def user():
 		global global_user
-
-		sys.stderr.write("global_user: " + pprint.pformat(global_user) + "\n")
 		return global_user
 
 	@classmethod

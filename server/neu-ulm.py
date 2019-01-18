@@ -682,7 +682,9 @@ while True:
 		if val_or_hash in links:
 			# link
 			desired_pageid = links[val_or_hash]
-			desired_pageid = decode_call(desired_pageid, None)
+			decode = decode_call(desired_pageid, None)
+			if decode:
+				desired_pageid = decode
 		elif not val:
 			# next sub-page
 			if current_pageid[-1:].isdigit():
