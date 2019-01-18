@@ -243,14 +243,14 @@ def create_page(pageid):
 		# messaging
 		ret = Messaging_UI.create_page(User.user(), pageid)
 		basedir = PATH_DATA + "8/"
-	if not ret and pageid.startswith("555"):
+	if not ret and pageid.startswith("55"):
 		# wikipedia
-		basedir = PATH_DATA + "555/"
+		basedir = PATH_DATA + "55/"
 		ret = Wikipedia_UI.create_page(pageid, basedir)
 	if not ret and pageid.startswith("666"):
 		# images
 		ret = Image_UI.create_page(pageid)
-		basedir = PATH_DATA + "555/"
+		basedir = PATH_DATA + "55/"
 
 	if ret:
 		(meta, data_cept) = ret

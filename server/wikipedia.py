@@ -55,8 +55,6 @@ class MediaWiki:
 		html = j["parse"]["text"]["*"]
 		return (title, html)
 
-PAGEID_PREFIX = "555"
-
 wikipedias = {}
 
 class Wikipedia(MediaWiki):
@@ -74,8 +72,22 @@ class Wikipedia(MediaWiki):
 			return wikipedia
 		return Wikipedia(lang)
 
+	def title(self):
+		return { "en": "Wikipedia - The Free Encyclopedia", "de": "Wikipedia - die freie Enzyklopädie" }.get(self.lang)
+
+	def search_string(self):
+		return { "en": "Search: ", "de": " Suche: " }.get(self.lang)
+
+
+PAGEID_PREFIX = "55"
 
 class Wikipedia_UI:
+	def pageid_prefix_for_lang(lang):
+		return PAGEID_PREFIX + str({ "en": 0, "de": 5 }.get(lang))
+
+	def lang_from_langdigit(langdigit):
+		return { 0: "en", 5: "de" }.get(langdigit)
+
 	def insert_toc(soup, page, link_index):
 		page_and_link_index_for_link = []
 		for t1 in soup.contents[0].children:
@@ -98,7 +110,7 @@ class Wikipedia_UI:
 		mediawiki = Wikipedia.get(lang)
 		wikiid = mediawiki.wikiid_for_title(title)
 		if wikiid:
-			return PAGEID_PREFIX + str(wikiid)
+			return Wikipedia_UI.pageid_prefix_for_lang(lang) + str(wikiid)
 		else:
 			return None
 
@@ -143,7 +155,7 @@ class Wikipedia_UI:
 					link = tag.get("href")
 					title = link[6:]
 					sys.stderr.write("a: " + pprint.pformat(title) + "\n")
-					wikiid = Wikipedia_UI.get_pageid_for_title(lang, title)[len(PAGEID_PREFIX):]
+					wikiid = Wikipedia_UI.get_pageid_for_title(mediawiki.lang, title)[len(Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang)):]
 					sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
 					return Wikipedia_UI.create_article_page(wikiid, sheet_number)
 
@@ -223,7 +235,7 @@ class Wikipedia_UI:
 					link_count += 1
 					while len(links_for_page) < link_page + 1:
 						links_for_page.append({})
-					links_for_page[link_page][str(link_name)] = PAGEID_PREFIX + str(wikiid) + chr(0x61 + page.current_sheet())
+					links_for_page[link_page][str(link_name)] = Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang) + str(wikiid) + chr(0x61 + page.current_sheet())
 
 #			elif t1.name == "ul":
 #				for t2 in t1.children:
@@ -248,7 +260,7 @@ class Wikipedia_UI:
 		else:
 			meta["links"] = links_for_page[sheet_number]
 
-		meta["links"]["0"] = PAGEID_PREFIX
+		meta["links"]["0"] = Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang)
 
 		if len(wiki_link_targets) < sheet_number + 1:
 			links_for_this_page = {}
@@ -361,13 +373,13 @@ class Wikipedia_UI:
 		data_cept.extend(Cept.set_line_bg_color(0))
 		data_cept.extend(Cept.double_height())
 		data_cept.extend(Cept.set_fg_color(7))
-		data_cept.extend(Cept.from_str("Wikipedia - The Free Encyclopedia"))
+		data_cept.extend(Cept.from_str(wikipedia.title()))
 		data_cept.extend(b'\r\n')
 		data_cept.extend(Cept.normal_size())
 		data_cept.extend(b'\n')
 		data_cept.extend(Cept.set_cursor(18, 1))
 		data_cept.extend(Cept.set_fg_color(0))
-		data_cept.extend(Cept.from_str("Search: "))
+		data_cept.extend(Cept.from_str(wikipedia.search_string()))
 		# trick: show cursor now so that user knows they can enter text, even though more
 		# data is loading
 		data_cept.extend(Cept.show_cursor())
@@ -410,11 +422,12 @@ class Wikipedia_UI:
 		return Wikipedia_UI.get_pageid_for_title(lang, title)
 
 	def create_page(pageid, basedir):
-		wikipedia = Wikipedia.get("de")
-		if pageid == PAGEID_PREFIX + "a":
-			return Wikipedia_UI.create_search_page(wikipedia, basedir)
-		elif pageid.startswith(PAGEID_PREFIX):
-			return Wikipedia_UI.create_article_page(wikipedia, int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
+		if re.search("^" + PAGEID_PREFIX + "\d", pageid):
+			wikipedia = Wikipedia.get(Wikipedia_UI.lang_from_langdigit(int(pageid[2])))
+			if len(pageid) == 4:
+				return Wikipedia_UI.create_search_page(wikipedia, basedir)
+			else:
+				return Wikipedia_UI.create_article_page(wikipedia, int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
 		else:
 			return None
 
