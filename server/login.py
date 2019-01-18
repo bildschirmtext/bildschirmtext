@@ -62,7 +62,7 @@ class Login_UI:
 			sys.stdout.buffer.write(msg)
 			sys.stdout.flush()
 			Util.wait_for_ter()
-			ret = Util.VALIDATE_INPUT_RESTART
+			return Util.VALIDATE_INPUT_RESTART
 		else:
 			sys.stderr.write("login ok\n")
 			return Util.VALIDATE_INPUT_OK

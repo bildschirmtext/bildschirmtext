@@ -7,6 +7,7 @@ import datetime
 
 from cept import Cept
 from user import User
+from util import Util
 
 PATH_MESSAGES = "../messages/"
 
@@ -288,6 +289,26 @@ class Messaging_UI:
 
 		return (meta, data_cept)
 
+	def callback_validate_user_id(cls, input_data, dummy):
+		if User.exists(input_data["user_id"]):
+			return Util.VALIDATE_INPUT_OK
+		else:
+			msg = Util.create_custom_system_message("Teilnehmerkennung ungültig! -> #")
+			sys.stdout.buffer.write(msg)
+			sys.stdout.flush()
+			Util.wait_for_ter()
+			return Util.VALIDATE_INPUT_BAD
+
+	def callback_validate_ext(cls, input_data, dummy):
+		if User.exists(input_data["user_id"], input_data["ext"]):
+			return Util.VALIDATE_INPUT_OK
+		else:
+			msg = Util.create_custom_system_message("Mitbenutzernummer ungültig! -> #")
+			sys.stdout.buffer.write(msg)
+			sys.stdout.flush()
+			Util.wait_for_ter()
+			return Util.VALIDATE_INPUT_RESTART
+
 	def messaging_create_compose(user):
 		meta = {
 			"include": "a",
@@ -306,7 +327,8 @@ class Messaging_UI:
 						"height": 1,
 						"width": 16,
 						"bgcolor": 4,
-						"fgcolor": 3
+						"fgcolor": 3,
+						"validate": "call:Messaging_UI.callback_validate_user_id"
 					},
 					{
 						"name": "ext",
@@ -317,7 +339,8 @@ class Messaging_UI:
 						"width": 1,
 						"bgcolor": 4,
 						"fgcolor": 3,
-						"default": "1"
+						"default": "1",
+						"validate": "call:Messaging_UI.callback_validate_ext"
 					},
 					{
 						"name": "body",

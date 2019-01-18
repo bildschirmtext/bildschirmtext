@@ -341,35 +341,6 @@ def decode_call(s, arg1):
 	else:
 		return None
 
-def validate_input(input_data, type, validate):
-	ret = decode_call(validate, input_data)
-	if ret:
-		return ret
-
-	if type == "user_id":
-		if User.exists(input_data["user_id"]):
-			return Util.VALIDATE_INPUT_OK
-		else:
-			msg = Util.create_custom_system_message("Teilnehmerkennung ungültig! -> #")
-			ret = Util.VALIDATE_INPUT_BAD
-	elif type == "ext":
-		user_id = input_data.get("user_id")
-		ext = input_data["ext"]
-		if ext == "":
-			ext = "1"
-		if User.exists(user_id, ext):
-			return Util.VALIDATE_INPUT_OK
-		else:
-			msg = Util.create_custom_system_message("Mitbenutzernummer ungültig! -> #")
-			ret = Util.VALIDATE_INPUT_BAD
-	else:
-		return Util.VALIDATE_INPUT_OK
-
-	sys.stdout.buffer.write(msg)
-	sys.stdout.flush()
-	Util.wait_for_ter()
-	return ret
-
 def confirm(inputs): # "send?" message
 	price = inputs.get("price", 0)
 	if price > 0:
@@ -451,9 +422,9 @@ def handle_inputs(inputs):
 
 		input_data[input["name"]] = val
 		
-		ret = validate_input(input_data, input.get("special"), input.get("validate"))
+		ret = decode_call(input.get("validate"), input_data)
 
-		if ret == Util.VALIDATE_INPUT_OK:
+		if not ret or ret == Util.VALIDATE_INPUT_OK:
 			i += 1
 		if ret == Util.VALIDATE_INPUT_BAD:
 			skip = False
