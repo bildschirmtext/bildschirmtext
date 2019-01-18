@@ -17,9 +17,52 @@ WIKI_PREFIX = "https://de.wikipedia.org/"
 WIKI_PREFIX_W = WIKI_PREFIX + "w/"
 WIKI_PREFIX_WIKI = WIKI_PREFIX + "wiki/"
 
-pageid_prefix = "555"
+PAGEID_PREFIX = "555"
+
+# maps urls to json
+http_cache = {}
 
 class Wikipedia_UI:
+
+	#
+	# Server interface
+	#
+
+	def fetch_json_from_server(url):
+		j = http_cache.get(url)
+		if not j :
+			sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
+			contents = urllib.request.urlopen(url).read()
+			j = json.loads(contents)
+#			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
+			http_cache[url] = j
+		return j
+
+	def title_for_search(search):
+		sys.stderr.write("search: " + pprint.pformat(search) + "\n")
+		j = Wikipedia_UI.fetch_json_from_server(WIKI_PREFIX_W + "api.php?action=opensearch&search=" + urllib.parse.quote_plus(search) + "&format=json")
+		links = j[3]
+		if not links:
+			return None
+		return links[0][len(WIKI_PREFIX_WIKI):]
+
+	def wikiid_for_title(title):
+		sys.stderr.write("title: " + pprint.pformat(title) + "\n")
+		j = Wikipedia_UI.fetch_json_from_server(WIKI_PREFIX_W + "api.php?action=query&titles=" + title + "&format=json")
+		pages = j["query"]["pages"]
+		wikiid = list(pages.keys())[0]
+		sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
+		return wikiid
+
+	def html_for_wikiid(wikiid):
+		j = Wikipedia_UI.fetch_json_from_server(WIKI_PREFIX_W + "api.php?action=parse&prop=text&pageid=" + str(wikiid) + "&format=json")
+
+		title = j["parse"]["title"]
+		html = j["parse"]["text"]["*"]
+
+		return (title, html)
+
+
 	def insert_toc(soup, page, link_index):
 		page_and_link_index_for_link = []
 		for t1 in soup.contents[0].children:
@@ -38,35 +81,18 @@ class Wikipedia_UI:
 				link_index += 1
 		return (link_index, page_and_link_index_for_link)
 
-	def get_wikipedia_pageid_for_title(cls, target_name):
-		sys.stderr.write("NAME: " + pprint.pformat(target_name) + "\n")
-		url = WIKI_PREFIX_W + "api.php?action=query&titles=" + target_name + "&format=json"
-		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
-		contents = urllib.request.urlopen(url).read()
-		j = json.loads(contents)
-		sys.stderr.write("LINK: " + pprint.pformat(j) + "\n")
-		pages = j["query"]["pages"]
-#		pageid = None
-#		for id in pages.keys():
-#			if pages[id]["title"] == target_name:
-#				pageid = id
-#				break
-#		if not pageid:
-		pageid = list(pages.keys())[0]
-		sys.stderr.write("pageid: " + pprint.pformat(pageid) + "\n")
-		return pageid_prefix + str(pageid)
+	def get_wikiid_for_title(cls, title):
+		wikiid = Wikipedia_UI.wikiid_for_title(title)
+		if wikiid:
+			return PAGEID_PREFIX + str(wikiid)
+		else:
+			return None
 
-	def create_wiki_page(wiki_id, sheet_number):
+	def create_wiki_page(wikiid, sheet_number):
 		is_first_page = sheet_number == 0
 
 		# get HTML from server
-		url = WIKI_PREFIX_W + "api.php?action=parse&prop=text&pageid=" + str(wiki_id) + "&format=json"
-		contents = urllib.request.urlopen(url).read()
-		j = json.loads(contents)
-#		sys.stderr.write("j: " + pprint.pformat(j) + "\n")
-
-		title = j["parse"]["title"]
-		html = j["parse"]["text"]["*"]
+		(title, html) = Wikipedia_UI.html_for_wikiid(wikiid)
 
 		soup = BeautifulSoup(html, 'html.parser')
 
@@ -77,9 +103,9 @@ class Wikipedia_UI:
 					link = tag.get("href")
 					page_name = link[6:]
 					sys.stderr.write("a: " + pprint.pformat(page_name) + "\n")
-					wiki_id = Wikipedia_UI.get_wikipedia_pageid_for_title(None, page_name)[len(pageid_prefix):]
-					sys.stderr.write("wiki_id: " + pprint.pformat(wiki_id) + "\n")
-					return Wikipedia_UI.create_wiki_page(wiki_id, sheet_number)
+					wikiid = Wikipedia_UI.get_wikiid_for_title(None, page_name)[len(PAGEID_PREFIX):]
+					sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
+					return Wikipedia_UI.create_wiki_page(wikiid, sheet_number)
 
 		# extract URL of first image
 		image_url = None
@@ -178,8 +204,13 @@ class Wikipedia_UI:
 					link_count += 1
 					while len(links_for_page) < link_page + 1:
 						links_for_page.append({})
-					links_for_page[link_page][str(link_name)] = pageid_prefix + str(wiki_id) + chr(0x61 + page.current_sheet())
+					links_for_page[link_page][str(link_name)] = PAGEID_PREFIX + str(wikiid) + chr(0x61 + page.current_sheet())
 
+#			elif t1.name == "ul":
+#				for t2 in t1.children:
+#					if t2.name == "li":
+#						page.print(t2.get_text(), True)
+#						page.print("\n")
 
 #		sys.stderr.write("wiki_link_targets: " + pprint.pformat(wiki_link_targets) + "\n")
 
@@ -198,7 +229,7 @@ class Wikipedia_UI:
 		else:
 			meta["links"] = links_for_page[sheet_number]
 
-		meta["links"]["0"] = pageid_prefix
+		meta["links"]["0"] = PAGEID_PREFIX
 
 		if len(wiki_link_targets) < sheet_number + 1:
 			links_for_this_page = {}
@@ -206,7 +237,7 @@ class Wikipedia_UI:
 			links_for_this_page = wiki_link_targets[sheet_number]
 
 		for l in links_for_this_page.keys():
-			meta["links"][str(l)] = "call:Wikipedia_UI.get_wikipedia_pageid_for_title:" + str(links_for_this_page[l])
+			meta["links"][str(l)] = "call:Wikipedia_UI.get_wikiid_for_title:" + str(links_for_this_page[l])
 
 		meta["clear_screen"] = is_first_page
 
@@ -253,7 +284,7 @@ class Wikipedia_UI:
 
 		# add text
 		data_cept.extend(page.cept_for_sheet(sheet_number))
-		sys.stderr.write("page.cept_for_sheet(sheet_number): " + pprint.pformat(page.cept_for_sheet(sheet_number)) + "\n")
+#		sys.stderr.write("page.cept_for_sheet(sheet_number): " + pprint.pformat(page.cept_for_sheet(sheet_number)) + "\n")
 
 		# transfer image on first sheet
 		if is_first_page and image_url:
@@ -337,20 +368,8 @@ class Wikipedia_UI:
 
 		return (meta, data_cept)
 
-	def title_from_search(s):
-		sys.stderr.write("s: " + pprint.pformat(s) + "\n")
-		url = WIKI_PREFIX_W + "api.php?action=opensearch&search=" + urllib.parse.quote_plus(s["search"]) + "&format=json"
-		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
-		contents = urllib.request.urlopen(url).read()
-		j = json.loads(contents)
-		sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
-		links = j[3]
-		if not links:
-			return None
-		return links[0][len(WIKI_PREFIX_WIKI):]
-
 	def validate_search(cls, input_data):
-		pageid = Wikipedia_UI.title_from_search(input_data)
+		pageid = Wikipedia_UI.title_for_search(input_data["search"])
 		if not pageid:
 			msg = Util.create_custom_system_message("Suchbegriff nicht gefunden! -> #")
 			sys.stdout.buffer.write(msg)
@@ -361,14 +380,14 @@ class Wikipedia_UI:
 			return Util.VALIDATE_INPUT_OK
 
 	def search(cls, s):
-		title = Wikipedia_UI.title_from_search(s)
+		title = Wikipedia_UI.title_for_search(s["search"])
 		sys.stderr.write("TITLE: " + pprint.pformat(title) + "\n")
-		return Wikipedia_UI.get_wikipedia_pageid_for_title(None, title)
+		return Wikipedia_UI.get_wikiid_for_title(None, title)
 
 	def create_page(pageid, basedir):
-		if pageid == pageid_prefix + "a":
+		if pageid == PAGEID_PREFIX + "a":
 			return Wikipedia_UI.create_search_page(basedir)
-		elif pageid.startswith(pageid_prefix):
+		elif pageid.startswith(PAGEID_PREFIX):
 			return Wikipedia_UI.create_wiki_page(int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
 		else:
 			return None

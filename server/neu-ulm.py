@@ -518,6 +518,8 @@ def wait_for_dial_command():
 #			else:
 #				sys.stderr.write(cc)
 #		sys.stderr.write("'\n")
+	sys.stderr.write("CONNECT\r\n")
+	sys.stderr.flush()
 
 def send(cept_data):
 	global baud
