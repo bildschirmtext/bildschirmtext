@@ -5,9 +5,13 @@ import sys
 from cept import Cept
 import urllib.request
 
-num_dcrs = 46
+NUM_DRCS = 46
+
+PIXEL_ASPECT_RATIO = 0.92
 
 class Image_UI:
+
+
 
 	def cept_from_image(url):
 		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
@@ -18,12 +22,49 @@ class Image_UI:
 		image.load()
 		(width, height) = image.size
 		sys.stderr.write("resolution: " + str(width) + "*" + str(height) + "\n")
-		sys.stderr.write("mode: " + str(image.mode) + "\n")
 
 		# calculate character resolution
-		res_y = math.floor(math.sqrt(num_dcrs * height / width))
-		res_x = math.floor(num_dcrs / res_y)
-		sys.stderr.write("char resolution: " + str(res_x) + "*" + str(res_y) + "\n")
+		exact_res_x = math.sqrt(NUM_DRCS * width / height)
+		exact_res_y = math.sqrt(NUM_DRCS * height / width)
+		aspect_ratio = width / height / PIXEL_ASPECT_RATIO
+
+#		sys.stderr.write("exact char resolution: " + str(exact_res_x) + "*" + str(exact_res_y) + "\n")
+
+		res_x_1 = math.floor(exact_res_x)
+		res_y_1 = math.floor(NUM_DRCS / res_x_1)
+		error_1 = abs(1 - (aspect_ratio / (res_x_1 / res_y_1)))
+		res_x_2 = math.ceil(exact_res_x)
+		res_y_2 = math.floor(NUM_DRCS / res_x_2)
+		error_2 = abs(1 - (aspect_ratio / (res_x_2 / res_y_2)))
+		res_y_3 = math.floor(exact_res_y)
+		res_x_3 = math.floor(NUM_DRCS / res_y_3)
+		error_3 = abs(1 - (aspect_ratio / (res_x_3 / res_y_3)))
+		res_y_4 = math.ceil(exact_res_y)
+		res_x_4 = math.floor(NUM_DRCS / res_y_4)
+		error_4 = abs(1 - (aspect_ratio / (res_x_4 / res_y_4)))
+
+#		sys.stderr.write("char resolution 1: " + str(res_x_1) + "*" + str(res_y_1) + ", error: " + str(error_1) + "\n")
+#		sys.stderr.write("char resolution 2: " + str(res_x_2) + "*" + str(res_y_2) + ", error: " + str(error_2) + "\n")
+#		sys.stderr.write("char resolution 3: " + str(res_x_3) + "*" + str(res_y_3) + ", error: " + str(error_3) + "\n")
+#		sys.stderr.write("char resolution 4: " + str(res_x_4) + "*" + str(res_y_4) + ", error: " + str(error_4) + "\n")
+
+		res_x = res_x_1
+		res_y = res_y_1
+		error = error_1
+		if error_2 < error:
+			res_x = res_x_2
+			res_y = res_y_2
+			error = error_2
+		if error_3 < error:
+			res_x = res_x_3
+			res_y = res_y_3
+			error = error_3
+		if error_4 < error:
+			res_x = res_x_4
+			res_y = res_y_4
+			error = error_4
+
+		sys.stderr.write("char resolution:   " + str(res_x) + "*" + str(res_y) + ", error: " + str(error) + "\n")
 
 		# remove alpha
 		if image.mode == "RGBA" or image.mode == "LA":
