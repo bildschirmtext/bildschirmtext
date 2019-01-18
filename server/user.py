@@ -12,6 +12,8 @@ PATH_USERS = "../users/"
 PATH_SECRETS = "../secrets/"
 PATH_STATS = "../stats/"
 
+global_user = None
+
 # Currently, this only holds the last use
 class Stats():
 	last_login = None
@@ -55,6 +57,12 @@ class User():
 
 	stats = None
 	messaging = None
+
+	def user():
+		global global_user
+
+		sys.stderr.write("global_user: " + pprint.pformat(global_user) + "\n")
+		return global_user
 
 	@classmethod
 	def sanitize(cls, user_id, ext):
@@ -135,6 +143,8 @@ class User():
 
 	@classmethod
 	def login(cls, user_id, ext, password, force = False):
+		global global_user
+
 		(user_id, ext) = cls.sanitize(user_id, ext)
 		filename = User.secrets_filename(user_id, ext)
 		if not os.path.isfile(filename):
@@ -145,7 +155,8 @@ class User():
 		if password != dict.get("password") and not force:
 			return None
 
-		return cls.get(user_id, ext, True)
+		global_user = cls.get(user_id, ext, True)
+		return True if global_user else False
 
 class User_UI:
 	def line():
@@ -504,118 +515,6 @@ class User_UI:
 			sys.stdout.flush()
 			Util.wait_for_ter()
 			return "77"
-
-	def historic_link_from_str(s):
-		return s.replace("/", "")
-
-	def historic_pretty_link_from_str(s):
-		s = "*" + s.split("/")[0] + "#"
-		if len(s) >= 8:
-			return s + " "
-		else:
-			return (s + " " * 5)[:8]
-
-	def historic_line(page, index):
-		link = User_UI.historic_pretty_link_from_str(page[0])
-		data_cept = bytearray()
-		data_cept.extend(Cept.from_str(link))
-		data_cept.extend(Cept.from_str((page[1] + "." * 29)[:38 - len(link)]))
-		data_cept.extend(Cept.from_str(str(index)))
-		return data_cept
-
-	def create_historic_overview(index):
-		name = "Amiga Demo"
-		description = (
-			"Der Amiga BTX Software-Decoder wurde mit"
-			"Dumps von 113 BTX-Seiten aus 32\n"
-			"Programmen ausgeliefert, sowie 56 eigens"
-			"gestalteten Seiten zum Thema BTX.\n"
-			"Die Seiten stammen vom April 1989."
-		)
-		distribution = [ 9, 17 ]
-
-		start_page = [ "25096/0", "Amiga Demo Startseite" ]
-
-		pages = [
-			[ "1050", "Btx-Telex" ],
-			[ "1188", "Teleauskunft" ],
-			[ "1692", "Cityruf" ],
-			[ "20000", "Deutsche Bundespost" ],
-			[ "20096", "Commodore" ],
-			[ "20511/223", "Kölner Stadtanzeiger" ],
-			[ "21212", "Verbraucher-Zentrale NRW" ],
-			[ "25800/0000", "Deutsche Bundesbahn" ],
-			[ "30003", "Formel Eins" ],
-			[ "30711", "Btx Südwest Datenbank GmbH" ],
-			[ "33033", "Eden" ],
-			[ "34034", "Frankfurter Allg. Zeitung" ],
-			[ "34344", "Neue Mediengesellschaft Ulm" ],
-			[ "35853", "ABIDA GmbH" ],
-			[ "40040/200", "Axel Springer Verlag" ],
-			[ "44479", "DIMDI" ],
-			[ "50257", "Computerwelt Btx-Info-Dienst" ],
-			[ "54004/04", "ÖVA Versicherungen" ],
-			[ "57575", "Lotto Toto" ],
-			[ "64064", "Markt & Technik" ],
-			[ "65432/0", "ADAC" ],
-			[ "67007", "Rheinpfalz Verlag/Druckerei" ],
-			[ "201474/75", "Rhein-Neckar-Zeitung" ],
-#			[ "208585", "eba Pressebüro und Verlag [BROKEN]" ],
-			[ "208888", "Neue Mediengesellschaft Ulm" ],
-			[ "402060", "AUTO & BTX WOLFSBURG" ],
-			[ "50707545", "CHIP Magazin" ],
-			[ "86553222", "Chaos Computer Club" ],
-			[ "505050035", "Steinfels Sprachreisen" ],
-			[ "920492040092", "Wolfgang Fritsch (BHP)" ]
-		]
-
-		links = { "10": User_UI.historic_link_from_str(start_page[0])}
-		i = 10
-		for page in pages:
-			links[str(i)] = User_UI.historic_link_from_str(page[0])
-			i += 1
-
-		meta = {
-			"publisher_name": "!BTX",
-			"include": "a",
-			"clear_screen": True,
-			"links": links,
-			"publisher_color": 7
-		}
-		sys.stderr.write("meta: " + pprint.pformat(meta) + "\n")
-		
-		data_cept = bytearray()
-		data_cept.extend(User_UI.create_title2("Historische Seiten: " + name))
-		data_cept.extend(b"\r\n")
-
-		if not index:
-			data_cept.extend(Cept.from_str(description))
-			data_cept.extend(b"\r\n\n")
-			data_cept.extend(User_UI.historic_line(start_page, 10))
-			data_cept.extend(b"\n")
-
-		start_with = 0
-		if index:
-			for i in range(0, index):
-				start_with += distribution[i]
-
-		if index >= len(distribution):
-			end = len(pages)
-		else:
-			end = start_with + distribution[index]
-		for i in range(start_with, end):
-			data_cept.extend(User_UI.historic_line(pages[i], i + 20))
-
-		data_cept.extend(Cept.set_cursor(23, 1))
-		data_cept.extend(Cept.set_palette(0))
-		data_cept.extend(Cept.set_line_bg_color_simple(4))
-		data_cept.extend(Cept.from_str("0 Zurück"))
-		
-		if index < len(distribution):
-			data_cept.extend(Cept.set_cursor(23, 33))
-			data_cept.extend(Cept.from_str("Weiter #"))
-
-		return (meta, Cept.compress(data_cept))
 
 	def create_page(user, pagenumber):
 		if pagenumber == "77a":

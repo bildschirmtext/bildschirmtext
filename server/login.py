@@ -1,6 +1,9 @@
+import sys
 import datetime
 
 from cept import Cept
+from user import User
+from util import Util
 
 class Login_UI:
 	def btx_logo():
@@ -52,6 +55,18 @@ class Login_UI:
 			], 6
 		)
 
+	def callback_login(cls, input_data, dummy):
+		if not User.login(input_data["user_id"], input_data["ext"], input_data["password"]):
+			sys.stderr.write("login incorrect\n")
+			msg = Util.create_custom_system_message("Ungültiger Teilnehmer/Kennwort -> #")
+			sys.stdout.buffer.write(msg)
+			sys.stdout.flush()
+			Util.wait_for_ter()
+			ret = Util.VALIDATE_INPUT_RESTART
+		else:
+			sys.stderr.write("login ok\n")
+			return Util.VALIDATE_INPUT_OK
+
 	def create_login():
 		meta = {
 			"clear_screen": False,
@@ -93,7 +108,7 @@ class Login_UI:
 						"bgcolor": 12,
 						"fgcolor": 3,
 						"type": "password",
-						"special": "$login_password"
+						"validate": "call:Login_UI.callback_login"
 					}
 				],
 				"confirm": False,

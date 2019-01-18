@@ -71,8 +71,6 @@ from cm.makePage import CM
 # paths
 PATH_DATA = "../data/"
 
-user = None
-
 # globals
 
 last_filename_palette = ""
@@ -231,19 +229,19 @@ def create_page(pageid):
 	# generated pages
 	if pageid.startswith("00000") or pageid == "9a":
 		# login
-		ret = Login_UI.create_page(user, pageid)
+		ret = Login_UI.create_page(User.user(), pageid)
 		basedir = PATH_DATA + "00000/"
 	if not ret and (pageid.startswith("71") or pageid.startswith("78")):
 		# historic page overview
-		ret = Historic_UI.create_page(user, pageid)
+		ret = Historic_UI.create_page(User.user(), pageid)
 		basedir = PATH_DATA + "8/"
 	if not ret and pageid.startswith("7"):
 		# user management
-		ret = User_UI.create_page(user, pageid)
+		ret = User_UI.create_page(User.user(), pageid)
 		basedir = PATH_DATA + "7/"
 	if not ret and pageid.startswith("8"):
 		# messaging
-		ret = Messaging_UI.create_page(user, pageid)
+		ret = Messaging_UI.create_page(User.user(), pageid)
 		basedir = PATH_DATA + "8/"
 	if not ret and pageid.startswith("555"):
 		# wikipedia
@@ -326,14 +324,6 @@ def create_page(pageid):
 	inputs = meta.get("inputs")
 	return (cept_1, cept_2, meta["links"], inputs, meta.get("autoplay", False))
 
-
-def login(input_data):
-	global user
-	
-	user = User.login(input_data["user_id"], input_data["ext"], input_data["password"])
-	
-	return not user is None
-
 def decode_call(s, arg1):
 	if s and s.startswith("call:"):
 		call = s[5:]
@@ -372,14 +362,6 @@ def validate_input(input_data, type, validate):
 		else:
 			msg = Util.create_custom_system_message("Mitbenutzernummer ungültig! -> #")
 			ret = Util.VALIDATE_INPUT_BAD
-	elif type == "$login_password":
-		if not login(input_data):
-			sys.stderr.write("login incorrect\n")
-			msg = Util.create_custom_system_message("Ungültiger Teilnehmer/Kennwort -> #")
-			ret = Util.VALIDATE_INPUT_RESTART
-		else:
-			sys.stderr.write("login ok\n")
-			return Util.VALIDATE_INPUT_OK
 	else:
 		return Util.VALIDATE_INPUT_OK
 
@@ -429,8 +411,6 @@ def system_message_sent_message():
 	Util.wait_for_ter()
 
 def handle_inputs(inputs):
-	global user
-
 	# create editors and draw backgrounds
 	editors = []
 	for input in inputs["fields"]:
@@ -487,7 +467,7 @@ def handle_inputs(inputs):
 	if inputs.get("confirm", True):
 		if confirm(inputs):
 			if inputs.get("action") == "send_message":
-				user.messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
+				User.user().messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
 				system_message_sent_message()
 			else:
 				pass # TODO we stay on the page, in the navigator?
@@ -564,7 +544,7 @@ for arg in sys.argv[1:]:
 	if arg == "--modem":
 		wait_for_dial_command()
 	elif arg.startswith("--user="):
-		user = User.login(arg[7:], "1", None, True)
+		User.login(arg[7:], "1", None, True)
 	elif arg.startswith("--page="):
 		desired_pageid = arg[7:]
 	elif arg.startswith("--baud="):
@@ -583,8 +563,8 @@ error = 0
 showing_message = False
 
 while True:
-	if user is not None:
-		user.stats.update()
+	if User.user() is not None:
+		User.user().stats.update()
 
 	if desired_pageid and desired_pageid[-1:].isdigit():
 		desired_pageid += "a"
