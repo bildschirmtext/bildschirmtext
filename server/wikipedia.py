@@ -57,8 +57,26 @@ class MediaWiki:
 
 PAGEID_PREFIX = "555"
 
-#WIKI_URL = "https://en.wikipedia.org/"
-WIKI_URL = "https://de.wikipedia.org/"
+wikipedias = {}
+
+class Wikipedia:
+	wiki_url = None
+	lang = None
+	mediawiki = None
+
+	def __init__(self, lang):
+		self.wiki_url = "https://" + lang + ".wikipedia.org/"
+		self.lang = lang
+		self.mediawiki = MediaWiki(self.wiki_url)
+		wikipedias[lang] = self
+
+	def get(lang):
+		wikipedia = wikipedias.get(lang)
+		if wikipedia:
+			return wikipedia
+		return Wikipedia(lang)
+
+
 
 class Wikipedia_UI:
 	def insert_toc(soup, page, link_index):
@@ -79,18 +97,22 @@ class Wikipedia_UI:
 				link_index += 1
 		return (link_index, page_and_link_index_for_link)
 
-	def callback_get_pageid_for_title(cls, dummy, title):
-		mediawiki = MediaWiki(WIKI_URL)
+	def get_pageid_for_title(lang, title):
+		mediawiki = Wikipedia.get(lang).mediawiki
 		wikiid = mediawiki.wikiid_for_title(title)
 		if wikiid:
 			return PAGEID_PREFIX + str(wikiid)
 		else:
 			return None
 
-	def create_wiki_page(wikiid, sheet_number):
+	def callback_get_pageid_for_title(cls, dummy, lang_title):
+		index = lang_title.find("/")
+		return Wikipedia_UI.get_pageid_for_title(lang_title[:index], lang_title[index + 1:])
+
+	def create_wiki_page(wikipedia, wikiid, sheet_number):
 		is_first_page = sheet_number == 0
 
-		mediawiki = MediaWiki(WIKI_URL)
+		mediawiki = wikipedia.mediawiki
 		# get HTML from server
 		(title, html) = mediawiki.html_for_wikiid(wikiid)
 
@@ -101,9 +123,9 @@ class Wikipedia_UI:
 				sys.stderr.write("tag: " + pprint.pformat(tag) + "\n")
 				for tag in tag.findAll('a'):
 					link = tag.get("href")
-					page_name = link[6:]
-					sys.stderr.write("a: " + pprint.pformat(page_name) + "\n")
-					wikiid = Wikipedia_UI.callback_get_pageid_for_title(None, None, page_name)[len(PAGEID_PREFIX):]
+					title = link[6:]
+					sys.stderr.write("a: " + pprint.pformat(title) + "\n")
+					wikiid = Wikipedia_UI.get_pageid_for_title(lang, title)[len(PAGEID_PREFIX):]
 					sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
 					return Wikipedia_UI.create_wiki_page(wikiid, sheet_number)
 
@@ -237,7 +259,7 @@ class Wikipedia_UI:
 			links_for_this_page = wiki_link_targets[sheet_number]
 
 		for l in links_for_this_page.keys():
-			meta["links"][str(l)] = "call:Wikipedia_UI.callback_get_pageid_for_title:" + str(links_for_this_page[l])
+			meta["links"][str(l)] = "call:Wikipedia_UI.callback_get_pageid_for_title:" + wikipedia.lang + "/" + str(links_for_this_page[l])
 
 		meta["clear_screen"] = is_first_page
 
@@ -308,7 +330,7 @@ class Wikipedia_UI:
 
 		return (meta, data_cept)
 
-	def create_search_page(basedir):
+	def create_search_page(wikipedia, basedir):
 		meta = {
 			"clear_screen": True,
 			"links": {
@@ -324,11 +346,11 @@ class Wikipedia_UI:
 						"width": 31,
 						"bgcolor": 0,
 						"fgcolor": 15,
-						"validate": "call:Wikipedia_UI.callback_validate_search"
+						"validate": "call:Wikipedia_UI.callback_validate_search:" + wikipedia.lang
 					}
 				],
 				"confirm": False,
-				"target": "call:Wikipedia_UI.callback_search"
+				"target": "call:Wikipedia_UI.callback_search:" + wikipedia.lang
 			},
 			"publisher_color": 0
 		}
@@ -368,8 +390,8 @@ class Wikipedia_UI:
 
 		return (meta, data_cept)
 
-	def callback_validate_search(cls, input_data, dummy):
-		mediawiki = MediaWiki(WIKI_URL)
+	def callback_validate_search(cls, input_data, lang):
+		mediawiki = Wikipedia.get(lang).mediawiki
 		pageid = mediawiki.title_for_search(input_data["search"])
 		if not pageid:
 			msg = Util.create_custom_system_message("Suchbegriff nicht gefunden! -> #")
@@ -380,17 +402,18 @@ class Wikipedia_UI:
 		else:
 			return Util.VALIDATE_INPUT_OK
 
-	def callback_search(cls, s, dummy):
-		mediawiki = MediaWiki(WIKI_URL)
+	def callback_search(cls, s, lang):
+		mediawiki = Wikipedia.get(lang).mediawiki
 		title = mediawiki.title_for_search(s["search"])
 		sys.stderr.write("TITLE: " + pprint.pformat(title) + "\n")
-		return Wikipedia_UI.callback_get_pageid_for_title(None, None, title)
+		return Wikipedia_UI.get_pageid_for_title(lang, title)
 
 	def create_page(pageid, basedir):
+		wikipedia = Wikipedia.get("de")
 		if pageid == PAGEID_PREFIX + "a":
-			return Wikipedia_UI.create_search_page(basedir)
+			return Wikipedia_UI.create_search_page(wikipedia, basedir)
 		elif pageid.startswith(PAGEID_PREFIX):
-			return Wikipedia_UI.create_wiki_page(int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
+			return Wikipedia_UI.create_wiki_page(wikipedia, int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
 		else:
 			return None
 
