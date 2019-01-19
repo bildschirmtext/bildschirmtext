@@ -286,7 +286,7 @@ class Cept(bytearray):
 			"Ô": Cept.g2code('C', mode) + b'O',
 			"Õ": Cept.g2code('D', mode) + b'O',
 			"Ö": Cept.g2code('H', mode) + b'O',
-			"×": b'?',    # not available
+			"×": Cept.g2code('4', mode),
 			"Ø": Cept.g2code('i', mode),
 			"Ù": Cept.g2code('A', mode) + b'U',
 			"Ú": Cept.g2code('B', mode) + b'U',
@@ -328,12 +328,56 @@ class Cept(bytearray):
 			"þ": Cept.g2code('|', mode),
 			"ÿ": Cept.g2code('H', mode) + b'y',
 
+			# arrows
+			"←": Cept.g2code(',', mode),
+			"↑": Cept.g2code('-', mode),
+			"→": Cept.g2code('.', mode),
+			"↓": Cept.g2code('/', mode),
+
+			# math
+			"⋅": Cept.g2code('7', mode),
+
+			# line feed
 			"\n": b'\r\n',
-			"\u2018": b'"', # smart quote
-			"\u201a": b'"', # smart quote
-			"\u201c": b'"', # smart quote
-			"\u201e": b'"', # smart quote
-			"–": b'-',
+
+			# latin other
+			"š": Cept.g2code('O', mode) + b's',
+			"Œ": Cept.g2code('j', mode),
+			"œ": Cept.g2code('z', mode),
+			"ł": Cept.g2code('x', mode),
+			"č": Cept.g2code('O', mode) + b'c',
+			"ć": Cept.g2code('B', mode) + b'c',
+
+			# greek
+			"ŋ": Cept.g2code('\x7e', mode),
+			"μ": Cept.g2code('5', mode),
+			"Ω": Cept.g2code('`', mode),
+
+			# punctuation
+			"‚": Cept.g2code(')', mode),
+			"’": Cept.g2code('9', mode),
+			"‘": Cept.g2code('9', mode),
+			"„": Cept.g2code('*', mode),
+			"“": Cept.g2code(':', mode),
+			"″": Cept.g2code(':', mode),
+			"–": Cept.g2code('P', mode),
+
+			# look-alikes
+			"†": b'+',
+			"−": b'-', # MINUS SIGN
+			"⟨": b'<',
+			"⟩": b'>',
+			" ": b' ', # NARROW NO-BREAK SPACE
+			" ": b' ', # THIN SPACE
+			" ": b' ', # ZERO WIDTH SPACE
+
+			# used in phonetic alphabet
+			"ˈ": b"'",
+			"ː": b":",
+
+			# XXX these change the length!!
+			"€": b'EUR',
+			"…": b'...',
 		}
 
 		for c in s1:
@@ -344,7 +388,7 @@ class Cept(bytearray):
 				s2.append(ord(c))
 			else:
 				s2.append(ord('?')) # non-Latin-1
-		sys.stderr.write("s2: " + str(s2) + "\n")
+				sys.stderr.write("unknown character: '" + c + "' (" + hex(ord(c)) + ")n '" + s1 + "'\n")
 		return s2
 
 	def code_to_str(s1):
