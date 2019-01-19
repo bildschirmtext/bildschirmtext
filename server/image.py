@@ -9,12 +9,6 @@ PIXEL_ASPECT_RATIO = 0.92
 
 class Image_UI:
 	def cept_from_image(url, colors = 16):
-
-		if colors == 16:
-			num_drcs = 47
-		else:
-			num_drcs = 94
-
 		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
 		if url.startswith("http://") or url.startswith("https://"):
 			image = Image.open(urllib.request.urlopen(url))
@@ -22,7 +16,24 @@ class Image_UI:
 			image = Image.open(url)
 		image.load()
 		(width, height) = image.size
-		sys.stderr.write("resolution: " + str(width) + "*" + str(height) + "\n")
+		sys.stderr.write("mode: " + image.mode + ", resolution: " + str(width) + "*" + str(height) + "\n")
+
+		is_grayscale = image.mode == "L" or image.mode == "LA"
+
+		# 4 shades of gray instead of 16, but double resolution
+		# disabled, PIL doesn't select good base colors
+#		if is_grayscale:
+#			colors = 4
+		# TODO: calling ImageMagick might give better results:
+		# e.g. $ convert in.jpg -resize 54x80\! -dither FloydSteinberg -colors 16 out.png
+
+		sys.stderr.write("target colors: " + str(colors) + "\n")
+
+		if colors == 16:
+			num_drcs = 47
+		else:
+			num_drcs = 94
+
 
 		# calculate character resolution
 		exact_res_x = math.sqrt(num_drcs * width / height)
