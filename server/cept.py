@@ -248,36 +248,103 @@ class Cept(bytearray):
 	
 	def from_str(s1, mode = 0):
 		s2 = bytearray()
+
+		conversion_table = {
+			"¤": b'$', # $ and ¤ are swapped
+			"$": Cept.g2code('$', mode), # $ and ¤ are swapped
+			"¦": b'?',    # not available
+			"¨": b'?',    # not available
+			"©": b'?',    # not available
+			"ª": b'?',    # not available
+			"\xad": "",   # soft hyphen
+			"®": b'?',    # not available
+			"¯": b'?',    # not available
+			"´": b'?',    # not available
+			"¸": b'?',    # not available
+			"¹": b'?',    # not available
+			"º": b'?',    # not available
+			"À": Cept.g2code('A', mode) + b'A',
+			"Á": Cept.g2code('B', mode) + b'A',
+			"Â": Cept.g2code('C', mode) + b'A',
+			"Ã": Cept.g2code('D', mode) + b'A',
+			"Ä": Cept.g2code('H', mode) + b'A',
+			"Å": Cept.g2code('J', mode) + b'A',
+			"Æ": Cept.g2code('a', mode),
+			"Ç": Cept.g2code('K', mode) + b'C',
+			"È": Cept.g2code('A', mode) + b'E',
+			"É": Cept.g2code('B', mode) + b'E',
+			"Ê": Cept.g2code('C', mode) + b'E',
+			"Ë": Cept.g2code('H', mode) + b'E',
+			"Ì": Cept.g2code('A', mode) + b'I',
+			"Í": Cept.g2code('B', mode) + b'I',
+			"Î": Cept.g2code('C', mode) + b'I',
+			"Ï": Cept.g2code('H', mode) + b'I',
+			"Ð": Cept.g2code('b', mode),
+			"Ñ": Cept.g2code('D', mode) + b'N',
+			"Ò": Cept.g2code('A', mode) + b'O',
+			"Ó": Cept.g2code('B', mode) + b'O',
+			"Ô": Cept.g2code('C', mode) + b'O',
+			"Õ": Cept.g2code('D', mode) + b'O',
+			"Ö": Cept.g2code('H', mode) + b'O',
+			"×": b'?',    # not available
+			"Ø": Cept.g2code('i', mode),
+			"Ù": Cept.g2code('A', mode) + b'U',
+			"Ú": Cept.g2code('B', mode) + b'U',
+			"Û": Cept.g2code('C', mode) + b'U',
+			"Ü": Cept.g2code('H', mode) + b'U',
+			"Ý": Cept.g2code('B', mode) + b'Y',
+			"Þ": Cept.g2code('l', mode),
+			"ß": Cept.g2code('{', mode),
+			"à": Cept.g2code('A', mode) + b'a',
+			"á": Cept.g2code('B', mode) + b'a',
+			"â": Cept.g2code('C', mode) + b'a',
+			"ã": Cept.g2code('D', mode) + b'a',
+			"ä": Cept.g2code('H', mode) + b'a',
+			"å": Cept.g2code('J', mode) + b'a',
+			"æ": Cept.g2code('q', mode),
+			"ç": Cept.g2code('K', mode) + b'c',
+			"è": Cept.g2code('A', mode) + b'e',
+			"é": Cept.g2code('B', mode) + b'e',
+			"ê": Cept.g2code('C', mode) + b'e',
+			"ë": Cept.g2code('H', mode) + b'e',
+			"ì": Cept.g2code('A', mode) + b'i',
+			"í": Cept.g2code('B', mode) + b'i',
+			"î": Cept.g2code('C', mode) + b'i',
+			"ï": Cept.g2code('H', mode) + b'i',
+			"ð": Cept.g2code('s', mode),
+			"ñ": Cept.g2code('D', mode) + b'n',
+			"ò": Cept.g2code('A', mode) + b'o',
+			"ó": Cept.g2code('B', mode) + b'o',
+			"ô": Cept.g2code('C', mode) + b'o',
+			"õ": Cept.g2code('D', mode) + b'o',
+			"ö": Cept.g2code('H', mode) + b'o',
+			"÷": Cept.g2code('8', mode),
+			"ø": Cept.g2code('u', mode),
+			"ù": Cept.g2code('A', mode) + b'u',
+			"ú": Cept.g2code('B', mode) + b'u',
+			"û": Cept.g2code('C', mode) + b'u',
+			"ü": Cept.g2code('H', mode) + b'u',
+			"ý": Cept.g2code('A', mode) + b'y',
+			"þ": Cept.g2code('|', mode),
+			"ÿ": Cept.g2code('H', mode) + b'y',
+
+			"\n": b'\r\n',
+			"\u2018": b'"', # smart quote
+			"\u201a": b'"', # smart quote
+			"\u201c": b'"', # smart quote
+			"\u201e": b'"', # smart quote
+			"–": b'-',
+		}
+
 		for c in s1:
-			# TODO: complete conversion!
-			if ord(c) == 0xe4:
-				s2.extend(Cept.g2code('H', mode) + b'a') # ä
-			elif ord(c) == 0xf6:
-				s2.extend(Cept.g2code('H', mode) + b'o') # ö
-			elif ord(c) == 0xfc:
-				s2.extend(Cept.g2code('H', mode) + b'u') # ü
-			elif ord(c) == 0xc4:
-				s2.extend(Cept.g2code('H', mode) + b'A') # Ä
-			elif ord(c) == 0xd6:
-				s2.extend(Cept.g2code('H', mode) + b'O') # Ö
-			elif ord(c) == 0xdc:
-				s2.extend(Cept.g2code('H', mode) + b'U') # Ü
-			elif ord(c) == 0xdf:
-				s2.extend(Cept.g2code('{', mode))        # ß
-			elif ord(c) == 0x0a:
-				s2.extend(b'\r\n')                       # \n
-			elif ord(c) == 0x201e:
-				s2.extend(b'"')
-			elif ord(c) == 0x201c:
-				s2.extend(b'"')
-			elif ord(c) == 0x2018:
-				s2.extend(b'"')
-			elif ord(c) == 0x201a:
-				s2.extend(b'"')
+			res = conversion_table.get(c)
+			if res:
+				s2.extend(res)
 			elif ord(c) < 256:
 				s2.append(ord(c))
 			else:
 				s2.append(ord('?')) # non-Latin-1
+		sys.stderr.write("s2: " + str(s2) + "\n")
 		return s2
 
 	def code_to_str(s1):
