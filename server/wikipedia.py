@@ -158,7 +158,7 @@ class Wikipedia_UI:
 					sys.stderr.write("a: " + pprint.pformat(title) + "\n")
 					wikiid = Wikipedia_UI.get_pageid_for_title(mediawiki.lang, title)[len(Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang)):]
 					sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
-					return Wikipedia_UI.create_article_page(wikiid, sheet_number)
+					return Wikipedia_UI.create_article_page(mediawiki, wikiid, sheet_number)
 
 		# extract URL of first image
 		image_url = None
@@ -388,18 +388,19 @@ class Wikipedia_UI:
 		# data is loading
 		data_cept.extend(Cept.show_cursor())
 
-		(palette, drcs, chars) = Image_UI.cept_from_image(basedir + "wikipedia.png")
+		(palette, drcs, chars) = Image_UI.cept_from_image(basedir + "wikipedia.png", colors = 4)
 
 		data_cept.extend(Cept.define_palette(palette))
 		data_cept.extend(drcs)
 
+		data_cept.extend(Cept.hide_cursor())
+
 		y = 6
 		for l in chars:
-			data_cept.extend(Cept.set_cursor(y, int((41 - 2 * len(chars[0])) / 2)))
+			data_cept.extend(Cept.set_cursor(y, int((41 - len(chars[0])) / 2)))
 			data_cept.extend(Cept.load_g0_drcs())
-			data_cept.extend(Cept.double_size())
 			data_cept.extend(l)
-			y += 2
+			y += 1
 
 		return (meta, data_cept)
 
