@@ -1,4 +1,5 @@
 import sys
+import math
 import pprint
 
 class Cept_page:
@@ -221,7 +222,7 @@ class Cept_page:
 
 	# API
 	def number_of_sheets(self):
-		return self.current_sheet() + 1
+		return math.ceil(len(self.lines_cept) / self.lines_per_sheet)
 
 	# API
 	def cept_for_sheet(self, sheet_number):
