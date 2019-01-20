@@ -10,6 +10,7 @@ class Cept_page:
 	italics = False
 	bold = False
 	link = False
+	code = False
 	dirty = False
 	title_image_width = 0
 	title_image_height = 0
@@ -49,6 +50,10 @@ class Cept_page:
 			self.data_cept.extend(Cept.set_fg_color(6))
 		elif self.bold:
 			self.data_cept.extend(Cept.set_fg_color(0))
+		if self.code:
+			self.data_cept.extend(Cept.set_bg_color(6))
+		else:
+			self.data_cept.extend(Cept.set_bg_color(7))
 		if self.link:
 			self.data_cept.extend(Cept.underline_on())
 			self.data_cept.extend(Cept.set_fg_color(4))
@@ -167,6 +172,16 @@ class Cept_page:
 		self.dirty = True
 
 	# API
+	def set_code_on(self):
+		self.code = True
+		self.dirty = True
+
+	# API
+	def set_code_off(self):
+		self.code = False
+		self.dirty = True
+
+	# API
 	def print(self, s, ignore_lf = False):
 		self.prev_sheet = self.current_sheet()
 
@@ -255,10 +270,10 @@ class Cept(bytearray):
 			"$": Cept.g2code('$', mode), # $ and ¤ are swapped
 			"¦": b'?',    # not available
 			"¨": b'?',    # not available
-			"©": b'?',    # not available
+			"©": Cept.g2code('S', mode),
 			"ª": b'?',    # not available
 			"\xad": "",   # soft hyphen
-			"®": b'?',    # not available
+			"®": Cept.g2code('R', mode),
 			"¯": b'?',    # not available
 			"´": b'?',    # not available
 			"¸": b'?',    # not available

@@ -92,6 +92,7 @@ class HTML_Converter:
 	links_for_page = []
 	pageid_without_sheet = None
 	soup = None
+	ignore_lf = True
 
 	def insert_toc(self, soup):
 		self.page_and_link_index_for_link = []
@@ -113,39 +114,7 @@ class HTML_Converter:
 	def convert(self, tags):
 		for t1 in tags:
 			if t1.name == "p":
-				for t2 in t1.children:
-					if t2.name is None:
-						self.page.print(t2, True)
-					elif t2.name == "span":
-						self.page.print(t2.get_text(), True)
-					elif t2.name == "i":
-						self.page.set_italics_on()
-						self.page.print(t2.get_text(), True)
-						self.page.set_italics_off()
-					elif t2.name == "b":
-						self.page.set_bold_on()
-						self.page.print(t2.get_text(), True)
-						self.page.set_bold_off()
-					elif t2.name == "a":
-						if t2["href"].startswith("/wiki/"): # links to different article
-							if self.page.current_sheet() != self.page.prev_sheet:
-								self.link_index = 10
-								# TODO: this breaks if the link
-								# goes across two sheets!
-
-							while len(self.wiki_link_targets) < self.page.current_sheet() + 1:
-								self.wiki_link_targets.append({})
-							self.wiki_link_targets[self.page.current_sheet()][self.link_index] = t2["href"][6:]
-
-							link_text = t2.get_text().replace("\n", "") + " [" + str(self.link_index) + "]"
-							self.page.set_link_on()
-							self.page.print(link_text)
-							self.link_index += 1
-							self.page.set_link_off()
-						else: # link to section or external link, just print the text
-							self.page.print(t2.get_text(), True)
-					else:
-						pass
+				self.convert(t1.children)
 				self.page.print("\n")
 
 				if self.first_paragraph:
@@ -165,11 +134,55 @@ class HTML_Converter:
 						self.links_for_page.append({})
 					self.links_for_page[link_page][str(link_name)] = self.pageid_without_sheet + chr(0x61 + self.page.current_sheet())
 
-#			elif t1.name == "ul":
-#				for t2 in t1.children:
-#					if t2.name == "li":
-#						self.page.print(t2.get_text(), True)
-#						self.page.print("\n")
+			elif t1.name is None:
+				self.page.print(t1, self.ignore_lf)
+			elif t1.name == "span":
+				self.page.print(t1.get_text(), self.ignore_lf)
+			elif t1.name == "i":
+				self.page.set_italics_on()
+				self.page.print(t1.get_text(), self.ignore_lf)
+				self.page.set_italics_off()
+			elif t1.name == "b":
+				self.page.set_bold_on()
+				self.page.print(t1.get_text(), self.ignore_lf)
+				self.page.set_bold_off()
+			elif t1.name == "a":
+				if t1["href"].startswith("/wiki/"): # links to different article
+					if self.page.current_sheet() != self.page.prev_sheet:
+						self.link_index = 10
+						# TODO: this breaks if the link
+						# goes across two sheets!
+
+					while len(self.wiki_link_targets) < self.page.current_sheet() + 1:
+						self.wiki_link_targets.append({})
+					self.wiki_link_targets[self.page.current_sheet()][self.link_index] = t1["href"][6:]
+
+					link_text = t1.get_text().replace("\n", "") + " [" + str(self.link_index) + "]"
+					self.page.set_link_on()
+					self.page.print(link_text)
+					self.link_index += 1
+					self.page.set_link_off()
+				else: # link to section or external link, just print the text
+					self.page.print(t1.get_text(), self.ignore_lf)
+
+			elif t1.name == "ul":
+				self.convert(t1.children)
+			elif t1.name == "code":
+				sys.stderr.write("code: " + pprint.pformat(t1) + "\n")
+				self.page.set_code_on()
+				self.convert(t1.children)
+				self.page.set_code_off()
+			elif t1.name == "li":
+				# TODO indentation
+				self.page.print("* ")
+				self.convert(t1.children)
+			elif t1.name == "pre":
+				sys.stderr.write("pre: " + pprint.pformat(t1) + "\n")
+				self.ignore_lf = False
+				self.convert(t1.children)
+				self.ignore_lf = True
+			else:
+				sys.stderr.write("ignoring tag: " + pprint.pformat(t1.name) + "\n")
 
 #		sys.stderr.write("self.wiki_link_targets: " + pprint.pformat(self.wiki_link_targets) + "\n")
 
