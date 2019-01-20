@@ -167,17 +167,19 @@ class HTML_Converter:
 
 			elif t1.name == "ul":
 				self.convert(t1.children)
+			elif t1.name == "ol":
+				self.convert(t1.children)
 			elif t1.name == "code":
-				sys.stderr.write("code: " + pprint.pformat(t1) + "\n")
 				self.page.set_code_on()
 				self.convert(t1.children)
 				self.page.set_code_off()
 			elif t1.name == "li":
 				# TODO indentation
-				self.page.print("* ")
+#				if self.page.x != 0:
+				self.page.print("* ") # TODO: ordered list
 				self.convert(t1.children)
+				self.page.print("\n")
 			elif t1.name == "pre":
-				sys.stderr.write("pre: " + pprint.pformat(t1) + "\n")
 				self.ignore_lf = False
 				self.convert(t1.children)
 				self.ignore_lf = True

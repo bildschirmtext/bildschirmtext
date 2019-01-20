@@ -41,8 +41,15 @@ class Cept_page:
 		if self.x == 0 and self.y % self.lines_per_sheet == 0:
 			# no empty first lines
 			return
+		self.reset_style()
 		self.data_cept.extend(Cept.repeat(" ", 40 - self.x))
+		self.resend_attributes()
 		self.create_new_line()
+
+	def reset_style(self):
+		self.data_cept.extend(Cept.set_fg_color(15))
+		self.data_cept.extend(Cept.set_bg_color(7))
+		self.data_cept.extend(Cept.underline_off())
 
 	def resend_attributes(self):
 #		sys.stderr.write("self.italics: " + pprint.pformat(["self.italics: ",self.italics , self.bold , self.link]) + "\n")
@@ -57,9 +64,8 @@ class Cept_page:
 		if self.link:
 			self.data_cept.extend(Cept.underline_on())
 			self.data_cept.extend(Cept.set_fg_color(4))
-		if not self.italics and not self.bold and not self.link:
-			self.data_cept.extend(Cept.set_fg_color(15))
-			self.data_cept.extend(Cept.underline_off())
+		if not self.italics and not self.bold and not self.link and not self.code:
+			self.reset_style()
 		self.dirty = False
 
 	def add_string(self, s):
@@ -100,12 +106,7 @@ class Cept_page:
 #				sys.stderr.write("B\n")
 				# word doesn't fit, print it (plus the space)
 				# into a new line
-				if self.link:
-					self.data_cept.extend(Cept.underline_off())
-				self.data_cept.extend(Cept.repeat(" ", 40 - self.x))
-				if self.link:
-					self.data_cept.extend(Cept.underline_on())
-				self.create_new_line()
+				self.print_newline()
 				self.add_string(s[:index + 1])
 				self.x += index
 				if ends_in_space:
@@ -376,6 +377,7 @@ class Cept(bytearray):
 			"„": Cept.g2code('*', mode),
 			"“": Cept.g2code(':', mode),
 			"″": Cept.g2code(':', mode),
+			"”": Cept.g2code(':', mode),
 			"–": Cept.g2code('P', mode),
 
 			# look-alikes
@@ -384,6 +386,7 @@ class Cept(bytearray):
 			"⟨": b'<',
 			"⟩": b'>',
 			"∗": b'*',
+			"‐": b'-',
 
 			# spaces
 			" ": b' ', # NARROW NO-BREAK SPACE
