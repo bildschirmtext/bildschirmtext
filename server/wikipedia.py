@@ -82,8 +82,7 @@ class Wikipedia(MediaWiki):
 
 PAGEID_PREFIX = "55"
 
-class HTML_Converter:
-	page = None
+class Cept_page_from_HTML(Cept_page):
 	link_index = None
 	wiki_link_targets = []
 	page_and_link_index_for_link = []
@@ -98,7 +97,7 @@ class HTML_Converter:
 		self.page_and_link_index_for_link = []
 		for t1 in soup.contents[0].children:
 			if t1.name in ["h2", "h3", "h4", "h5", "h6"]:
-				if self.page.current_sheet() != self.page.prev_sheet:
+				if self.current_sheet() != self.prev_sheet:
 					self.link_index = 10
 
 				level = int(t1.name[1])
@@ -107,81 +106,80 @@ class HTML_Converter:
 				entry = indent + t1.get_text().replace("\n", "")
 				padded = entry + ("." * 36)
 				padded = padded[:36]
-				self.page.print(padded + "[" + str(self.link_index) + "]")
-				self.page_and_link_index_for_link.append((self.page.current_sheet(), self.link_index))
+				self.print(padded + "[" + str(self.link_index) + "]")
+				self.page_and_link_index_for_link.append((self.current_sheet(), self.link_index))
 				self.link_index += 1
 
-	def convert(self, tags):
+	def insert_html_tags(self, tags):
 		for t1 in tags:
 			if t1.name == "p":
-				self.convert(t1.children)
-				self.page.print("\n")
+				self.insert_html_tags(t1.children)
+				self.print("\n")
 
 				if self.first_paragraph:
 					self.first_paragraph = False
 					self.insert_toc(self.soup)
 #					sys.stderr.write("self.page_and_link_index_for_link: " + pprint.pformat(self.page_and_link_index_for_link) + "\n")
-					self.page.print("\n")
+					self.print("\n")
 
 			elif t1.name in ["h2", "h3", "h4", "h5", "h6"]:
 				level = int(t1.name[1])
-				self.page.print_heading(level, t1.contents[0].get_text().replace("\n", ""))
+				self.print_heading(level, t1.contents[0].get_text().replace("\n", ""))
 #				sys.stderr.write("HEADING page " + str(page.current_sheet()) + ": " + pprint.pformat(t1.contents[0].get_text()) + "\n")
 				if self.page_and_link_index_for_link: # only if there is a TOC
 					(link_page, link_name) = self.page_and_link_index_for_link[self.link_count]
 					self.link_count += 1
 					while len(self.links_for_page) < link_page + 1:
 						self.links_for_page.append({})
-					self.links_for_page[link_page][str(link_name)] = self.pageid_without_sheet + chr(0x61 + self.page.current_sheet())
+					self.links_for_page[link_page][str(link_name)] = self.pageid_without_sheet + chr(0x61 + self.current_sheet())
 
 			elif t1.name is None:
-				self.page.print(t1, self.ignore_lf)
+				self.print(t1, self.ignore_lf)
 			elif t1.name == "span":
-				self.page.print(t1.get_text(), self.ignore_lf)
+				self.print(t1.get_text(), self.ignore_lf)
 			elif t1.name == "i":
-				self.page.set_italics_on()
-				self.page.print(t1.get_text(), self.ignore_lf)
-				self.page.set_italics_off()
+				self.set_italics_on()
+				self.print(t1.get_text(), self.ignore_lf)
+				self.set_italics_off()
 			elif t1.name == "b":
-				self.page.set_bold_on()
-				self.page.print(t1.get_text(), self.ignore_lf)
-				self.page.set_bold_off()
+				self.set_bold_on()
+				self.print(t1.get_text(), self.ignore_lf)
+				self.set_bold_off()
 			elif t1.name == "a":
 				if t1["href"].startswith("/wiki/"): # links to different article
-					if self.page.current_sheet() != self.page.prev_sheet:
+					if self.current_sheet() != self.prev_sheet:
 						self.link_index = 10
 						# TODO: this breaks if the link
 						# goes across two sheets!
 
-					while len(self.wiki_link_targets) < self.page.current_sheet() + 1:
+					while len(self.wiki_link_targets) < self.current_sheet() + 1:
 						self.wiki_link_targets.append({})
-					self.wiki_link_targets[self.page.current_sheet()][self.link_index] = t1["href"][6:]
+					self.wiki_link_targets[self.current_sheet()][self.link_index] = t1["href"][6:]
 
 					link_text = t1.get_text().replace("\n", "") + " [" + str(self.link_index) + "]"
-					self.page.set_link_on()
-					self.page.print(link_text)
+					self.set_link_on()
+					self.print(link_text)
 					self.link_index += 1
-					self.page.set_link_off()
+					self.set_link_off()
 				else: # link to section or external link, just print the text
-					self.page.print(t1.get_text(), self.ignore_lf)
+					self.print(t1.get_text(), self.ignore_lf)
 
 			elif t1.name == "ul":
-				self.convert(t1.children)
+				self.insert_html_tags(t1.children)
 			elif t1.name == "ol":
-				self.convert(t1.children)
+				self.insert_html_tags(t1.children)
 			elif t1.name == "code":
-				self.page.set_code_on()
-				self.convert(t1.children)
-				self.page.set_code_off()
+				self.set_code_on()
+				self.insert_html_tags(t1.children)
+				self.set_code_off()
 			elif t1.name == "li":
 				# TODO indentation
-#				if self.page.x != 0:
-				self.page.print("* ") # TODO: ordered list
-				self.convert(t1.children)
-				self.page.print("\n")
+				self.print("* ") # TODO: ordered list
+				self.insert_html_tags(t1.children)
+				self.print("\n")
 			elif t1.name == "pre":
 				self.ignore_lf = False
-				self.convert(t1.children)
+				self.insert_html_tags(t1.children)
 				self.ignore_lf = True
 			else:
 				sys.stderr.write("ignoring tag: " + pprint.pformat(t1.name) + "\n")
@@ -261,6 +259,12 @@ class Wikipedia_UI:
 
 		page = Cept_page()
 
+
+		#
+		# conversion
+		#
+		page = Cept_page_from_HTML()
+
 		# tell page renderer to leave room for the image in the top right of the first sheet
 		if image_url is not None:
 			page.title_image_width = len(image_chars[0])
@@ -269,15 +273,10 @@ class Wikipedia_UI:
 		# XXX why is this necessary???
 		page.lines_cept = []
 
-		#
-		# conversion
-		#
-		c = HTML_Converter()
-		c.page = page
-		c.soup = soup
-		c.link_index = 10
-		c.pageid_without_sheet = Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang) + str(wikiid)
-		c.convert(soup.contents[0].children)
+		page.soup = soup
+		page.link_index = 10
+		page.pageid_without_sheet = Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang) + str(wikiid)
+		page.insert_html_tags(soup.contents[0].children)
 
 		# create one page
 
@@ -288,17 +287,17 @@ class Wikipedia_UI:
 			"publisher_color": 0
 		}
 
-		if len(c.links_for_page) < sheet_number + 1:
+		if len(page.links_for_page) < sheet_number + 1:
 			meta["links"] = {}
 		else:
-			meta["links"] = c.links_for_page[sheet_number]
+			meta["links"] = page.links_for_page[sheet_number]
 
 		meta["links"]["0"] = Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang)
 
-		if len(c.wiki_link_targets) < sheet_number + 1:
+		if len(page.wiki_link_targets) < sheet_number + 1:
 			links_for_this_page = {}
 		else:
-			links_for_this_page = c.wiki_link_targets[sheet_number]
+			links_for_this_page = page.wiki_link_targets[sheet_number]
 
 		for l in links_for_this_page.keys():
 			meta["links"][str(l)] = "call:Wikipedia_UI.callback_get_pageid_for_title:" + mediawiki.lang + "/" + str(links_for_this_page[l])
