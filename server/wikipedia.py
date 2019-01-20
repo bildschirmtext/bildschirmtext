@@ -89,7 +89,7 @@ class Cept_page_from_HTML(Cept_page):
 	first_paragraph = True
 	link_count = 0
 	links_for_page = []
-	pageid_without_sheet = None
+	pageid_base = None
 	soup = None
 	ignore_lf = True
 
@@ -131,7 +131,7 @@ class Cept_page_from_HTML(Cept_page):
 					self.link_count += 1
 					while len(self.links_for_page) < link_page + 1:
 						self.links_for_page.append({})
-					self.links_for_page[link_page][str(link_name)] = self.pageid_without_sheet + chr(0x61 + self.current_sheet())
+					self.links_for_page[link_page][str(link_name)] = self.pageid_base + chr(0x61 + self.current_sheet())
 
 			elif t1.name is None:
 				self.print(t1, self.ignore_lf)
@@ -228,7 +228,7 @@ class Wikipedia_UI:
 
 		return soup
 
-	def create_article_page(mediawiki, wikiid, sheet_number):
+	def create_article_page(mediawiki, pageid_prefix, wikiid, sheet_number):
 		is_first_page = sheet_number == 0
 
 		# get HTML from server
@@ -245,7 +245,7 @@ class Wikipedia_UI:
 					sys.stderr.write("a: " + pprint.pformat(title) + "\n")
 					wikiid = Wikipedia_UI.get_pageid_for_title(mediawiki.lang, title)[len(Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang)):]
 					sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
-					return Wikipedia_UI.create_article_page(mediawiki, wikiid, sheet_number)
+					return Wikipedia_UI.create_article_page(mediawiki, pageid_prefix, wikiid, sheet_number)
 
 		# extract URL of first image
 		image_url = None
@@ -275,7 +275,7 @@ class Wikipedia_UI:
 
 		page.soup = soup
 		page.link_index = 10
-		page.pageid_without_sheet = Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang) + str(wikiid)
+		page.pageid_base = str(pageid_prefix) + str(wikiid)
 		page.insert_html_tags(soup.contents[0].children)
 
 		# create one page
@@ -460,7 +460,7 @@ class Wikipedia_UI:
 			if len(pageid) == 4:
 				return Wikipedia_UI.create_search_page(wikipedia, basedir)
 			else:
-				return Wikipedia_UI.create_article_page(wikipedia, int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
+				return Wikipedia_UI.create_article_page(wikipedia, int(pageid[:3]), int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
 		else:
 			return None
 
