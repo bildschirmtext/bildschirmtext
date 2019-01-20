@@ -107,13 +107,6 @@ class Image_UI:
 
 		# create drcs
 		data_drcs = bytearray()
-		if colors == 4:
-			data_drcs.extend(b'\x1f\x23\x20\x28\x20\x40\x4b\x42') # start defining 6x10 @ 16c
-		elif colors == 16:
-			data_drcs.extend(b'\x1f\x23\x20\x28\x20\x40\x4b\x44') # start defining 6x10 @ 16c
-		else:
-			error()
-		data_drcs.extend(b'\x1f\x23\x21') # define starting at char 0x21
 
 		if colors == 4:
 			num_bits = 2
@@ -158,14 +151,28 @@ class Image_UI:
 #					sys.stderr.write("data_drcs_block: " + pprint.pformat(data_drcs_block) + "\n")
 					data_drcs.extend(data_drcs_block)
 
+		sys.stderr.write("DRCs compressed " + str(40 * res_x * res_y) + " down to " + str(len(data_drcs)) + "\n")
+
+		data_drcs_header = bytearray()
 		if colors == 4:
+			data_drcs_header.extend(b'\x1f\x23\x20\x28\x20\x40\x4b\x42') # start defining 6x10 @ 16c
+		elif colors == 16:
+			data_drcs_header.extend(b'\x1f\x23\x20\x28\x20\x40\x4b\x44') # start defining 6x10 @ 16c
+		else:
+			error()
+		data_drcs_header.extend(b'\x1f\x23\x21') # define starting at char 0x21
+
+		# prepend
+		data_drcs[0:0] = data_drcs_header
+
+		# append
+		if colors == 4:
+			# set colors to 16, 17, 18, 19
 			data_drcs.extend(b'\x1f\x26\x20\x22\x20\x35\x40')
 			data_drcs.extend(b'\x1f\x26\x30\x50')
 			data_drcs.extend(b'\x1f\x26\x31\x51')
 			data_drcs.extend(b'\x1f\x26\x32\x52')
 			data_drcs.extend(b'\x1f\x26\x33\x53')
-
-		sys.stderr.write("DRCs compressed " + str(40 * res_x * res_y) + " down to " + str(len(data_drcs)) + "\n")
 
 		# create characters to print
 		if colors == 16:
