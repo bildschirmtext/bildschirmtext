@@ -22,6 +22,7 @@ class Cept_page_from_HTML(Cept_page):
 	pageid_base = None
 	soup = None
 	ignore_lf = True
+	article_prefix = None
 
 	def insert_toc(self, soup):
 		self.page_and_link_index_for_link = []
@@ -76,7 +77,7 @@ class Cept_page_from_HTML(Cept_page):
 				self.print(t1.get_text(), self.ignore_lf)
 				self.set_bold_off()
 			elif t1.name == "a":
-				if t1["href"].startswith("/wiki/"): # links to different article
+				if t1["href"].startswith(self.article_prefix): # links to different article
 					if self.current_sheet() != self.prev_sheet:
 						self.link_index = 10
 						# TODO: this breaks if the link
@@ -84,7 +85,7 @@ class Cept_page_from_HTML(Cept_page):
 
 					while len(self.wiki_link_targets) < self.current_sheet() + 1:
 						self.wiki_link_targets.append({})
-					self.wiki_link_targets[self.current_sheet()][self.link_index] = t1["href"][6:]
+					self.wiki_link_targets[self.current_sheet()][self.link_index] = t1["href"][len(self.article_prefix):]
 
 					link_text = t1.get_text().replace("\n", "") + " [" + str(self.link_index) + "]"
 					self.set_link_on()
@@ -125,13 +126,15 @@ class MediaWiki:
 	search_string = None
 	pageid_prefix = None
 	id = None
+	api_prefix = "/wiki/"
+	article_prefix = "/wiki/index.php/"
 
 	# maps urls to json
 	http_cache = {}
 
 	def __init__(self, wiki_url):
-		if not wiki_url.endswith("/"):
-			wiki_url += "/"
+		if wiki_url.endswith("/"):
+			wiki_url = wiki_url[:-1]
 		self.wiki_url = wiki_url
 		self.id = len(mediawiki_from_id)
 		mediawiki_from_id.append(self)
@@ -142,22 +145,24 @@ class MediaWiki:
 			sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
 			contents = urllib.request.urlopen(url).read()
 			j = json.loads(contents)
-#			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
+			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
 			self.http_cache[url] = j
 		return j
 
 	def title_for_search(self, search):
 		sys.stderr.write("search: " + pprint.pformat(search) + "\n")
-		j = self.fetch_json_from_server(self.wiki_url + "w/api.php?action=opensearch&search=" + urllib.parse.quote_plus(search) + "&format=json")
+		j = self.fetch_json_from_server(self.wiki_url + self.api_prefix + "api.php?action=opensearch&search=" + urllib.parse.quote_plus(search) + "&format=json")
 		links = j[3]
 		if not links:
 			return None
-		return links[0][len(self.wiki_url + "wiki/"):]
+		sys.stderr.write("self.wiki_url: " + pprint.pformat(self.wiki_url) + "\n")
+		sys.stderr.write("self.article_prefix: " + pprint.pformat(self.article_prefix) + "\n")
+		return links[0][len(self.base_url() + self.article_prefix):]
 
 	def wikiid_for_title(self, title):
 		title = title.split("#")[0] # we ignore links to sections
 		sys.stderr.write("title: " + pprint.pformat(title) + "\n")
-		j = self.fetch_json_from_server(self.wiki_url + "w/api.php?action=query&titles=" + title + "&format=json")
+		j = self.fetch_json_from_server(self.wiki_url + self.api_prefix + "api.php?action=query&titles=" + title + "&format=json")
 		pages = j["query"]["pages"]
 		wikiid = list(pages.keys())[0]
 		sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
@@ -166,15 +171,24 @@ class MediaWiki:
 	def pageid_for_title(self, title):
 		wikiid = self.wikiid_for_title(title)
 		if wikiid:
+			sys.stderr.write("self.pageid_prefix: " + pprint.pformat(self.pageid_prefix) + "\n")
 			return self.pageid_prefix + str(wikiid)
 		else:
 			return None
 
 	def html_for_wikiid(self, wikiid):
-		j = self.fetch_json_from_server(self.wiki_url + "w/api.php?action=parse&prop=text&pageid=" + str(wikiid) + "&format=json")
+		j = self.fetch_json_from_server(self.wiki_url + self.api_prefix + "api.php?action=parse&prop=text&pageid=" + str(wikiid) + "&format=json")
 		title = j["parse"]["title"]
 		html = j["parse"]["text"]["*"]
 		return (title, html)
+
+	def base_url(self):
+		p = urllib.parse.urlparse(self.wiki_url)
+		return '{uri.scheme}://{uri.netloc}'.format(uri=p)
+
+	def base_scheme(self):
+		p = urllib.parse.urlparse(self.wiki_url)
+		return '{uri.scheme}://'.format(uri=p)
 
 	def get_from_wiki_url(wiki_url):
 		mediawiki = mediawiki_from_wiki_url.get(wiki_url)
@@ -185,9 +199,6 @@ class MediaWiki:
 	def get_from_id(id):
 		sys.stderr.write("mediawiki_from_wiki_url: " + pprint.pformat(mediawiki_from_wiki_url) + "\n")
 		return mediawiki_from_id[id]
-
-
-PAGEID_PREFIX = "55"
 
 class MediaWiki_UI:
 
@@ -217,7 +228,7 @@ class MediaWiki_UI:
 
 		return soup
 
-	def create_article_page(mediawiki, pageid_prefix, wikiid, sheet_number):
+	def create_article_page(mediawiki, wikiid, sheet_number):
 		is_first_page = sheet_number == 0
 
 		# get HTML from server
@@ -235,13 +246,17 @@ class MediaWiki_UI:
 					sys.stderr.write("a: " + pprint.pformat(title) + "\n")
 					wikiid = mediawiki.wikiid_for_title(title)
 					sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
-					return MediaWiki_UI.create_article_page(mediawiki, pageid_prefix, wikiid, sheet_number)
+					return MediaWiki_UI.create_article_page(mediawiki, wikiid, sheet_number)
 
 		# extract URL of first image
 		image_url = None
 		for tag in soup.contents[0].findAll('img'):
 			if tag.get("class") == ["thumbimage"]:
-				image_url = "https:" + tag.get("src")
+				image_url = tag.get("src")
+				if image_url.startswith("//"): # same scheme
+					image_url = mediawiki.base_scheme() + image_url[2:]
+				if image_url.startswith("/"): # same scheme + host
+					image_url = mediawiki.base_url() + image_url
 				(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(image_url)
 				break
 
@@ -255,6 +270,8 @@ class MediaWiki_UI:
 		#
 		page = Cept_page_from_HTML()
 
+		page.article_prefix = mediawiki.article_prefix
+
 		# tell page renderer to leave room for the image in the top right of the first sheet
 		if image_url is not None:
 			page.title_image_width = len(image_chars[0])
@@ -265,7 +282,7 @@ class MediaWiki_UI:
 
 		page.soup = soup
 		page.link_index = 10
-		page.pageid_base = str(pageid_prefix) + str(wikiid)
+		page.pageid_base = mediawiki.pageid_prefix + str(wikiid)
 		page.insert_html_tags(soup.contents[0].children)
 
 		# create one page
@@ -282,7 +299,7 @@ class MediaWiki_UI:
 		else:
 			meta["links"] = page.links_for_page[sheet_number]
 
-		meta["links"]["0"] = pageid_prefix
+		meta["links"]["0"] = mediawiki.pageid_prefix
 
 		if len(page.wiki_link_targets) < sheet_number + 1:
 			links_for_this_page = {}
@@ -429,8 +446,8 @@ class MediaWiki_UI:
 
 	def callback_validate_search(cls, input_data, id):
 		mediawiki = MediaWiki.get_from_id(int(id))
-		pageid = mediawiki.title_for_search(input_data["search"])
-		if not pageid:
+		title = mediawiki.title_for_search(input_data["search"])
+		if not title:
 			msg = Util.create_custom_system_message("Suchbegriff nicht gefunden! -> #")
 			sys.stdout.buffer.write(msg)
 			sys.stdout.flush()
@@ -449,17 +466,34 @@ class MediaWiki_UI:
 		return
 
 	def create_page(pageid, basedir):
-		if re.search("^" + PAGEID_PREFIX + "\d", pageid):
+		WIKIPEDIA_PAGEID_PREFIX = "55"
+		CONGRESS_PAGEID_PREFIX = "35"
+		if re.search("^" + WIKIPEDIA_PAGEID_PREFIX + "\d", pageid):
 			lang = { 0: "en", 5: "de" }.get(int(pageid[2]))
 			wiki_url = "https://" + lang + ".wikipedia.org/"
 			mediawiki = MediaWiki.get_from_wiki_url(wiki_url)
-			mediawiki.pageid_prefix = PAGEID_PREFIX + pageid[2]
+			mediawiki.api_prefix = "/w/"
+			mediawiki.article_prefix = "/wiki/"
+			mediawiki.pageid_prefix = WIKIPEDIA_PAGEID_PREFIX + pageid[2]
 			mediawiki.title = { "en": "Wikipedia - The Free Encyclopedia", "de": "Wikipedia - die freie Enzyklopädie" }.get(lang)
 			mediawiki.search_string = { "en": "Search: ", "de": " Suche: " }.get(lang)
 			if len(pageid) == 4:
 				return MediaWiki_UI.create_search_page(mediawiki, basedir)
 			else:
-				return MediaWiki_UI.create_article_page(mediawiki, int(pageid[:3]), int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
+				return MediaWiki_UI.create_article_page(mediawiki, int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
+		if re.search("^" + CONGRESS_PAGEID_PREFIX, pageid):
+			sys.stderr.write("pageid: " + pprint.pformat(pageid) + "\n")
+#			wiki_url = "https://events.ccc.de/congress/2018/wiki/index.php"
+			wiki_url = "https://events.ccc.de/congress/2018/"
+			mediawiki = MediaWiki.get_from_wiki_url(wiki_url)
+			mediawiki.article_prefix = "/congress/2018/wiki/index.php/"
+			mediawiki.pageid_prefix = CONGRESS_PAGEID_PREFIX
+			mediawiki.title = "35C3 Wiki"
+			mediawiki.search_string = "Search: "
+			if len(pageid) == 3:
+				return MediaWiki_UI.create_search_page(mediawiki, basedir)
+			else:
+				return MediaWiki_UI.create_article_page(mediawiki, int(pageid[2:-1]), ord(pageid[-1]) - ord("a"))
 		else:
 			return None
 

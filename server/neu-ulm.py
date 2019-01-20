@@ -247,6 +247,10 @@ def create_page(pageid):
 		# wikipedia
 		basedir = PATH_DATA + "55/"
 		ret = MediaWiki_UI.create_page(pageid, basedir)
+	if not ret and pageid.startswith("35"):
+		# Congress Wiki
+		basedir = PATH_DATA + "55/"
+		ret = MediaWiki_UI.create_page(pageid, basedir)
 	if not ret and pageid.startswith("666"):
 		# images
 		ret = Image_UI.create_page(pageid)
@@ -325,6 +329,7 @@ def create_page(pageid):
 	return (cept_1, cept_2, meta["links"], inputs, meta.get("autoplay", False))
 
 def decode_call(s, arg1):
+	sys.stderr.write("s: " + pprint.pformat(s) + "\n")
 	if s and s.startswith("call:"):
 		call = s[5:]
 		colon = call.find(":")
