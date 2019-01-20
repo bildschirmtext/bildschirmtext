@@ -387,6 +387,7 @@ class Cept(bytearray):
 			"⟩": b'>',
 			"∗": b'*',
 			"‐": b'-',
+			"—": b'-',
 
 			# spaces
 			" ": b' ', # NARROW NO-BREAK SPACE

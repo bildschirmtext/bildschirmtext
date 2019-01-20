@@ -63,7 +63,7 @@ from messaging import Messaging
 from messaging import Messaging_UI
 from login import Login_UI
 from historic import Historic_UI
-from wikipedia import Wikipedia_UI
+from wikipedia import MediaWiki_UI
 from image import Image_UI
 
 from cm.makePage import CM
@@ -246,7 +246,7 @@ def create_page(pageid):
 	if not ret and pageid.startswith("55"):
 		# wikipedia
 		basedir = PATH_DATA + "55/"
-		ret = Wikipedia_UI.create_page(pageid, basedir)
+		ret = MediaWiki_UI.create_page(pageid, basedir)
 	if not ret and pageid.startswith("666"):
 		# images
 		ret = Image_UI.create_page(pageid)

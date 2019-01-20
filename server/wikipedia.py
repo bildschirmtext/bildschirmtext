@@ -12,76 +12,6 @@ from cept import Cept_page
 from image import Image_UI
 from util import Util
 
-# maps urls to json
-http_cache = {}
-
-class MediaWiki:
-	wiki_url = None
-
-	def __init__(self, wiki_url):
-		if not wiki_url.endswith("/"):
-			wiki_url += "/"
-		self.wiki_url = wiki_url
-
-	def fetch_json_from_server(self, url):
-		j = http_cache.get(url)
-		if not j :
-			sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
-			contents = urllib.request.urlopen(url).read()
-			j = json.loads(contents)
-#			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
-			http_cache[url] = j
-		return j
-
-	def title_for_search(self, search):
-		sys.stderr.write("search: " + pprint.pformat(search) + "\n")
-		j = self.fetch_json_from_server(self.wiki_url + "w/api.php?action=opensearch&search=" + urllib.parse.quote_plus(search) + "&format=json")
-		links = j[3]
-		if not links:
-			return None
-		return links[0][len(self.wiki_url + "wiki/"):]
-
-	def wikiid_for_title(self, title):
-		title = title.split("#")[0] # we ignore links to sections
-		sys.stderr.write("title: " + pprint.pformat(title) + "\n")
-		j = self.fetch_json_from_server(self.wiki_url + "w/api.php?action=query&titles=" + title + "&format=json")
-		pages = j["query"]["pages"]
-		wikiid = list(pages.keys())[0]
-		sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
-		return wikiid
-
-	def html_for_wikiid(self, wikiid):
-		j = self.fetch_json_from_server(self.wiki_url + "w/api.php?action=parse&prop=text&pageid=" + str(wikiid) + "&format=json")
-		title = j["parse"]["title"]
-		html = j["parse"]["text"]["*"]
-		return (title, html)
-
-wikipedias = {}
-
-class Wikipedia(MediaWiki):
-	wiki_url = None
-	lang = None
-
-	def __init__(self, lang):
-		super(Wikipedia, self).__init__("https://" + lang + ".wikipedia.org/")
-		self.lang = lang
-		wikipedias[lang] = self
-
-	def get(lang):
-		wikipedia = wikipedias.get(lang)
-		if wikipedia:
-			return wikipedia
-		return Wikipedia(lang)
-
-	def title(self):
-		return { "en": "Wikipedia - The Free Encyclopedia", "de": "Wikipedia - die freie Enzyklopädie" }.get(self.lang)
-
-	def search_string(self):
-		return { "en": "Search: ", "de": " Suche: " }.get(self.lang)
-
-
-PAGEID_PREFIX = "55"
-
 class Cept_page_from_HTML(Cept_page):
 	link_index = None
 	wiki_link_targets = []
@@ -186,21 +116,80 @@ class Cept_page_from_HTML(Cept_page):
 
 #		sys.stderr.write("self.wiki_link_targets: " + pprint.pformat(self.wiki_link_targets) + "\n")
 
+mediawiki_from_wiki_url = {}
+mediawiki_from_id = []
 
-class Wikipedia_UI:
-	def pageid_prefix_for_lang(lang):
-		return PAGEID_PREFIX + str({ "en": 0, "de": 5 }.get(lang))
+class MediaWiki:
+	wiki_url = None
+	title = None
+	search_string = None
+	pageid_prefix = None
+	id = None
 
-	def lang_from_langdigit(langdigit):
-		return { 0: "en", 5: "de" }.get(langdigit)
+	# maps urls to json
+	http_cache = {}
 
-	def get_pageid_for_title(lang, title):
-		mediawiki = Wikipedia.get(lang)
-		wikiid = mediawiki.wikiid_for_title(title)
+	def __init__(self, wiki_url):
+		if not wiki_url.endswith("/"):
+			wiki_url += "/"
+		self.wiki_url = wiki_url
+		self.id = len(mediawiki_from_id)
+		mediawiki_from_id.append(self)
+
+	def fetch_json_from_server(self, url):
+		j = self.http_cache.get(url)
+		if not j :
+			sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
+			contents = urllib.request.urlopen(url).read()
+			j = json.loads(contents)
+#			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
+			self.http_cache[url] = j
+		return j
+
+	def title_for_search(self, search):
+		sys.stderr.write("search: " + pprint.pformat(search) + "\n")
+		j = self.fetch_json_from_server(self.wiki_url + "w/api.php?action=opensearch&search=" + urllib.parse.quote_plus(search) + "&format=json")
+		links = j[3]
+		if not links:
+			return None
+		return links[0][len(self.wiki_url + "wiki/"):]
+
+	def wikiid_for_title(self, title):
+		title = title.split("#")[0] # we ignore links to sections
+		sys.stderr.write("title: " + pprint.pformat(title) + "\n")
+		j = self.fetch_json_from_server(self.wiki_url + "w/api.php?action=query&titles=" + title + "&format=json")
+		pages = j["query"]["pages"]
+		wikiid = list(pages.keys())[0]
+		sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
+		return wikiid
+
+	def pageid_for_title(self, title):
+		wikiid = self.wikiid_for_title(title)
 		if wikiid:
-			return Wikipedia_UI.pageid_prefix_for_lang(lang) + str(wikiid)
+			return self.pageid_prefix + str(wikiid)
 		else:
 			return None
+
+	def html_for_wikiid(self, wikiid):
+		j = self.fetch_json_from_server(self.wiki_url + "w/api.php?action=parse&prop=text&pageid=" + str(wikiid) + "&format=json")
+		title = j["parse"]["title"]
+		html = j["parse"]["text"]["*"]
+		return (title, html)
+
+	def get_from_wiki_url(wiki_url):
+		mediawiki = mediawiki_from_wiki_url.get(wiki_url)
+		if mediawiki:
+			return mediawiki
+		return MediaWiki(wiki_url)
+
+	def get_from_id(id):
+		sys.stderr.write("mediawiki_from_wiki_url: " + pprint.pformat(mediawiki_from_wiki_url) + "\n")
+		return mediawiki_from_id[id]
+
+
+PAGEID_PREFIX = "55"
+
+class MediaWiki_UI:
 
 	def simplify_html(soup):
 		# div are usually boxes -> remove
@@ -236,6 +225,7 @@ class Wikipedia_UI:
 
 		soup = BeautifulSoup(html, 'html.parser')
 
+		# handle redirects
 		for tag in soup.contents[0].findAll('div'):
 			if tag.get("class") == ["redirectMsg"]:
 				sys.stderr.write("tag: " + pprint.pformat(tag) + "\n")
@@ -243,9 +233,9 @@ class Wikipedia_UI:
 					link = tag.get("href")
 					title = link[6:]
 					sys.stderr.write("a: " + pprint.pformat(title) + "\n")
-					wikiid = Wikipedia_UI.get_pageid_for_title(mediawiki.lang, title)[len(Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang)):]
+					wikiid = mediawiki.wikiid_for_title(title)
 					sys.stderr.write("wikiid: " + pprint.pformat(wikiid) + "\n")
-					return Wikipedia_UI.create_article_page(mediawiki, pageid_prefix, wikiid, sheet_number)
+					return MediaWiki_UI.create_article_page(mediawiki, pageid_prefix, wikiid, sheet_number)
 
 		# extract URL of first image
 		image_url = None
@@ -255,7 +245,7 @@ class Wikipedia_UI:
 				(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(image_url)
 				break
 
-		soup = Wikipedia_UI.simplify_html(soup)
+		soup = MediaWiki_UI.simplify_html(soup)
 
 		page = Cept_page()
 
@@ -292,7 +282,7 @@ class Wikipedia_UI:
 		else:
 			meta["links"] = page.links_for_page[sheet_number]
 
-		meta["links"]["0"] = Wikipedia_UI.pageid_prefix_for_lang(mediawiki.lang)
+		meta["links"]["0"] = pageid_prefix
 
 		if len(page.wiki_link_targets) < sheet_number + 1:
 			links_for_this_page = {}
@@ -300,7 +290,7 @@ class Wikipedia_UI:
 			links_for_this_page = page.wiki_link_targets[sheet_number]
 
 		for l in links_for_this_page.keys():
-			meta["links"][str(l)] = "call:Wikipedia_UI.callback_get_pageid_for_title:" + mediawiki.lang + "/" + str(links_for_this_page[l])
+			meta["links"][str(l)] = "call:MediaWiki_UI.callback_pageid_for_title:" + str(mediawiki.id) + "|" + str(links_for_this_page[l])
 
 		meta["clear_screen"] = is_first_page
 
@@ -371,7 +361,7 @@ class Wikipedia_UI:
 
 		return (meta, data_cept)
 
-	def create_search_page(wikipedia, basedir):
+	def create_search_page(mediawiki, basedir):
 		meta = {
 			"clear_screen": True,
 			"links": {
@@ -387,11 +377,11 @@ class Wikipedia_UI:
 						"width": 31,
 						"bgcolor": 0,
 						"fgcolor": 15,
-						"validate": "call:Wikipedia_UI.callback_validate_search:" + wikipedia.lang
+						"validate": "call:MediaWiki_UI.callback_validate_search:" + str(mediawiki.id)
 					}
 				],
 				"confirm": False,
-				"target": "call:Wikipedia_UI.callback_search:" + wikipedia.lang
+				"target": "call:MediaWiki_UI.callback_search:" + str(mediawiki.id)
 			},
 			"publisher_color": 0
 		}
@@ -405,13 +395,13 @@ class Wikipedia_UI:
 		data_cept.extend(Cept.set_line_bg_color(0))
 		data_cept.extend(Cept.double_height())
 		data_cept.extend(Cept.set_fg_color(7))
-		data_cept.extend(Cept.from_str(wikipedia.title()))
+		data_cept.extend(Cept.from_str(mediawiki.title))
 		data_cept.extend(b'\r\n')
 		data_cept.extend(Cept.normal_size())
 		data_cept.extend(b'\n')
 		data_cept.extend(Cept.set_cursor(18, 1))
 		data_cept.extend(Cept.set_fg_color(0))
-		data_cept.extend(Cept.from_str(wikipedia.search_string()))
+		data_cept.extend(Cept.from_str(mediawiki.search_string))
 		# trick: show cursor now so that user knows they can enter text, even though more
 		# data is loading
 		data_cept.extend(Cept.show_cursor())
@@ -432,12 +422,13 @@ class Wikipedia_UI:
 
 		return (meta, data_cept)
 
-	def callback_get_pageid_for_title(cls, dummy, lang_title):
-		index = lang_title.find("/")
-		return Wikipedia_UI.get_pageid_for_title(lang_title[:index], lang_title[index + 1:])
+	def callback_pageid_for_title(cls, dummy, id_and_title):
+		index = id_and_title.find("|")
+		mediawiki = MediaWiki.get_from_id(int(id_and_title[:index]))
+		return mediawiki.pageid_for_title(id_and_title[index + 1:])
 
-	def callback_validate_search(cls, input_data, lang):
-		mediawiki = Wikipedia.get(lang)
+	def callback_validate_search(cls, input_data, id):
+		mediawiki = MediaWiki.get_from_id(int(id))
 		pageid = mediawiki.title_for_search(input_data["search"])
 		if not pageid:
 			msg = Util.create_custom_system_message("Suchbegriff nicht gefunden! -> #")
@@ -448,19 +439,27 @@ class Wikipedia_UI:
 		else:
 			return Util.VALIDATE_INPUT_OK
 
-	def callback_search(cls, s, lang):
-		mediawiki = Wikipedia.get(lang)
+	def callback_search(cls, s, id):
+		mediawiki = MediaWiki.get_from_id(int(id))
 		title = mediawiki.title_for_search(s["search"])
 		sys.stderr.write("TITLE: " + pprint.pformat(title) + "\n")
-		return Wikipedia_UI.get_pageid_for_title(lang, title)
+		return mediawiki.pageid_for_title(title)
+
+	def lang_from_langdigit(langdigit):
+		return
 
 	def create_page(pageid, basedir):
 		if re.search("^" + PAGEID_PREFIX + "\d", pageid):
-			wikipedia = Wikipedia.get(Wikipedia_UI.lang_from_langdigit(int(pageid[2])))
+			lang = { 0: "en", 5: "de" }.get(int(pageid[2]))
+			wiki_url = "https://" + lang + ".wikipedia.org/"
+			mediawiki = MediaWiki.get_from_wiki_url(wiki_url)
+			mediawiki.pageid_prefix = PAGEID_PREFIX + pageid[2]
+			mediawiki.title = { "en": "Wikipedia - The Free Encyclopedia", "de": "Wikipedia - die freie Enzyklopädie" }.get(lang)
+			mediawiki.search_string = { "en": "Search: ", "de": " Suche: " }.get(lang)
 			if len(pageid) == 4:
-				return Wikipedia_UI.create_search_page(wikipedia, basedir)
+				return MediaWiki_UI.create_search_page(mediawiki, basedir)
 			else:
-				return Wikipedia_UI.create_article_page(wikipedia, int(pageid[:3]), int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
+				return MediaWiki_UI.create_article_page(mediawiki, int(pageid[:3]), int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
 		else:
 			return None
 

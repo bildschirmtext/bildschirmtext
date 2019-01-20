@@ -103,7 +103,7 @@ class Image_UI:
 			b = p[i * 3 + 2]
 			palette.append("#{:02x}{:02x}{:02x}".format(r,g,b))
 
-		sys.stderr.write("palette: " + pprint.pformat(palette) + "\n")
+#		sys.stderr.write("palette: " + pprint.pformat(palette) + "\n")
 
 		# create drcs
 		data_drcs = bytearray()
