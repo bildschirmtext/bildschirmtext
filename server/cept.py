@@ -367,9 +367,13 @@ class Cept(bytearray):
 			"−": b'-', # MINUS SIGN
 			"⟨": b'<',
 			"⟩": b'>',
+			"∗": b'*',
+
+			# spaces
 			" ": b' ', # NARROW NO-BREAK SPACE
 			" ": b' ', # THIN SPACE
 			" ": b' ', # ZERO WIDTH SPACE
+			" ": b' ', # EN SPACE
 
 			# used in phonetic alphabet
 			"ˈ": b"'",
