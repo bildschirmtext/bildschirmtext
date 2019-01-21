@@ -97,6 +97,14 @@ class Cept_page:
 
 #			sys.stderr.write("decide self.x: " + pprint.pformat(self.x) + "\n")
 #			sys.stderr.write("decide index: " + pprint.pformat(index) + "\n")
+			if index >= 40:
+				# it wouldn't ever fit, break it
+				# at the end of the line
+				index = 40 - self.x
+				new_s = s[index:]
+			else:
+				new_s = None
+
 			if index == 0 and self.x == 0:
 #				sys.stderr.write("A\n")
 				# starts with space and we're at the start of a line
@@ -135,7 +143,11 @@ class Cept_page:
 				self.x += len(s[:index + 1])
 				if self.x == 40:
 					self.create_new_line()
-			s = s[index + 1:]
+
+			if new_s:
+				s = new_s
+			else:
+				s = s[index + 1:]
 
 	# API
 	def create_new_line(self):

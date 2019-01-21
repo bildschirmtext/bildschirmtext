@@ -145,7 +145,7 @@ class MediaWiki:
 			sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
 			contents = urllib.request.urlopen(url).read()
 			j = json.loads(contents)
-			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
+#			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
 			self.http_cache[url] = j
 		return j
 
