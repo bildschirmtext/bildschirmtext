@@ -16,6 +16,8 @@ class Cept_page:
 	title_image_height = 0
 	lines_per_sheet = 17
 	prev_sheet = None
+	characterset = None
+	drcs_start_for_first_sheet = None
 
 	def __init__(self):
 		self.x = 0
@@ -32,6 +34,11 @@ class Cept_page:
 
 		if (self.y % self.lines_per_sheet) == 0:
 			self.resend_attributes()
+			# remember how much of the DRCS space on the first sheet was used
+			if self.current_sheet() == 1:
+				self.drcs_start_for_first_sheet = self.characterset.drcs_code
+			# new character set for every sheet
+			self.characterset = CharacterSet()
 
 #		s = str(self.y) + " "
 #		self.data_cept.extend(Cept.from_str(s))
@@ -71,7 +78,7 @@ class Cept_page:
 	def add_string(self, s):
 		if self.dirty:
 			self.resend_attributes()
-		self.data_cept.extend(Cept.from_str(s))
+		self.data_cept.extend(Cept.from_str(s, characterset = self.characterset))
 #		sys.stderr.write("before self.x: " + pprint.pformat(self.x) + "\n")
 #		sys.stderr.write("adding: '" + pprint.pformat(s) + "'\n")
 #		sys.stderr.write("self.data_cept: " + pprint.pformat(self.data_cept) + "\n")
@@ -266,7 +273,91 @@ class Cept_page:
 			data_cept.extend(Cept.clear_line())
 		return data_cept
 
+class Unscii:
+	f = None
+
+	def font():
+		if not Unscii.f:
+			Unscii.f = {}
+			with open("unscii-8.hex", "r") as f:
+				for line in f:
+					line = line.split(":")
+					index = int(line[0], 16)
+					data = line[1]
+#					sys.stderr.write("data: " + pprint.pformat(data) + "\n")
+					data_drcs_block = bytearray()
+					data_drcs_block.extend([0x40, 0x40]) # top padding
+					for i in range(0, 8):
+						inbyte = int(data[i * 2 : i * 2 + 2], 16)
+						# center character
+						byte0 = inbyte >> 4
+#						byte0 ^= 0x3f
+						byte0 |= 0x40
+						byte1 = (inbyte & 15) << 2
+#						byte1 ^= 0x3f
+						byte1 |= 0x40
+						data_drcs_block.append(byte0)
+						data_drcs_block.append(byte1)
+					data_drcs_block.extend([0x40, 0x40]) # bottom padding
+					data_drcs_block[0:0] = b'\x30'
+					Unscii.f[index] = data_drcs_block
+		return Unscii.f
+
+DRCS_CODE_START = 0x21
+DRCS_CODE_END = DRCS_CODE_START + 94
+
+class CharacterSet:
+	drcs_code = None
+	code_for_char = None
+
+	def __init__(self, drcs_code_start = DRCS_CODE_START):
+		self.drcs_code = drcs_code_start
+		self.code_for_char = {}
+
+	def get(self, c):
+		sys.stderr.write("CharacterSet c: " + pprint.pformat(c) + "\n")
+		font = Unscii.font()
+
+		data_cept = bytearray()
+
+		# maybe it's already defined
+		code = self.code_for_char.get(c)
+		if code:
+			sys.stderr.write("CharacterSet: already defined.\n")
+		else:
+			# is there more space?
+			if self.drcs_code == DRCS_CODE_END:
+				sys.stderr.write("CharacterSet no more space.\n")
+				return None
+
+			# get it from the font
+			if not font.get(ord(c)):
+				sys.stderr.write("CharacterSet not in font.\n")
+				return None # font doesn't have it
+
+			code = self.drcs_code
+			self.code_for_char[c] = code
+			self.drcs_code += 1
+
+			data_cept.extend(b'\x1f\x23\x20\x47\x41') # start defining 12x10 @ 2c
+			data_cept.extend([0x1f, 0x23, code]) # define starting at char 0x21
+			data_cept.extend(font[ord(c)])
+			data_cept.extend(Cept.service_break(24)) # TODO: optimize
+			data_cept.extend(Cept.service_break_back())
+
+		data_cept.extend(Cept.load_g0_drcs())
+		data_cept.append(code)
+		data_cept.extend(Cept.load_g0_g0())
+
+		sys.stderr.write("CharacterSet ret: " + pprint.pformat(data_cept) + "\n")
+
+		sys.stderr.write("CharacterSet code: " + pprint.pformat(self.drcs_code) + "\n")
+
+		return data_cept
+
+
 class Cept(bytearray):
+	drcs_index = 0
 
 	# private
 	def g2code(c, mode):
@@ -275,23 +366,23 @@ class Cept(bytearray):
 		else:
 			return bytearray([ord(c) + 0x80])
 	
-	def from_str(s1, mode = 0):
+	def from_str(s1, mode = 0, characterset = None):
 		s2 = bytearray()
 
 		conversion_table = {
 			"¤": b'$', # $ and ¤ are swapped
 			"$": Cept.g2code('$', mode), # $ and ¤ are swapped
-			"¦": b'?',    # not available
-			"¨": b'?',    # not available
+#			"¦": b'?',    # not available
+#			"¨": b'?',    # not available
 			"©": Cept.g2code('S', mode),
-			"ª": b'?',    # not available
+#			"ª": b'?',    # not available
 			"\xad": "",   # soft hyphen
 			"®": Cept.g2code('R', mode),
-			"¯": b'?',    # not available
-			"´": b'?',    # not available
-			"¸": b'?',    # not available
-			"¹": b'?',    # not available
-			"º": b'?',    # not available
+#			"¯": b'?',    # not available
+#			"´": b'?',    # not available
+#			"¸": b'?',    # not available
+#			"¹": b'?',    # not available
+#			"º": b'?',    # not available
 			"À": Cept.g2code('A', mode) + b'A',
 			"Á": Cept.g2code('B', mode) + b'A',
 			"Â": Cept.g2code('C', mode) + b'A',
@@ -422,9 +513,16 @@ class Cept(bytearray):
 				s2.extend(res)
 			elif ord(c) < 256:
 				s2.append(ord(c))
-			else:
-				s2.append(ord('?')) # non-Latin-1
+			else: # non-Latin-1
 				sys.stderr.write("unknown character: '" + c + "' (" + hex(ord(c)) + ")n '" + s1 + "'\n")
+				if characterset:
+					data_cept = characterset.get(c)
+					if data_cept:
+						s2.extend(data_cept)
+					else:
+						s2.append(ord('?'))
+				else:
+					s2.append(ord('?'))
 		return s2
 
 	def code_to_str(s1):

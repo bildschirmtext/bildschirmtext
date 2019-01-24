@@ -8,7 +8,30 @@ import urllib.request
 PIXEL_ASPECT_RATIO = 0.92
 
 class Image_UI:
-	def cept_from_image(url, colors = 16):
+	def compress(data_drcs_block):
+		if data_drcs_block == bytearray(b'@@@@@@@@@@'):
+			data_drcs_block = bytearray(b'\x20')
+		elif data_drcs_block == bytearray(b'\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f'):
+			data_drcs_block = bytearray(b'\x2f')
+		else:
+			y1 = 0
+			max = 10
+			while True:
+				l = 0
+				for y2 in range(y1 + 1, max):
+					if data_drcs_block[y2] != data_drcs_block[y1]:
+						break
+					l += 1
+				if l:
+					data_drcs_block = data_drcs_block[:y1 + 1] + bytes([0x20 + l]) + data_drcs_block[y1 + l + 1:]
+					y1 += 1
+					max -= l - 1
+				y1 += 1
+				if y1 == max:
+					break
+		return data_drcs_block
+
+	def cept_from_image(url, colors = 16, drcs_start = 0x21):
 		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
 		if url.startswith("http://") or url.startswith("https://"):
 			image = Image.open(urllib.request.urlopen(url))
@@ -29,11 +52,9 @@ class Image_UI:
 
 		sys.stderr.write("target colors: " + str(colors) + "\n")
 
+		num_drcs = 0x7f - drcs_start
 		if colors == 16:
-			num_drcs = 47
-		else:
-			num_drcs = 94
-
+			num_drcs = int(num_drcs / 2)
 
 		# calculate character resolution
 		exact_res_x = math.sqrt(num_drcs * width / height)
@@ -127,26 +148,7 @@ class Image_UI:
 						data_drcs_block.append(byte)
 
 					# compression
-					if data_drcs_block == bytearray(b'@@@@@@@@@@'):
-						data_drcs_block = bytearray(b'\x20')
-					elif data_drcs_block == bytearray(b'\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f'):
-						data_drcs_block = bytearray(b'\x2f')
-					else:
-						y1 = 0
-						max = 10
-						while True:
-							l = 0
-							for y2 in range(y1 + 1, max):
-								if data_drcs_block[y2] != data_drcs_block[y1]:
-									break
-								l += 1
-							if l:
-								data_drcs_block = data_drcs_block[:y1 + 1] + bytes([0x20 + l]) + data_drcs_block[y1 + l + 1:]
-								y1 += 1
-								max -= l - 1
-							y1 += 1
-							if y1 == max:
-								break
+					data_drcs_block = Image_UI.compress(data_drcs_block)
 
 #					sys.stderr.write("data_drcs_block: " + pprint.pformat(data_drcs_block) + "\n")
 					data_drcs.extend(data_drcs_block)
@@ -155,12 +157,12 @@ class Image_UI:
 
 		data_drcs_header = bytearray()
 		if colors == 4:
-			data_drcs_header.extend(b'\x1f\x23\x20\x28\x20\x40\x4b\x42') # start defining 6x10 @ 16c
+			data_drcs_header.extend(b'\x1f\x23\x20\x4b\x42') # start defining 6x10 @ 4c
 		elif colors == 16:
-			data_drcs_header.extend(b'\x1f\x23\x20\x28\x20\x40\x4b\x44') # start defining 6x10 @ 16c
+			data_drcs_header.extend(b'\x1f\x23\x20\x4b\x44') # start defining 6x10 @ 16c
 		else:
 			error()
-		data_drcs_header.extend(b'\x1f\x23\x21') # define starting at char 0x21
+		data_drcs_header.extend([0x1f, 0x23, drcs_start])
 
 		# prepend
 		data_drcs[0:0] = data_drcs_header
@@ -183,7 +185,7 @@ class Image_UI:
 		for y in range(0, res_y):
 			l = bytearray()
 			for x in range(0, res_x):
-				l.append(0x21 + (y * res_x + x) * step)
+				l.append(drcs_start + (y * res_x + x) * step)
 			data_chars.append(l)
 
 		return (palette, data_drcs, data_chars)

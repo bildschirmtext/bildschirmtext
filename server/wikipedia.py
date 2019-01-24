@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 from cept import Cept
 from cept import Cept_page
+from cept import Unscii
 from image import Image_UI
 from util import Util
 
@@ -257,13 +258,22 @@ class MediaWiki_UI:
 					image_url = mediawiki.base_scheme() + image_url[2:]
 				if image_url.startswith("/"): # same scheme + host
 					image_url = mediawiki.base_url() + image_url
-				(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(image_url)
 				break
 
 		soup = MediaWiki_UI.simplify_html(soup)
 
-		page = Cept_page()
-
+		# try conversion without image to estimate an upper bound
+		# on the number of DRCS characters needed on the first page
+		page = Cept_page_from_HTML()
+		page.article_prefix = mediawiki.article_prefix
+		# XXX why is this necessary???
+		page.lines_cept = []
+		page.soup = soup
+		page.link_index = 10
+		page.pageid_base = mediawiki.pageid_prefix + str(wikiid)
+		page.insert_html_tags(soup.contents[0].children)
+		# and create the image with the remaining characters
+		(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(image_url, drcs_start = page.drcs_start_for_first_sheet)
 
 		#
 		# conversion
