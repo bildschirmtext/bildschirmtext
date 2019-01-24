@@ -403,7 +403,7 @@ Nach dem letzten Datenblock eines DRCs können weitere Datenblöcke folgen, die 
 	2C    ganze Zeile mit *0* füllen
 	2D    ganze Zeile mit *1* füllen
 	2E    Rest des Blocks mit letzter ganzer Zeile füllen
-	2F    Rest des Datenblocks Bit *1* füllen
+	2F    Rest des Datenblocks mit *1* füllen
 
 ### 13.) Farbwahl für 4-Farben-DRCs
 
@@ -484,7 +484,8 @@ kehrt der Decoder wieder in den zwischengespeicherten Zustand zurück (auch die 
 	14        Cursor unsichtbar
 	18        Zeile ab Cursor löschen (Cancel)
 	19        1 Zeichen aus G2-Satz
-	1B .. ..  ESCAPE: Einleitung einer Code-Sequenz lC TER (# für Seitenaufruf)
+	1B .. ..  ESCAPE: Einleitung einer Code-Sequenz
+	1C        TER (# für Seitenaufruf)
 	1D        1 Zeichen aus G3-Satz
 	1E        Cursor links oben (home)
 	1F        OS: Einleitung einer Codesequenz
