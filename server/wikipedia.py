@@ -273,7 +273,9 @@ class MediaWiki_UI:
 		page.pageid_base = mediawiki.pageid_prefix + str(wikiid)
 		page.insert_html_tags(soup.contents[0].children)
 		# and create the image with the remaining characters
-		(image_palette, image_drcs, image_chars) = Image_UI.cept_from_image(image_url, drcs_start = page.drcs_start_for_first_sheet)
+		ret = Image_UI.cept_from_image(image_url, drcs_start = page.drcs_start_for_first_sheet)
+		if ret:
+			(image_palette, image_drcs, image_chars) = ret
 
 		#
 		# conversion
@@ -479,14 +481,14 @@ class MediaWiki_UI:
 		WIKIPEDIA_PAGEID_PREFIX = "55"
 		CONGRESS_PAGEID_PREFIX = "35"
 		if re.search("^" + WIKIPEDIA_PAGEID_PREFIX + "\d", pageid):
-			lang = { 0: "en", 5: "de" }.get(int(pageid[2]))
+			lang = { 0: "en", 5: "de", 6: "jp" }.get(int(pageid[2]))
 			wiki_url = "https://" + lang + ".wikipedia.org/"
 			mediawiki = MediaWiki.get_from_wiki_url(wiki_url)
 			mediawiki.api_prefix = "/w/"
 			mediawiki.article_prefix = "/wiki/"
 			mediawiki.pageid_prefix = WIKIPEDIA_PAGEID_PREFIX + pageid[2]
-			mediawiki.title = { "en": "Wikipedia - The Free Encyclopedia", "de": "Wikipedia - die freie Enzyklopädie" }.get(lang)
-			mediawiki.search_string = { "en": "Search: ", "de": " Suche: " }.get(lang)
+			mediawiki.title = { "en": "Wikipedia - The Free Encyclopedia", "de": "Wikipedia - die freie Enzyklopädie", "jp": "Wikipedia - The Free Encyclopedia" }.get(lang)
+			mediawiki.search_string = { "en": "Search: ", "de": " Suche: ", "jp": "Search: " }.get(lang)
 			if len(pageid) == 4:
 				return MediaWiki_UI.create_search_page(mediawiki, basedir)
 			else:

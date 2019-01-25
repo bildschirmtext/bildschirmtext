@@ -32,6 +32,8 @@ class Image_UI:
 		return data_drcs_block
 
 	def cept_from_image(url, colors = 16, drcs_start = 0x21):
+		if url is None:
+			return None
 		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
 		if url.startswith("http://") or url.startswith("https://"):
 			image = Image.open(urllib.request.urlopen(url))

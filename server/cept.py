@@ -279,26 +279,54 @@ class Unscii:
 	def font():
 		if not Unscii.f:
 			Unscii.f = {}
-			with open("unscii-8.hex", "r") as f:
+			with open("unifont-11.0.03.hex", "r") as f:
 				for line in f:
 					line = line.split(":")
 					index = int(line[0], 16)
 					data = line[1]
-#					sys.stderr.write("data: " + pprint.pformat(data) + "\n")
+					length = int(len(data)/2)
+					# decode line
+					origbyte = [0] * length
+					for i in range(0, length):
+						origbyte[i] = int(data[i * 2 : i * 2 + 2], 16)
+
 					data_drcs_block = bytearray()
-					data_drcs_block.extend([0x40, 0x40]) # top padding
-					for i in range(0, 8):
-						inbyte = int(data[i * 2 : i * 2 + 2], 16)
-						# center character
-						byte0 = inbyte >> 4
-#						byte0 ^= 0x3f
-						byte0 |= 0x40
-						byte1 = (inbyte & 15) << 2
-#						byte1 ^= 0x3f
-						byte1 |= 0x40
-						data_drcs_block.append(byte0)
-						data_drcs_block.append(byte1)
-					data_drcs_block.extend([0x40, 0x40]) # bottom padding
+
+					if length == 16:
+						# 8 pixels wide, 16 pixels high
+						# -> scale height to 10
+						scaledbyte = [0] * 10
+						for i in range(0, 16):
+							scaledbyte[int(i/length*10)] |= origbyte[i]
+						for i in range(0, 10):
+							inbyte = scaledbyte[i]
+							# center character
+							byte0 = inbyte >> 4
+							byte0 |= 0x40
+							byte1 = (inbyte & 15) << 2
+							byte1 |= 0x40
+							data_drcs_block.append(byte0)
+							data_drcs_block.append(byte1)
+					else:
+						# 17 pixels wide, 16 pixels high
+						# -> scale height to 10, width to 12
+						scaledword = [0] * 10
+						for i in range(0, 16):
+							word = origbyte[i*2] << 8 | origbyte[i*2 + 1]
+							for j in range(0, 16):
+								if word & (1 << j):
+									scaledword[int(i/16*10)] |= (1 << int(j/16*12))
+						for i in range(0, 10):
+							inword = scaledword[i]
+							# center character
+							byte0 = inword >> 6
+							byte0 |= 0x40
+							byte1 = (inword & 0x3F)
+							byte1 |= 0x40
+							data_drcs_block.append(byte0)
+							data_drcs_block.append(byte1)
+
+
 					data_drcs_block[0:0] = b'\x30'
 					Unscii.f[index] = data_drcs_block
 		return Unscii.f
