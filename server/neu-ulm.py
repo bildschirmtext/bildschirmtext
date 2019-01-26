@@ -65,6 +65,7 @@ from login import Login_UI
 from historic import Historic_UI
 from wikipedia import MediaWiki_UI
 from image import Image_UI
+from rss import RSS_UI
 
 from cm.makePage import CM
 
@@ -255,6 +256,10 @@ def create_page(pageid):
 		# images
 		ret = Image_UI.create_page(pageid)
 		basedir = PATH_DATA + "55/"
+	if not ret and pageid.startswith("6502"):
+		# RSS
+		basedir = PATH_DATA + "55/"
+		ret = RSS_UI.create_page(pageid, basedir)
 
 	if ret:
 		(meta, data_cept) = ret

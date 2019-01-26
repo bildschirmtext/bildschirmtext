@@ -8,30 +8,34 @@ import urllib.request
 PIXEL_ASPECT_RATIO = 0.92
 
 class Image_UI:
-	def compress(data_drcs_block):
-		if data_drcs_block == bytearray(b'@@@@@@@@@@'):
-			data_drcs_block = bytearray(b'\x20')
-		elif data_drcs_block == bytearray(b'\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f'):
-			data_drcs_block = bytearray(b'\x2f')
+	palette = None
+	drcs = None
+	chars = None
+
+	def compress(drcs_block):
+		if drcs_block == bytearray(b'@@@@@@@@@@'):
+			drcs_block = bytearray(b'\x20')
+		elif drcs_block == bytearray(b'\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f'):
+			drcs_block = bytearray(b'\x2f')
 		else:
 			y1 = 0
 			max = 10
 			while True:
 				l = 0
 				for y2 in range(y1 + 1, max):
-					if data_drcs_block[y2] != data_drcs_block[y1]:
+					if drcs_block[y2] != drcs_block[y1]:
 						break
 					l += 1
 				if l:
-					data_drcs_block = data_drcs_block[:y1 + 1] + bytes([0x20 + l]) + data_drcs_block[y1 + l + 1:]
+					drcs_block = drcs_block[:y1 + 1] + bytes([0x20 + l]) + drcs_block[y1 + l + 1:]
 					y1 += 1
 					max -= l - 1
 				y1 += 1
 				if y1 == max:
 					break
-		return data_drcs_block
+		return drcs_block
 
-	def cept_from_image(url, colors = 16, drcs_start = 0x21):
+	def __init__(self, url, colors = 16, drcs_start = 0x21):
 		if url is None:
 			return None
 		sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
@@ -119,17 +123,17 @@ class Image_UI:
 
 		# create array with palette
 		p = image.getpalette()
-		palette = []
+		self.palette = []
 		for i in range(0, colors):
 			r = p[i * 3]
 			g = p[i * 3 + 1]
 			b = p[i * 3 + 2]
-			palette.append("#{:02x}{:02x}{:02x}".format(r,g,b))
+			self.palette.append("#{:02x}{:02x}{:02x}".format(r,g,b))
 
-#		sys.stderr.write("palette: " + pprint.pformat(palette) + "\n")
+#		sys.stderr.write("self.palette: " + pprint.pformat(self.palette) + "\n")
 
 		# create drcs
-		data_drcs = bytearray()
+		self.drcs = bytearray()
 
 		if colors == 4:
 			num_bits = 2
@@ -139,58 +143,56 @@ class Image_UI:
 		for base_y in range(0, res_y * 10, 10):
 			for base_x in range(0, res_x * 6, 6):
 				for bitno in range(0, num_bits):
-					data_drcs.extend([0x30 + bitno])
-					data_drcs_block = bytearray()
+					self.drcs.extend([0x30 + bitno])
+					drcs_block = bytearray()
 					for y in range(0, 10):
 						byte = 0
 						for x in range(0, 6):
 							byte <<= 1
 							byte |= (image.getpixel((base_x + x, base_y + y)) >> bitno) & 1
 						byte |= 0x40
-						data_drcs_block.append(byte)
+						drcs_block.append(byte)
 
 					# compression
-					data_drcs_block = Image_UI.compress(data_drcs_block)
+					drcs_block = Image_UI.compress(drcs_block)
 
-#					sys.stderr.write("data_drcs_block: " + pprint.pformat(data_drcs_block) + "\n")
-					data_drcs.extend(data_drcs_block)
+#					sys.stderr.write("drcs_block: " + pprint.pformat(drcs_block) + "\n")
+					self.drcs.extend(drcs_block)
 
-		sys.stderr.write("DRCs compressed " + str(40 * res_x * res_y) + " down to " + str(len(data_drcs)) + "\n")
+		sys.stderr.write("DRCs compressed " + str(40 * res_x * res_y) + " down to " + str(len(self.drcs)) + "\n")
 
-		data_drcs_header = bytearray()
+		drcs_header = bytearray()
 		if colors == 4:
-			data_drcs_header.extend(b'\x1f\x23\x20\x4b\x42') # start defining 6x10 @ 4c
+			drcs_header.extend(b'\x1f\x23\x20\x4b\x42') # start defining 6x10 @ 4c
 		elif colors == 16:
-			data_drcs_header.extend(b'\x1f\x23\x20\x4b\x44') # start defining 6x10 @ 16c
+			drcs_header.extend(b'\x1f\x23\x20\x4b\x44') # start defining 6x10 @ 16c
 		else:
 			error()
-		data_drcs_header.extend([0x1f, 0x23, drcs_start])
+		drcs_header.extend([0x1f, 0x23, drcs_start])
 
 		# prepend
-		data_drcs[0:0] = data_drcs_header
+		self.drcs[0:0] = drcs_header
 
 		# append
 		if colors == 4:
 			# set colors to 16, 17, 18, 19
-			data_drcs.extend(b'\x1f\x26\x20\x22\x20\x35\x40')
-			data_drcs.extend(b'\x1f\x26\x30\x50')
-			data_drcs.extend(b'\x1f\x26\x31\x51')
-			data_drcs.extend(b'\x1f\x26\x32\x52')
-			data_drcs.extend(b'\x1f\x26\x33\x53')
+			self.drcs.extend(b'\x1f\x26\x20\x22\x20\x35\x40')
+			self.drcs.extend(b'\x1f\x26\x30\x50')
+			self.drcs.extend(b'\x1f\x26\x31\x51')
+			self.drcs.extend(b'\x1f\x26\x32\x52')
+			self.drcs.extend(b'\x1f\x26\x33\x53')
 
 		# create characters to print
 		if colors == 16:
 			step = 2
 		else:
 			step = 1
-		data_chars = []
+		self.chars = []
 		for y in range(0, res_y):
 			l = bytearray()
 			for x in range(0, res_x):
 				l.append(drcs_start + (y * res_x + x) * step)
-			data_chars.append(l)
-
-		return (palette, data_drcs, data_chars)
+			self.chars.append(l)
 
 	def create_image_page():
 #		filename = "/Users/mist/Desktop/RGB_24bits_palette_sample_image.jpg"

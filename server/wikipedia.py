@@ -273,21 +273,19 @@ class MediaWiki_UI:
 		page.pageid_base = mediawiki.pageid_prefix + str(wikiid)
 		page.insert_html_tags(soup.contents[0].children)
 		# and create the image with the remaining characters
-		ret = Image_UI.cept_from_image(image_url, drcs_start = page.drcs_start_for_first_sheet)
-		if ret:
-			(image_palette, image_drcs, image_chars) = ret
+		image = Image_UI(image_url, drcs_start = page.drcs_start_for_first_sheet)
 
 		#
 		# conversion
 		#
 		page = Cept_page_from_HTML()
-
+		page.title = title
 		page.article_prefix = mediawiki.article_prefix
 
 		# tell page renderer to leave room for the image in the top right of the first sheet
-		if image_url is not None:
-			page.title_image_width = len(image_chars[0])
-			page.title_image_height = len(image_chars) - 2 # image draws 2 characters into title area
+		if image is not None:
+			page.title_image_width = len(image.chars[0])
+			page.title_image_height = len(image.chars) - 2 # image draws 2 characters into title area
 
 		# XXX why is this necessary???
 		page.lines_cept = []
@@ -323,70 +321,7 @@ class MediaWiki_UI:
 
 		meta["clear_screen"] = is_first_page
 
-		# print the page title (only on the first sheet)
-		data_cept = bytearray()
-		data_cept.extend(Cept.parallel_mode())
-
-		if is_first_page:
-			data_cept.extend(Cept.set_screen_bg_color(7))
-			data_cept.extend(Cept.set_cursor(2, 1))
-			data_cept.extend(Cept.set_line_bg_color(0))
-			data_cept.extend(b'\n')
-			data_cept.extend(Cept.set_line_bg_color(0))
-			data_cept.extend(Cept.double_height())
-			data_cept.extend(Cept.set_fg_color(7))
-			data_cept.extend(Cept.from_str(title[:39]))
-			data_cept.extend(b'\r\n')
-			data_cept.extend(Cept.normal_size())
-			data_cept.extend(b'\n')
-		else:
-			# on sheets b+, we need to clear the image area
-			if image_url:
-				for i in range(0, 2):
-					data_cept.extend(Cept.set_cursor(3 + i, 41 - len(image_chars[0])))
-					data_cept.extend(Cept.repeat(" ", len(image_chars[0])))
-
-		# print navigation
-		# * on sheet 0, so we don't have to print it again on later sheets
-		# * on the last sheet, because it doesn't show the "#" text
-		# * on the second last sheet, because navigating back from the last one needs to show "#" again
-		if sheet_number == 0 or sheet_number >= page.number_of_sheets() - 2:
-			data_cept.extend(Cept.set_cursor(23, 1))
-			data_cept.extend(Cept.set_line_bg_color(0))
-			data_cept.extend(Cept.set_fg_color(7))
-			data_cept.extend(Cept.from_str("0 < Back"))
-			s = "# > Next"
-			data_cept.extend(Cept.set_cursor(23, 41 - len(s)))
-			if sheet_number == page.number_of_sheets() - 1:
-				data_cept.extend(Cept.repeat(" ", len(s)))
-			else:
-				data_cept.extend(Cept.from_str(s))
-
-		data_cept.extend(Cept.set_cursor(5, 1))
-
-		# add text
-		data_cept.extend(page.cept_for_sheet(sheet_number))
-#		sys.stderr.write("page.cept_for_sheet(sheet_number): " + pprint.pformat(page.cept_for_sheet(sheet_number)) + "\n")
-
-		# transfer image on first sheet
-		if is_first_page and image_url:
-			# placeholder rectangle
-			for y in range(0, len(image_chars)):
-				data_cept.extend(Cept.set_cursor(3 + y, 41 - len(image_chars[0])))
-				data_cept.extend(Cept.set_bg_color(15))
-				data_cept.extend(Cept.repeat(" ", len(image_chars[0])))
-			# palette
-			data_cept.extend(Cept.define_palette(image_palette))
-			# DRCS
-			data_cept.extend(image_drcs)
-			# draw characters
-			i = 0
-			for l in image_chars:
-				data_cept.extend(Cept.set_cursor(3 + i, 41 - len(image_chars[0])))
-				data_cept.extend(Cept.load_g0_drcs())
-				data_cept.extend(l)
-				data_cept.extend(b'\r\n')
-				i += 1
+		data_cept = page.complete_cept_for_sheet(sheet_number, image)
 
 		return (meta, data_cept)
 
@@ -435,15 +370,15 @@ class MediaWiki_UI:
 		# data is loading
 		data_cept.extend(Cept.show_cursor())
 
-		(palette, drcs, chars) = Image_UI.cept_from_image(basedir + "wikipedia.png", colors = 4)
+		image = Image_UI(basedir + "wikipedia.png", colors = 4)
 
-		data_cept.extend(Cept.define_palette(palette))
-		data_cept.extend(drcs)
+		data_cept.extend(Cept.define_palette(image.palette))
+		data_cept.extend(image.drcs)
 
 		data_cept.extend(Cept.hide_cursor())
 
 		y = 6
-		for l in chars:
+		for l in image.chars:
 			data_cept.extend(Cept.set_cursor(y, int((41 - len(chars[0])) / 2)))
 			data_cept.extend(Cept.load_g0_drcs())
 			data_cept.extend(l)
@@ -481,14 +416,14 @@ class MediaWiki_UI:
 		WIKIPEDIA_PAGEID_PREFIX = "55"
 		CONGRESS_PAGEID_PREFIX = "35"
 		if re.search("^" + WIKIPEDIA_PAGEID_PREFIX + "\d", pageid):
-			lang = { 0: "en", 5: "de", 6: "jp" }.get(int(pageid[2]))
+			lang = { 0: "en", 5: "de", 6: "el" }.get(int(pageid[2]))
 			wiki_url = "https://" + lang + ".wikipedia.org/"
 			mediawiki = MediaWiki.get_from_wiki_url(wiki_url)
 			mediawiki.api_prefix = "/w/"
 			mediawiki.article_prefix = "/wiki/"
 			mediawiki.pageid_prefix = WIKIPEDIA_PAGEID_PREFIX + pageid[2]
-			mediawiki.title = { "en": "Wikipedia - The Free Encyclopedia", "de": "Wikipedia - die freie Enzyklopädie", "jp": "Wikipedia - The Free Encyclopedia" }.get(lang)
-			mediawiki.search_string = { "en": "Search: ", "de": " Suche: ", "jp": "Search: " }.get(lang)
+			mediawiki.title = { "en": "Wikipedia - The Free Encyclopedia", "de": "Wikipedia - die freie Enzyklopädie", "el": "Wikipedia - The Free Encyclopedia" }.get(lang)
+			mediawiki.search_string = { "en": "Search: ", "de": " Suche: ", "el": "Search: " }.get(lang)
 			if len(pageid) == 4:
 				return MediaWiki_UI.create_search_page(mediawiki, basedir)
 			else:
