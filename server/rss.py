@@ -8,7 +8,7 @@ import feedparser
 from bs4 import BeautifulSoup
 
 from cept import Cept
-from cept import Cept_page_from_HTML
+from cept import Cept_page
 from cept import Unscii
 from util import Util
 
@@ -27,7 +27,7 @@ class RSS_UI:
 		html = entry["content"][0]["value"]
 		soup = BeautifulSoup(html, 'html.parser')
 
-		page = Cept_page_from_HTML()
+		page = Cept_page()
 		page.soup = soup
 		page.article_prefix = "XXX"
 		page.insert_html_tags(soup.children)

@@ -3,40 +3,58 @@ import math
 import pprint
 
 class Cept_page:
-	title = None
-	x = None
-	y = None
-	lines_cept = []
-	data_cept = None
-	italics = False
-	bold = False
-	link = False
-	code = False
-	dirty = False
-	title_image_width = 0
-	title_image_height = 0
-	lines_per_sheet = 17
-	prev_sheet = None
-	characterset = None
-	drcs_start_for_first_sheet = None
+#	title = None
+#	sheet_number = None
+#	y = None
+#	x = None
+#	lines_cept = None
+#	data_cept = None
+#	prev_sheet = None
+#	characterset = None
+#	drcs_start_for_first_sheet = None
+
+#	link_index = None
+#	pageid_base = None
+#	soup = None
+#	article_prefix = None
 
 	def __init__(self):
+		self.italics = False
+		self.bold = False
+		self.link = False
+		self.code = False
+		self.dirty = False
+
+		self.wiki_link_targets = []
+		self.page_and_link_index_for_link = []
+		self.first_paragraph = True
+		self.link_count = 0
+		self.links_for_page = []
+		self.ignore_lf = True
+
+		self.title_image_width = 0
+		self.title_image_height = 0
+		self.lines_per_sheet = 17
+		self.sheet_number = 0
 		self.x = 0
 		self.y = -1
+		self.lines_cept = [ [] ]
 		self.init_new_line()
 
 	def init_new_line(self):
-		self.data_cept = bytearray()
-		self.data_cept.extend(Cept.clear_line())
+		self.data_cept = bytearray(Cept.clear_line())
 #		sys.stderr.write("self.y: '" + pprint.pformat(self.y) + "'\n")
-#		sys.stderr.write("self.y % lines_per_sheet: '" + pprint.pformat(self.y % lines_per_sheet) + "'\n")
 		self.x = 0
 		self.y += 1
+		if self.y == self.lines_per_sheet:
+			self.y = 0
+			self.sheet_number += 1
+			self.lines_cept.append([])
 
-		if (self.y % self.lines_per_sheet) == 0:
+		if self.y == 0:
 			self.resend_attributes()
 			# remember how much of the DRCS space on the first sheet was used
-			if self.current_sheet() == 1:
+			if self.sheet_number == 1:
 				self.drcs_start_for_first_sheet = self.characterset.drcs_code
 			# new character set for every sheet
 			self.characterset = CharacterSet()
@@ -45,8 +63,19 @@ class Cept_page:
 #		self.data_cept.extend(Cept.from_str(s))
 #		self.x += len(s)
 
+	# API
+	def create_new_line(self):
+#		sys.stderr.write("self.lines_cept: " + pprint.pformat(self.lines_cept) + "\n")
+#		sys.stderr.write("len(self.lines_cept): " + pprint.pformat(len(self.lines_cept)) + "\n")
+#		sys.stderr.write("self.sheet_number: " + pprint.pformat(self.sheet_number) + "\n")
+		self.lines_cept[self.sheet_number].append(self.data_cept)
+#		if len(self.lines_cept[self.sheet_number]) == self.lines_per_sheet:
+#			self.sheet_number += 1
+#			self.lines_cept.append([])
+		self.init_new_line()
+
 	def print_newline(self):
-		if self.x == 0 and self.y % self.lines_per_sheet == 0:
+		if self.x == 0 and self.y == 0:
 			# no empty first lines
 			return
 		self.reset_style()
@@ -84,6 +113,10 @@ class Cept_page:
 #		sys.stderr.write("adding: '" + pprint.pformat(s) + "'\n")
 #		sys.stderr.write("self.data_cept: " + pprint.pformat(self.data_cept) + "\n")
 
+#	def form_feed(self):
+#		old_sheet_number = self.sheet_number
+#		while self.sheet_number == old_sheet_number:
+#			print_newline
 
 	def print_internal(self, s):
 		if s == "":
@@ -158,11 +191,6 @@ class Cept_page:
 				s = s[index + 1:]
 
 	# API
-	def create_new_line(self):
-		self.lines_cept.append(self.data_cept)
-		self.init_new_line()
-
-	# API
 	def set_italics_on(self):
 		self.italics = True
 		self.dirty = True
@@ -204,7 +232,7 @@ class Cept_page:
 
 	# API
 	def print(self, s, ignore_lf = False):
-		self.prev_sheet = self.current_sheet()
+		self.prev_sheet = self.sheet_number
 
 		components = s.split("\n")
 		if len(components) > 1:
@@ -218,10 +246,10 @@ class Cept_page:
 
 	# API
 	def print_heading(self, level, s):
-		self.prev_sheet = self.current_sheet()
+		self.prev_sheet = self.sheet_number
 
 		if level == 2:
-			if (self.y + 1) % self.lines_per_sheet == 0 or (self.y + 2) % self.lines_per_sheet == 0:
+			if self.y == self.lines_per_sheet - 1 or self.y == self.lines_per_sheet - 2:
 				# don't draw double height title into
 				# the last line or the one above
 				self.data_cept.extend(b'\n')
@@ -239,7 +267,7 @@ class Cept_page:
 			self.create_new_line()
 			self.create_new_line()
 		else:
-			if (self.y + 1) % self.lines_per_sheet == 0:
+			if self.y == self.lines_per_sheet - 1:
 				# don't draw title into the last line
 				self.data_cept.extend(b'\n')
 				self.create_new_line()
@@ -253,17 +281,13 @@ class Cept_page:
 		return
 
 	# API
-	def current_sheet(self):
-		return int(self.y / self.lines_per_sheet)
-
-	# API
 	def number_of_sheets(self):
-		return math.ceil(len(self.lines_cept) / self.lines_per_sheet)
+		return self.sheet_number + 1
 
 	# internal
 	def cept_for_sheet(self, sheet_number):
 		data_cept = bytearray()
-		lines = self.lines_cept[sheet_number * self.lines_per_sheet : (sheet_number + 1) * self.lines_per_sheet]
+		lines = self.lines_cept[sheet_number]
 		if not lines:
 			return None
 		for line in lines:
@@ -345,23 +369,11 @@ class Cept_page:
 
 		return data_cept
 
-class Cept_page_from_HTML(Cept_page):
-	link_index = None
-	wiki_link_targets = []
-	page_and_link_index_for_link = []
-	first_paragraph = True
-	link_count = 0
-	links_for_page = []
-	pageid_base = None
-	soup = None
-	ignore_lf = True
-	article_prefix = None
-
 	def insert_toc(self, soup):
 		self.page_and_link_index_for_link = []
 		for t1 in soup.contents[0].children:
 			if t1.name in ["h2", "h3", "h4", "h5", "h6"]:
-				if self.current_sheet() != self.prev_sheet:
+				if self.sheet_number != self.prev_sheet:
 					self.link_index = 10
 
 				level = int(t1.name[1])
@@ -371,7 +383,7 @@ class Cept_page_from_HTML(Cept_page):
 				padded = entry + ("." * 36)
 				padded = padded[:36]
 				self.print(padded + "[" + str(self.link_index) + "]")
-				self.page_and_link_index_for_link.append((self.current_sheet(), self.link_index))
+				self.page_and_link_index_for_link.append((self.sheet_number, self.link_index))
 				self.link_index += 1
 
 	def insert_html_tags(self, tags):
@@ -394,7 +406,7 @@ class Cept_page_from_HTML(Cept_page):
 					self.link_count += 1
 					while len(self.links_for_page) < link_page + 1:
 						self.links_for_page.append({})
-					self.links_for_page[link_page][str(link_name)] = self.pageid_base + chr(0x61 + self.current_sheet())
+					self.links_for_page[link_page][str(link_name)] = self.pageid_base + chr(0x61 + self.sheet_number)
 
 			elif t1.name is None:
 				self.print(t1, self.ignore_lf)
@@ -410,14 +422,14 @@ class Cept_page_from_HTML(Cept_page):
 				self.set_bold_off()
 			elif t1.name == "a":
 				if t1["href"].startswith(self.article_prefix): # links to different article
-					if self.current_sheet() != self.prev_sheet:
+					if self.sheet_number != self.prev_sheet:
 						self.link_index = 10
 						# TODO: this breaks if the link
 						# goes across two sheets!
 
-					while len(self.wiki_link_targets) < self.current_sheet() + 1:
+					while len(self.wiki_link_targets) < self.sheet_number + 1:
 						self.wiki_link_targets.append({})
-					self.wiki_link_targets[self.current_sheet()][self.link_index] = t1["href"][len(self.article_prefix):]
+					self.wiki_link_targets[self.sheet_number][self.link_index] = t1["href"][len(self.article_prefix):]
 
 					link_text = t1.get_text().replace("\n", "") + " [" + str(self.link_index) + "]"
 					self.set_link_on()
