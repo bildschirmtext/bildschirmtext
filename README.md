@@ -161,6 +161,10 @@ Die Tools im `tools` Verzeichnis werden mit `make` gebaut.
 
 `cut_btx` zerlegt die Dateien des Amiga-Dumps in .glob, .meta, .pal, .inc und .cept-Dateien. Da alle Dateien des Amiga-Dumps bereits konveriert sind, und andere Dumps wohl leicht anderen Code der Post benutzen (weil die Dumps aus einer anderen Zeit stammen), muß es erst für andere Dumps angepasst werden.
 
+# Bildschirmtext im Browser
+
+http://home.lassitu.de:8080/files/index.html
+
 # Mailingliste
 
 https://lists.hanse.de/mailman/listinfo/btx
