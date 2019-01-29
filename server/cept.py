@@ -22,7 +22,7 @@ class TextSheet(Sheet):
 		self.dirty = False
 
 		self.lines_per_sheet = lines_per_sheet
-		self.lines_cept = [bytearray()] * lines_per_sheet
+		self.__data_cept = bytearray()
 		self.characterset = CharacterSet()
 
 	def create_new_line(self):
@@ -34,7 +34,7 @@ class TextSheet(Sheet):
 			# swallow newlines at the end of the page
 			return
 		sys.stderr.write("self.y: " + pprint.pformat(self.y) + "\n")
-		self.lines_cept[self.y].extend(Cept.repeat(" ", 40 - self.x))
+		self.__data_cept.extend(Cept.repeat(" ", 40 - self.x))
 		self.resend_attributes()
 		self.create_new_line()
 
@@ -48,12 +48,14 @@ class TextSheet(Sheet):
 		self.dirty = False
 
 	def add_string(self, s):
-		if self.dirty:
-			self.resend_attributes()
+		sys.stderr.write("." + pprint.pformat(self.y) + " s: " + pprint.pformat(s) + "\n")
+		sys.stderr.write("sheet: " + pprint.pformat(self.__data_cept) + "\n")
+#		if self.dirty:
+#			self.resend_attributes()
 		self.add_bytes(Cept.from_str(s, characterset = self.characterset))
 
 	def add_bytes(self, b):
-		self.lines_cept[self.y].extend(b)
+		self.__data_cept.extend(b)
 
 	def is_full(self):
 		return self.y >= self.lines_per_sheet
@@ -61,10 +63,7 @@ class TextSheet(Sheet):
 	def data_cept(self):
 		while not self.is_full:
 			self.print_newline()
-		data_cept = bytearray()
-		for line in self.lines_cept:
-			data_cept.extend(line)
-		return data_cept
+		return self.__data_cept
 
 class ImageSheet(Sheet):
 	def __init__(self, url):
@@ -75,7 +74,6 @@ class Cept_page:
 #	sheet_number = None
 #	y = None
 #	x = None
-#	lines_cept = None
 #	data_cept = None
 #	prev_sheet = None
 #	characterset = None
@@ -105,31 +103,13 @@ class Cept_page:
 		self.sheet_number = 0
 		self.sheets = []
 		self.sheet = TextSheet(self.lines_per_sheet)
-#		self.init_new_line()
-
-#	def init_new_line(self):
-#		self.data_cept = bytearray(Cept.clear_line())
-#		self.sheet.x = 0
-#		self.sheet.y += 1
-#		if self.sheet.y == self.lines_per_sheet:
-#			self.sheet_number += 1
-#			self.sheets.append(self.sheet)
-#			self.sheet = TextSheet(lines_per_sheet)
-#
-#		if self.sheet.y == 0:
-#			self.resend_attributes()
-#			# remember how much of the DRCS space on the first sheet was used
-#			if self.sheet_number == 1:
-#				self.drcs_start_for_first_sheet = self.characterset.drcs_code
-#			# new character set for every sheet
-#			self.characterset = CharacterSet()
 
 	def print_internal(self, s):
 		if s == "":
 			return
 
-#		sys.stderr.write("s: " + pprint.pformat(s) + "\n")
 		while s:
+			sys.stderr.write("" + pprint.pformat(self.sheet.x) + "/" + pprint.pformat(self.sheet.y) + " s: " + pprint.pformat(s) + "\n")
 			if self.sheet.is_full():
 				self.sheets.append(self.sheet)
 				self.sheet = TextSheet(self.lines_per_sheet)
@@ -162,20 +142,20 @@ class Cept_page:
 				# word doesn't fit, print it (plus the space)
 				# into a new line
 				self.sheet.print_newline()
-				self.add_string(s[:index + 1])
+				self.sheet.add_string(s[:index + 1])
 				self.sheet.x += index
 				if ends_in_space:
 					self.sheet.x += 1
 			elif ends_in_space and index + self.sheet.x + 1 == 40:
 				# space in last column
 				# -> just print it, cursor will be in new line
-				self.add_string(s[:index + 1])
-				self.create_new_line()
+				self.sheet.add_string(s[:index + 1])
+				self.sheet.create_new_line()
 			elif not ends_in_space and index + self.sheet.x == 40:
 				# character in last column, not followed by a space
 				# -> just print it, cursor will be in new line
-				self.add_string(s[:index])
-				self.create_new_line()
+				self.sheet.add_string(s[:index])
+				self.sheet.create_new_line()
 			elif ends_in_space and index + self.sheet.x == 40:
 				# character in last column, followed by space
 				# -> omit the space, cursor will be in new line
@@ -249,37 +229,33 @@ class Cept_page:
 	# API
 	def print_heading(self, level, s):
 		self.prev_sheet = self.sheet_number
+		sys.stderr.write("self.sheet.y: " + pprint.pformat(self.sheet.y) + "\n")
 
 		if level == 2:
-			if self.sheet.y == self.lines_per_sheet - 1 or self.sheet.y == self.lines_per_sheet - 2:
-				# don't draw double height title into
-				# the last line or the one above
-				self.data_cept.extend(b'\n')
-				self.sheet.create_new_line()
-			self.data_cept.extend(Cept.underline_off())
-			self.data_cept.extend(Cept.clear_line())
-			self.data_cept.extend(b'\n')
-			self.data_cept.extend(Cept.clear_line())
-			self.data_cept.extend(Cept.set_fg_color(0))
-			self.data_cept.extend(Cept.double_height())
-			self.data_cept.extend(Cept.from_str(s[:39]))
-			self.data_cept.extend(b'\r\n')
-			self.data_cept.extend(Cept.normal_size())
-			self.data_cept.extend(Cept.set_fg_color(15))
-			self.sheet.create_new_line()
-			self.sheet.create_new_line()
+			if self.sheet.y + 3 >= self.lines_per_sheet:
+				self.sheets.append(self.sheet)
+				self.sheet = TextSheet(self.lines_per_sheet)
+
+			self.sheet.print_newline()
+			self.sheet.add_bytes(Cept.clear_line())
+			self.sheet.add_bytes(Cept.set_fg_color(0))
+			self.sheet.add_bytes(Cept.double_height())
+			self.sheet.add_bytes(Cept.from_str(s[:39]))
+			self.sheet.print_newline()
+#			self.sheet.add_bytes(Cept.normal_size())
+#			self.sheet.add_bytes(Cept.set_fg_color(15))
 		else:
-			if self.sheet.y == self.lines_per_sheet - 1:
-				# don't draw title into the last line
-				self.data_cept.extend(b'\n')
-				self.sheet.create_new_line()
-			self.data_cept.extend(Cept.underline_on())
-			self.data_cept.extend(Cept.set_fg_color(0))
-			self.data_cept.extend(Cept.from_str(s[:39]))
-			self.data_cept.extend(Cept.underline_off())
-			self.data_cept.extend(Cept.set_fg_color(15))
-			self.data_cept.extend(b'\r\n')
-			self.sheet.create_new_line()
+			if self.sheet.y + 2 >= self.lines_per_sheet:
+				self.sheets.append(self.sheet)
+				self.sheet = TextSheet(self.lines_per_sheet)
+
+			self.sheet.print_newline()
+			self.sheet.add_bytes(Cept.underline_on())
+			self.sheet.add_bytes(Cept.set_fg_color(0))
+			self.sheet.add_bytes(Cept.from_str(s[:39]))
+#			self.sheet.add_bytes(Cept.underline_off())
+#			self.sheet.add_bytes(Cept.set_fg_color(15))
+			self.sheet.print_newline()
 		return
 
 	# API
@@ -455,9 +431,9 @@ class Cept_page:
 #					#self.print("<IMAGE>")
 #					from image import Image_UI
 #					image = Image_UI(url)
-#					self.data_cept.extend(Cept.define_palette(image.palette))
-#					self.data_cept.extend(image.drcs)
-#					self.data_cept.extend(image.characters_at_position(1, 4))
+#					self.sheet.add_bytes.extend(Cept.define_palette(image.palette))
+#					self.sheet.add_bytes.extend(image.drcs)
+#					self.sheet.add_bytes.extend(image.characters_at_position(1, 4))
 #					self.form_feed()
 #				else:
 #					sys.stderr.write("ignoring image.\n")
@@ -465,6 +441,9 @@ class Cept_page:
 				sys.stderr.write("ignoring tag: " + pprint.pformat(t1.name) + "\n")
 
 #		sys.stderr.write("self.wiki_link_targets: " + pprint.pformat(self.wiki_link_targets) + "\n")
+
+	def drcs_start_for_first_sheet(self):
+		return self.sheets[0].characterset.drcs_code
 
 class Unscii:
 	f = None

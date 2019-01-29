@@ -169,7 +169,7 @@ class MediaWiki_UI:
 		page.pageid_base = mediawiki.pageid_prefix + str(wikiid)
 		page.insert_html_tags(soup.contents[0].children)
 		# and create the image with the remaining characters
-		image = Image_UI(image_url, drcs_start = page.drcs_start_for_first_sheet)
+		image = Image_UI(image_url, drcs_start = page.drcs_start_for_first_sheet())
 
 		#
 		# conversion
