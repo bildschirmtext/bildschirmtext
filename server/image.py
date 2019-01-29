@@ -194,6 +194,15 @@ class Image_UI:
 				l.append(drcs_start + (y * res_x + x) * step)
 			self.chars.append(l)
 
+	def characters_at_position(self, x, y):
+		data_cept = bytearray()
+		for l in self.chars:
+			data_cept.extend(Cept.set_cursor(y, x))
+			data_cept.extend(Cept.load_g0_drcs())
+			data_cept.extend(l)
+			y += 1
+		return data_cept
+
 	def create_image_page():
 #		filename = "/Users/mist/Desktop/RGB_24bits_palette_sample_image.jpg"
 #		filename = "/Users/mist/Desktop/Lenna_(test_image).png"

@@ -1,6 +1,74 @@
 import sys
 import math
 import pprint
+import urllib.parse
+
+class CeptAttributes:
+	def __init__(self):
+		self.fg_color = 15
+		self.bg_color = 7
+		self.underline = False
+
+class Sheet:
+	def foo():
+		pass
+
+class TextSheet(Sheet):
+	def __init__(self, lines_per_sheet):
+		self.x = 0
+		self.y = 0
+
+		self.attributes = CeptAttributes()
+		self.dirty = False
+
+		self.lines_per_sheet = lines_per_sheet
+		self.lines_cept = [bytearray()] * lines_per_sheet
+		self.characterset = CharacterSet()
+
+	def create_new_line(self):
+		self.x = 0
+		self.y += 1
+
+	def print_newline(self):
+		if self.is_full():
+			# swallow newlines at the end of the page
+			return
+		sys.stderr.write("self.y: " + pprint.pformat(self.y) + "\n")
+		self.lines_cept[self.y].extend(Cept.repeat(" ", 40 - self.x))
+		self.resend_attributes()
+		self.create_new_line()
+
+	def resend_attributes(self):
+		self.add_bytes(Cept.set_fg_color(self.attributes.fg_color))
+		self.add_bytes(Cept.set_bg_color(self.attributes.bg_color))
+		if self.attributes.underline:
+			self.add_bytes(Cept.underline_on())
+		else:
+			self.add_bytes(Cept.underline_off())
+		self.dirty = False
+
+	def add_string(self, s):
+		if self.dirty:
+			self.resend_attributes()
+		self.add_bytes(Cept.from_str(s, characterset = self.characterset))
+
+	def add_bytes(self, b):
+		self.lines_cept[self.y].extend(b)
+
+	def is_full(self):
+		return self.y >= self.lines_per_sheet
+
+	def data_cept(self):
+		while not self.is_full:
+			self.print_newline()
+		data_cept = bytearray()
+		for line in self.lines_cept:
+			data_cept.extend(line)
+		return data_cept
+
+class ImageSheet(Sheet):
+	def __init__(self, url):
+		self.url = url
 
 class Cept_page:
 #	title = None
@@ -23,7 +91,6 @@ class Cept_page:
 		self.bold = False
 		self.link = False
 		self.code = False
-		self.dirty = False
 
 		self.wiki_link_targets = []
 		self.page_and_link_index_for_link = []
@@ -36,87 +103,26 @@ class Cept_page:
 		self.title_image_height = 0
 		self.lines_per_sheet = 17
 		self.sheet_number = 0
-		self.x = 0
-		self.y = -1
-		self.lines_cept = [ [] ]
-		self.init_new_line()
+		self.sheets = []
+		self.sheet = TextSheet(self.lines_per_sheet)
+#		self.init_new_line()
 
-	def init_new_line(self):
-		self.data_cept = bytearray(Cept.clear_line())
-#		sys.stderr.write("self.y: '" + pprint.pformat(self.y) + "'\n")
-		self.x = 0
-		self.y += 1
-		if self.y == self.lines_per_sheet:
-			self.y = 0
-			self.sheet_number += 1
-			self.lines_cept.append([])
-
-		if self.y == 0:
-			self.resend_attributes()
-			# remember how much of the DRCS space on the first sheet was used
-			if self.sheet_number == 1:
-				self.drcs_start_for_first_sheet = self.characterset.drcs_code
-			# new character set for every sheet
-			self.characterset = CharacterSet()
-
-#		s = str(self.y) + " "
-#		self.data_cept.extend(Cept.from_str(s))
-#		self.x += len(s)
-
-	# API
-	def create_new_line(self):
-#		sys.stderr.write("self.lines_cept: " + pprint.pformat(self.lines_cept) + "\n")
-#		sys.stderr.write("len(self.lines_cept): " + pprint.pformat(len(self.lines_cept)) + "\n")
-#		sys.stderr.write("self.sheet_number: " + pprint.pformat(self.sheet_number) + "\n")
-		self.lines_cept[self.sheet_number].append(self.data_cept)
-#		if len(self.lines_cept[self.sheet_number]) == self.lines_per_sheet:
+#	def init_new_line(self):
+#		self.data_cept = bytearray(Cept.clear_line())
+#		self.sheet.x = 0
+#		self.sheet.y += 1
+#		if self.sheet.y == self.lines_per_sheet:
 #			self.sheet_number += 1
-#			self.lines_cept.append([])
-		self.init_new_line()
-
-	def print_newline(self):
-		if self.x == 0 and self.y == 0:
-			# no empty first lines
-			return
-		self.reset_style()
-		self.data_cept.extend(Cept.repeat(" ", 40 - self.x))
-		self.resend_attributes()
-		self.create_new_line()
-
-	def reset_style(self):
-		self.data_cept.extend(Cept.set_fg_color(15))
-		self.data_cept.extend(Cept.set_bg_color(7))
-		self.data_cept.extend(Cept.underline_off())
-
-	def resend_attributes(self):
-#		sys.stderr.write("self.italics: " + pprint.pformat(["self.italics: ",self.italics , self.bold , self.link]) + "\n")
-		if self.italics:
-			self.data_cept.extend(Cept.set_fg_color(6))
-		elif self.bold:
-			self.data_cept.extend(Cept.set_fg_color(0))
-		if self.code:
-			self.data_cept.extend(Cept.set_bg_color(6))
-		else:
-			self.data_cept.extend(Cept.set_bg_color(7))
-		if self.link:
-			self.data_cept.extend(Cept.underline_on())
-			self.data_cept.extend(Cept.set_fg_color(4))
-		if not self.italics and not self.bold and not self.link and not self.code:
-			self.reset_style()
-		self.dirty = False
-
-	def add_string(self, s):
-		if self.dirty:
-			self.resend_attributes()
-		self.data_cept.extend(Cept.from_str(s, characterset = self.characterset))
-#		sys.stderr.write("before self.x: " + pprint.pformat(self.x) + "\n")
-#		sys.stderr.write("adding: '" + pprint.pformat(s) + "'\n")
-#		sys.stderr.write("self.data_cept: " + pprint.pformat(self.data_cept) + "\n")
-
-#	def form_feed(self):
-#		old_sheet_number = self.sheet_number
-#		while self.sheet_number == old_sheet_number:
-#			print_newline
+#			self.sheets.append(self.sheet)
+#			self.sheet = TextSheet(lines_per_sheet)
+#
+#		if self.sheet.y == 0:
+#			self.resend_attributes()
+#			# remember how much of the DRCS space on the first sheet was used
+#			if self.sheet_number == 1:
+#				self.drcs_start_for_first_sheet = self.characterset.drcs_code
+#			# new character set for every sheet
+#			self.characterset = CharacterSet()
 
 	def print_internal(self, s):
 		if s == "":
@@ -124,6 +130,10 @@ class Cept_page:
 
 #		sys.stderr.write("s: " + pprint.pformat(s) + "\n")
 		while s:
+			if self.sheet.is_full():
+				self.sheets.append(self.sheet)
+				self.sheet = TextSheet(self.lines_per_sheet)
+
 			index = s.find(" ")
 			if index < 0:
 				index = len(s)
@@ -131,59 +141,51 @@ class Cept_page:
 			else:
 				ends_in_space = True
 
-			if self.y < self.title_image_height:
+			if self.sheet.y < self.title_image_height:
 				line_width = 40 - self.title_image_width
 			else:
 				line_width = 40
 
-#			sys.stderr.write("decide self.x: " + pprint.pformat(self.x) + "\n")
-#			sys.stderr.write("decide index: " + pprint.pformat(index) + "\n")
-			if index >= 40:
+			if len(s) >= 40:
 				# it wouldn't ever fit, break it
 				# at the end of the line
-				index = 40 - self.x
+				index = 40 - self.sheet.x
 				new_s = s[index:]
 			else:
 				new_s = None
 
-			if index == 0 and self.x == 0:
-#				sys.stderr.write("A\n")
+			if index == 0 and self.sheet.x == 0:
 				# starts with space and we're at the start of a line
 				# -> skip space
 				pass
-			elif index + self.x > line_width:
-#				sys.stderr.write("B\n")
+			elif index + self.sheet.x > line_width:
 				# word doesn't fit, print it (plus the space)
 				# into a new line
-				self.print_newline()
+				self.sheet.print_newline()
 				self.add_string(s[:index + 1])
-				self.x += index
+				self.sheet.x += index
 				if ends_in_space:
-					self.x += 1
-			elif ends_in_space and index + self.x + 1 == 40:
-#				sys.stderr.write("C\n")
+					self.sheet.x += 1
+			elif ends_in_space and index + self.sheet.x + 1 == 40:
 				# space in last column
 				# -> just print it, cursor will be in new line
 				self.add_string(s[:index + 1])
 				self.create_new_line()
-			elif not ends_in_space and index + self.x == 40:
-#				sys.stderr.write("D\n")
+			elif not ends_in_space and index + self.sheet.x == 40:
 				# character in last column, not followed by a space
 				# -> just print it, cursor will be in new line
 				self.add_string(s[:index])
 				self.create_new_line()
-			elif ends_in_space and index + self.x == 40:
-#				sys.stderr.write("E\n")
+			elif ends_in_space and index + self.sheet.x == 40:
 				# character in last column, followed by space
 				# -> omit the space, cursor will be in new line
-				self.add_string(s[:index])
-				self.create_new_line()
+				self.sheet.add_string(s[:index])
+				self.sheet.create_new_line()
 			else:
-#				sys.stderr.write("F\n")
-				self.add_string(s[:index + 1])
-				self.x += len(s[:index + 1])
-				if self.x == 40:
-					self.create_new_line()
+				self.sheet.add_string(s[:index + 1])
+				self.sheet.x += len(s[:index + 1])
+				if self.sheet.x == 40:
+					self.sheet.create_new_line()
 
 			if new_s:
 				s = new_s
@@ -193,42 +195,42 @@ class Cept_page:
 	# API
 	def set_italics_on(self):
 		self.italics = True
-		self.dirty = True
+		self.sheet.dirty = True
 
 	# API
 	def set_italics_off(self):
 		self.italics = False
-		self.dirty = True
+		self.sheet.dirty = True
 
 	# API
 	def set_bold_on(self):
 		self.bold = True
-		self.dirty = True
+		self.sheet.dirty = True
 
 	# API
 	def set_bold_off(self):
 		self.bold = False
-		self.dirty = True
+		self.sheet.dirty = True
 
 	# API
 	def set_link_on(self):
 		self.link = True
-		self.dirty = True
+		self.sheet.dirty = True
 
 	# API
 	def set_link_off(self):
 		self.link = False
-		self.dirty = True
+		self.sheet.dirty = True
 
 	# API
 	def set_code_on(self):
 		self.code = True
-		self.dirty = True
+		self.sheet.dirty = True
 
 	# API
 	def set_code_off(self):
 		self.code = False
-		self.dirty = True
+		self.sheet.dirty = True
 
 	# API
 	def print(self, s, ignore_lf = False):
@@ -239,7 +241,7 @@ class Cept_page:
 			for s in components:
 				self.print_internal(s)
 				if not ignore_lf:
-					self.print_newline()
+					self.sheet.print_newline()
 		else:
 			self.print_internal(s)
 
@@ -249,11 +251,11 @@ class Cept_page:
 		self.prev_sheet = self.sheet_number
 
 		if level == 2:
-			if self.y == self.lines_per_sheet - 1 or self.y == self.lines_per_sheet - 2:
+			if self.sheet.y == self.lines_per_sheet - 1 or self.sheet.y == self.lines_per_sheet - 2:
 				# don't draw double height title into
 				# the last line or the one above
 				self.data_cept.extend(b'\n')
-				self.create_new_line()
+				self.sheet.create_new_line()
 			self.data_cept.extend(Cept.underline_off())
 			self.data_cept.extend(Cept.clear_line())
 			self.data_cept.extend(b'\n')
@@ -264,39 +266,25 @@ class Cept_page:
 			self.data_cept.extend(b'\r\n')
 			self.data_cept.extend(Cept.normal_size())
 			self.data_cept.extend(Cept.set_fg_color(15))
-			self.create_new_line()
-			self.create_new_line()
+			self.sheet.create_new_line()
+			self.sheet.create_new_line()
 		else:
-			if self.y == self.lines_per_sheet - 1:
+			if self.sheet.y == self.lines_per_sheet - 1:
 				# don't draw title into the last line
 				self.data_cept.extend(b'\n')
-				self.create_new_line()
+				self.sheet.create_new_line()
 			self.data_cept.extend(Cept.underline_on())
 			self.data_cept.extend(Cept.set_fg_color(0))
 			self.data_cept.extend(Cept.from_str(s[:39]))
 			self.data_cept.extend(Cept.underline_off())
 			self.data_cept.extend(Cept.set_fg_color(15))
 			self.data_cept.extend(b'\r\n')
-			self.create_new_line()
+			self.sheet.create_new_line()
 		return
 
 	# API
 	def number_of_sheets(self):
 		return self.sheet_number + 1
-
-	# internal
-	def cept_for_sheet(self, sheet_number):
-		data_cept = bytearray()
-		lines = self.lines_cept[sheet_number]
-		if not lines:
-			return None
-		for line in lines:
-			data_cept.extend(line)
-		# fill page with blank lines
-		for i in range(0, self.lines_per_sheet - len(lines)):
-			data_cept.extend(b'\n')
-			data_cept.extend(Cept.clear_line())
-		return data_cept
 
 	# API
 	def complete_cept_for_sheet(self, sheet_number, image = None):
@@ -344,7 +332,7 @@ class Cept_page:
 		data_cept.extend(Cept.set_cursor(5, 1))
 
 		# add text
-		data_cept.extend(self.cept_for_sheet(sheet_number))
+		data_cept.extend(self.sheets[sheet_number].data_cept())
 #		sys.stderr.write("self.cept_for_sheet(sheet_number): " + pprint.pformat(self.cept_for_sheet(sheet_number)) + "\n")
 
 		# transfer image on first sheet
@@ -395,7 +383,6 @@ class Cept_page:
 				if self.first_paragraph:
 					self.first_paragraph = False
 					self.insert_toc(self.soup)
-#					sys.stderr.write("self.page_and_link_index_for_link: " + pprint.pformat(self.page_and_link_index_for_link) + "\n")
 					self.print("\n")
 
 			elif t1.name in ["h2", "h3", "h4", "h5", "h6"]:
@@ -437,7 +424,8 @@ class Cept_page:
 					self.link_index += 1
 					self.set_link_off()
 				else: # link to section or external link, just print the text
-					self.print(t1.get_text(), self.ignore_lf)
+					self.insert_html_tags(t1.children)
+					#self.print(t1.get_text(), self.ignore_lf)
 
 			elif t1.name == "ul":
 				self.insert_html_tags(t1.children)
@@ -456,6 +444,23 @@ class Cept_page:
 				self.ignore_lf = False
 				self.insert_html_tags(t1.children)
 				self.ignore_lf = True
+#			elif t1.name == "img":
+#				if self.url:
+#					self.form_feed()
+#					url = t1["src"]
+#					if not url.startswith("http"): # XXX ugly
+#						p = urllib.parse.urlparse(self.url)
+#						url = '{uri.scheme}://{uri.netloc}'.format(uri=p) + "/" + url
+#					sys.stderr.write("url: " + pprint.pformat(url) + "\n")
+#					#self.print("<IMAGE>")
+#					from image import Image_UI
+#					image = Image_UI(url)
+#					self.data_cept.extend(Cept.define_palette(image.palette))
+#					self.data_cept.extend(image.drcs)
+#					self.data_cept.extend(image.characters_at_position(1, 4))
+#					self.form_feed()
+#				else:
+#					sys.stderr.write("ignoring image.\n")
 			else:
 				sys.stderr.write("ignoring tag: " + pprint.pformat(t1.name) + "\n")
 
