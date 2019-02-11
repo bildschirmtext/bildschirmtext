@@ -108,6 +108,14 @@ Dann kann der Decoder (siehe Downloads unten) gestartet werden. Die Einwahl wird
 
 Es sollte möglich sein, auch andere Software-Decoder über einen virtuellen seriellen Port mit der Server-Software zu verbinden. Über Erfahrungsberichte sind wir dankbar.
 
+## `neu-ulm` als Netzwerkserver
+
+Mit Hilfe von `socat` kann man den Server über das Netzwerk zugänglich
+machen:
+```
+socat TCP-LISTEN:20000,reuseaddr,fork 'exec:python neu-ulm.py'
+```
+
 ## Software-Decoder Downloads
 
 Es existieren einige Software-Decoder für unterschiedliche Betriebssysteme:
