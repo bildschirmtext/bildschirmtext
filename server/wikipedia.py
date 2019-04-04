@@ -145,7 +145,7 @@ class MediaWiki:
 		if not j :
 			sys.stderr.write("URL: " + pprint.pformat(url) + "\n")
 			contents = urllib.request.urlopen(url).read()
-			j = json.loads(contents)
+			j = json.loads(contents.decode("utf-8"))
 #			sys.stderr.write("RESPONSE: " + pprint.pformat(j) + "\n")
 			self.http_cache[url] = j
 		return j
@@ -283,7 +283,7 @@ class MediaWiki_UI:
 		page.article_prefix = mediawiki.article_prefix
 
 		# tell page renderer to leave room for the image in the top right of the first sheet
-		if image is not None:
+		if (image is not None) and (image.chars is not None):
 			page.title_image_width = len(image.chars[0])
 			page.title_image_height = len(image.chars) - 2 # image draws 2 characters into title area
 
