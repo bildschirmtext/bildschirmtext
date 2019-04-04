@@ -379,7 +379,7 @@ class MediaWiki_UI:
 
 		y = 6
 		for l in image.chars:
-			data_cept.extend(Cept.set_cursor(y, int((41 - len(chars[0])) / 2)))
+			data_cept.extend(Cept.set_cursor(y, int((41 - len(image.chars[0])) / 2)))
 			data_cept.extend(Cept.load_g0_drcs())
 			data_cept.extend(l)
 			y += 1
