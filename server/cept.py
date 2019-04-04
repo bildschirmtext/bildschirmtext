@@ -296,7 +296,7 @@ class Cept_page:
 			data_cept.extend(b'\n')
 		else:
 			# on sheets b+, we need to clear the image area
-			if image:
+			if image and (image is not None) and (image.chars is not None):
 				for i in range(0, 2):
 					data_cept.extend(Cept.set_cursor(3 + i, 41 - len(image.chars[0])))
 					data_cept.extend(Cept.repeat(" ", len(image.chars[0])))
@@ -324,7 +324,7 @@ class Cept_page:
 #		sys.stderr.write("self.cept_for_sheet(sheet_number): " + pprint.pformat(self.cept_for_sheet(sheet_number)) + "\n")
 
 		# transfer image on first sheet
-		if is_first_page and image:
+		if is_first_page and image and (image is not None) and (image.chars is not None):
 			# placeholder rectangle
 			for y in range(0, len(image.chars)):
 				data_cept.extend(Cept.set_cursor(3 + y, 41 - len(image.chars[0])))
