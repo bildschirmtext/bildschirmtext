@@ -293,9 +293,12 @@ def create_page(pageid):
 		if data_cept is None:
 			return None
 
-	with open(basedir + "a.glob") as f:
-		glob = json.load(f)
-	meta.update(glob) # combine dicts, glob overrides meta
+	try:
+		with open(basedir + "a.glob") as f:
+			glob = json.load(f)
+		meta.update(glob) # combine dicts, glob overrides meta
+	except:
+		pass
 
 	cept_1 = bytearray()
 
@@ -313,9 +316,12 @@ def create_page(pageid):
 		cept_2.extend(Cept.serial_limited_mode())
 		cept_2.extend(Cept.clear_screen())
 
-	# header
-	hf = headerfooter(pageid, meta["publisher_name"], meta["publisher_color"])
-	cept_2.extend(hf)
+	# header if the data is actually there, if not ignore this
+	try:
+		hf = headerfooter(pageid, meta["publisher_name"], meta["publisher_color"])
+		cept_2.extend(hf)
+	except:
+		pass
 
 	if meta.get("parallel_mode", False):
 		cept_2.extend(Cept.parallel_mode())
@@ -325,8 +331,11 @@ def create_page(pageid):
 
 	cept_2.extend(Cept.serial_limited_mode())
 
-	# footer
-	cept_2.extend(hf)
+	# footer if it exists
+	try:
+		cept_2.extend(hf)
+	except:
+		pass
 
 	cept_2.extend(Cept.sequence_end_of_page())
 
