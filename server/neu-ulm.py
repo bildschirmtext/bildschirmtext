@@ -591,8 +591,11 @@ while True:
 			add_to_history = False
 		elif desired_pageid:
 			sys.stderr.write("showing page: '" + desired_pageid + "'\n")
-			ret = create_page(desired_pageid)
-	
+			try:
+				ret = create_page(desired_pageid)
+			except:
+				error=10
+
 			success = ret is not None
 			if success:
 				(page_cept_data_1, page_cept_data_2, links, inputs, autoplay) = ret
