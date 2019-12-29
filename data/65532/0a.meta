@@ -1,4 +1,4 @@
-{ "clear_screen": false,
+{ "clear_screen": true,
 "links":{	"0": "1a"
 }, "publisher_color": 7
 }
