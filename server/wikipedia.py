@@ -179,7 +179,10 @@ class MediaWiki:
 
 	def html_for_wikiid(self, wikiid):
 		j = self.fetch_json_from_server(self.wiki_url + self.api_prefix + "api.php?action=parse&prop=text&pageid=" + str(wikiid) + "&format=json")
-		title = j["parse"]["title"]
+		try:
+			title = j["parse"]["title"]
+		except: 
+			title = "ERROR"
 		html = j["parse"]["text"]["*"]
 		return (title, html)
 
@@ -431,11 +434,11 @@ class MediaWiki_UI:
 		if re.search("^" + CONGRESS_PAGEID_PREFIX, pageid):
 			sys.stderr.write("pageid: " + pprint.pformat(pageid) + "\n")
 #			wiki_url = "https://events.ccc.de/congress/2018/wiki/index.php"
-			wiki_url = "https://events.ccc.de/congress/2018/"
+			wiki_url = "https://events.ccc.de/congress/2019/"
 			mediawiki = MediaWiki.get_from_wiki_url(wiki_url)
-			mediawiki.article_prefix = "/congress/2018/wiki/index.php/"
+			mediawiki.article_prefix = "/congress/2019/wiki/index.php/"
 			mediawiki.pageid_prefix = CONGRESS_PAGEID_PREFIX
-			mediawiki.title = "35C3 Wiki"
+			mediawiki.title = "36C3 Wiki"
 			mediawiki.search_string = "Search: "
 			if len(pageid) == 3:
 				return MediaWiki_UI.create_search_page(mediawiki, basedir)
