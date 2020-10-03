@@ -199,9 +199,13 @@ def create_preamble(basedir, meta):
 		last_filename_palette = ""
 
 	if "include" in meta:
-		filename_include = basedir + meta["include"] + ".inc"
+		if os.path.isfile( basedir + meta["include"] + ".cept"):
+			filename_include = basedir + meta["include"] + ".cept"
+		else:
+			filename_include = basedir + meta["include"] + ".inc"
+		sys.stderr.write("Filename_include="+filename_include+"\n");
 		filename_include_cm = basedir + meta["include"] + ".inc.cm"
-		if filename_include != last_filename_include:
+		if ((filename_include != last_filename_include) or meta.get("clear_screen", False)):
 			last_filename_include = filename_include
 			if os.path.isfile(filename_include):
 				with open(filename_include, mode='rb') as f:
@@ -307,6 +311,8 @@ def create_page(pageid):
 	if meta.get("clear_screen", False):
 		cept_1.extend(Cept.serial_limited_mode())
 		cept_1.extend(Cept.clear_screen())
+		last_filename_include = ""
+		sys.stderr.write("Clear Screen\n");
 
 	cept_1.extend(create_preamble(basedir, meta))
 
@@ -315,6 +321,7 @@ def create_page(pageid):
 	if meta.get("cls2", False):
 		cept_2.extend(Cept.serial_limited_mode())
 		cept_2.extend(Cept.clear_screen())
+		last_filename_include = ""
 
 	# header if the data is actually there, if not ignore this
 	try:
