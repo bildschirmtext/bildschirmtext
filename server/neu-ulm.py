@@ -199,12 +199,14 @@ def create_preamble(basedir, meta):
 		last_filename_palette = ""
 
 	if "include" in meta:
-		if os.path.isfile( basedir + meta["include"] + ".cept"):
-			filename_include = basedir + meta["include"] + ".cept"
-		else:
+		if os.path.isfile( basedir + meta["include"] + ".inc"):
+			filename_include_cm = basedir + meta["include"] + ".inc.cm"
 			filename_include = basedir + meta["include"] + ".inc"
+		else:
+			filename_include_cm =""
+			filename_include = basedir + meta["include"] + ".cept"
 		sys.stderr.write("Filename_include="+filename_include+"\n");
-		filename_include_cm = basedir + meta["include"] + ".inc.cm"
+
 		if ((filename_include != last_filename_include) or meta.get("clear_screen", False)):
 			last_filename_include = filename_include
 			if os.path.isfile(filename_include):
