@@ -1,0 +1,7 @@
+[package]
+name = "rs-server"
+version = "0.1.0"
+authors = ["Michael Steil <mist64@mac.com>"]
+edition = "2018"
+
+[dependencies]
