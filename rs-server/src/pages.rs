@@ -1,40 +1,234 @@
 use std::io::Write;
 use super::cept::*;
 
+struct InputField {
+    name: String,
+    line: i8,
+    column: i8,
+    height: i8,
+    width: i8,
+    clear_line: bool,
+    legal_values: Vec<String>,
+    end_on_illegal_character: bool,
+    end_on_legal_string: bool,
+    echo_ter: bool,
+}
+
+struct Input {
+    fields: Vec<InputField>,
+    confirm: bool,
+    no_55: bool,
+}
 
 pub fn interactive_mode(stream: &mut impl Write)
 {
+    let mut desired_pageid = "00000".to_string(); // login page
+    let compress = false;
+
+    let mut current_pageid = "".to_string();
+    let autoplay = false;
+    let mut inputs: Vec<Input> = vec!();
+    let mut history: Vec<String> = vec!();
+    let mut error = 0;
+
+    let showing_message = false;
+
+    let mut last_filename_palette = "";
+    let mut last_filename_include = "";
+
     loop {
+        // if User.user() is not None:
+    	// 	User.user().stats.update()
 
-        let pageid = "123";
-
-        let page = Page::create_historic_main_page();
-
-        let mut cept1 = Cept::new();
-        cept1.hide_cursor();
-
-        if page.meta.clear_screen {
-            cept1.serial_limited_mode();
-            cept1.clear_screen();
-            //last_filename_include = ""
+        if desired_pageid.len() > 0 && desired_pageid.chars().last().unwrap().is_ascii_digit() {
+            desired_pageid += "a";
         }
 
-        // cept1.extend(create_preamble(basedir, meta))
+        let mut add_to_history = true;
+        if error == 0 {
+            add_to_history = true;
 
-        let mut cept2 = Cept::new();
+            // *# back
+            if desired_pageid == "" {
+                if history.len() < 2 {
+                    // sys.stderr.write("ERROR: No history.\n")
+                    error = 10
+                } else {
+                    let _ = history.pop();
+                    desired_pageid = history.pop().unwrap();
+                    // if we're navigating back across page numbers...
+                    if desired_pageid.chars().last().unwrap() != current_pageid.chars().last().unwrap() {
+                        // if previous page was sub-page, keep going back until "a"
+                        while desired_pageid.chars().last().unwrap() != 'a' {
+                            desired_pageid = history.pop().unwrap();
+                        }
+                    }
+                }
+            }
+            if desired_pageid == "09" { // hard reload
+                // sys.stderr.write("hard reload\n")
+                desired_pageid = history.last().unwrap().to_string();
+                add_to_history = false;
+                // force load palette and include
+                last_filename_palette = "";
+                last_filename_include = "";
+            }
+            if desired_pageid == "00" { // re-send CEPT data of current page
+                // sys.stderr.write("resend\n")
+                error = 0;
+                add_to_history = false;
+            } else if desired_pageid != "" {
+                // sys.stderr.write("showing page: '" + desired_pageid + "'\n")
+                let (cept1, cept2, links, inputs, autoplay) = create_page();
+                // except:
+                //     error=10
 
-        if page.meta.cls2 {
-            cept2.serial_limited_mode();
-            cept2.clear_screen();
-            // last_filename_include = ""
+                // if (compress):
+                //     page_cept_data_1 = Cept.compress(page_cept_data_1)
+                //     page_cept_data_2 = Cept.compress(page_cept_data_2)
+
+                // sys.stderr.write("Sending pal/char: ")
+                stream.write_all(cept1.data()).unwrap();
+                // sys.stderr.write("Sending text: ")
+                stream.write_all(cept2.data()).unwrap();
+
+                // # user interrupted palette/charset, so the decoder state is undefined
+                // last_filename_palette = ""
+                // last_filename_include = ""
+
+
+                error = 0
+
+                // if success else 100
+            } else {
+                error = 100
+            }
         }
 
-        headerfooter(&mut cept2, pageid, page.meta.publisher_name.as_deref(), page.meta.publisher_color);
+        if error == 0 {
+            current_pageid = desired_pageid;
+            if add_to_history {
+                history.push(current_pageid.clone());
+            };
+        } else {
+        //     if desired_pageid:
+    	// 		sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\n")
+		// 	if (desired_pageid[-1] >= "b" and desired_pageid[-1] <= "z"):
+		// 		code = 101
+    	// 	cept_data = Util.create_system_message(error) + Cept.sequence_end_of_page()
+    	// 	sys.stdout.buffer.write(cept_data)
+    	// 	sys.stdout.flush()
+    	// 	showing_message = True
+        }
+
+        desired_pageid = "".to_string();
+
+        if autoplay {
+            // sys.stderr.write("autoplay!\n")
+            // input_data = { "$navigation" : "" }
+        } else {
+            if inputs.is_empty() {
+                // legal_values = list(links.keys())
+                // if "#" in legal_values:
+                //     legal_values.remove("#")
+                let legal_values = vec!();
+                inputs = vec!(Input {
+                    fields: vec!(
+                        InputField {
+                            name: "$navigation".to_string(),
+                            line: 24,
+                            column: 1,
+                            height: 1,
+                            width: 20,
+                            clear_line: false,
+                            legal_values: legal_values,
+                            end_on_illegal_character: true,
+                            end_on_legal_string: true,
+                            echo_ter: true,
+                        }),
+                    confirm: false,
+                    no_55: true,
+                });
+            }
+
+            // input_data = handle_inputs(inputs)
+
+            // sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
+        }
+
+        // error = 0;
+        // desired_pageid = input_data.get("$command")
+
+        // if desired_pageid is None:
+        //     val = input_data["$navigation"]
+        //     val_or_hash = val if val else "#"
+        //     if val_or_hash in links:
+        //         # link
+        //         desired_pageid = links[val_or_hash]
+        //         decode = decode_call(desired_pageid, None)
+        //         if decode:
+        //             desired_pageid = decode
+        //     elif not val:
+        //         # next sub-page
+        //         if current_pageid[-1:].isdigit():
+        //             desired_pageid = current_pageid + "b"
+        //         elif current_pageid[-1:] >= "a" and current_pageid[-1:] <= "y":
+        //             desired_pageid = current_pageid[:-1] + chr(ord(current_pageid[-1:]) + 1)
+        //         else:
+        //             error = 101
+        //             desired_pageid = None
+        //     else:
+        //         error = 100
+        //         desired_pageid = None
 
 
-        stream.write_all(cept1.data()).unwrap();
-        stream.write_all(cept2.data()).unwrap();
     }
+}
+
+pub fn create_page() -> (Cept, Cept, &'static str, &'static str, bool) {
+    let pageid = "123";
+
+    let page = Page::create_historic_main_page();
+
+    let mut cept1 = Cept::new();
+    cept1.hide_cursor();
+
+    if page.meta.clear_screen {
+        cept1.serial_limited_mode();
+        cept1.clear_screen();
+        //last_filename_include = ""
+    }
+
+    // cept1.extend(create_preamble(basedir, meta))
+
+    let mut cept2 = Cept::new();
+
+    if page.meta.cls2 {
+        cept2.serial_limited_mode();
+        cept2.clear_screen();
+        // last_filename_include = ""
+    }
+
+    headerfooter(&mut cept2, pageid, page.meta.publisher_name.as_deref(), page.meta.publisher_color);
+
+    if page.meta.parallel_mode {
+        cept2.parallel_mode();
+    }
+
+    cept2.add_raw(page.cept.data());
+
+    cept2.serial_limited_mode();
+
+    // cept_2.extend(hf) //???
+
+    cept2.sequence_end_of_page();
+
+    // XXX
+    let links = "";
+    let inputs = "";
+    let autoplay = false;
+
+    (cept1, cept2, links, inputs, autoplay)
 }
 
 pub fn headerfooter(cept: &mut Cept, pageid: &str, publisher_name: Option<&str>, publisher_color: u8) {
@@ -125,6 +319,7 @@ struct Meta {
     publisher_name: Option<String>,
     clear_screen: bool,
     cls2: bool,
+    parallel_mode: bool,
     links: Vec<(String, String)>,
     publisher_color: u8,
 }
@@ -184,6 +379,7 @@ impl Page {
             publisher_name: Some("!BTX".to_owned()),
             clear_screen: true,
             cls2: false,
+            parallel_mode: false,
             links: vec![
         		("0".to_owned(), "0".to_owned()),
 				("10".to_owned(), "710".to_owned()),
@@ -226,3 +422,4 @@ impl Page {
 fn format_currency(price: f32) -> String {
     format!("DM  {},{:02}", (price / 100.0).floor(), (price % 100.0).floor())
 }
+

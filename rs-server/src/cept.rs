@@ -195,6 +195,14 @@ impl Cept {
         }
     }
 
+    pub fn sequence_end_of_page(&mut self) {
+        self.data.extend(&[
+        0x1f, 0x58, 0x41, // set cursor to line 24, column 1
+        0x11,             // show cursor
+        0x1a,             // end of page
+        ]);
+    }
+
 	pub fn ini(&mut self) {
         self.data.push(0x13);
     }
