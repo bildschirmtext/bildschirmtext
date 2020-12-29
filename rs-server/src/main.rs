@@ -1,3 +1,9 @@
+mod cept;
+
+use cept::*;
+
 fn main() {
-    println!("Hello, world!");
+    let mut cept = Cept::new();
+    cept.add_str(&"hello");
+    println!("{:?}", cept.data());
 }
