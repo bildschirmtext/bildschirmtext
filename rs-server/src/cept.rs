@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub struct Cept {
     data: Vec<u8>,
     mode: i32,
@@ -188,4 +190,200 @@ impl Cept {
             };
         }
     }
+
+	pub fn ini(&mut self) {
+        self.data.push(0x13);
+    }
+
+	pub fn ter(&mut self) {
+		self.data.push(0x1c);
+    }
+
+	pub fn dct(&mut self) {
+		self.data.push(0x1a);
+    }
+
+	pub fn set_res_40_24(&mut self) {
+		self.data.extend(&[0x1f, 0x2d]);
+    }
+
+	pub fn show_cursor(&mut self) {
+		self.data.push(0x11);
+    }
+
+	pub fn hide_cursor(&mut self) {
+		self.data.push(0x14);
+    }
+
+	pub fn cursor_home(&mut self) {
+		self.data.push(0x1e);
+    }
+
+	pub fn cursor_left(&mut self) {
+		self.data.push(0x08);
+    }
+
+	pub fn cursor_right(&mut self) {
+		self.data.push(0x09);
+    }
+
+	pub fn cursor_down(&mut self) {
+		self.data.push(0x0a);
+    }
+
+	pub fn cursor_up(&mut self) {
+		self.data.push(0x0b);
+    }
+
+	pub fn set_cursor(&mut self, y: u8, x: u8) {
+        self.data.push(0x1f);
+        self.data.push(0x40 + y);
+        self.data.push(0x40 + x);
+    }
+
+	pub fn clear_screen(&mut self) {
+		self.data.push(0x0c);
+    }
+
+	pub fn clear_line(&mut self) {
+		self.data.push(0x18);
+    }
+
+	pub fn protect_line(&mut self) {
+		self.data.extend(&[0x9b, 0x31, 0x50]);
+    }
+
+	pub fn unprotect_line(&mut self) {
+		self.data.extend(&[0x9b, 0x31, 0x51]);
+    }
+
+	pub fn parallel_mode(&mut self) {
+		self.data.extend(&[0x1b, 0x22, 0x41]);
+    }
+
+	pub fn serial_limited_mode(&mut self) {
+		self.data.extend(&[0x1f, 0x2f, 0x43]);
+    }
+
+	pub fn parallel_limited_mode(&mut self) {
+		self.data.extend(&[0x1f, 0x2f, 0x44]);
+    }
+
+	pub fn repeat(&mut self, c: u8, n: u8) {
+        self.data.push(c);
+        self.data.push(0x12);
+        self.data.push(0x40 + n - 1);
+    }
+
+	pub fn set_palette(&mut self, pal: u8) {
+        self.data.push(0x9b);
+        self.data.push(0x30 + pal);
+        self.data.push(0x40);
+    }
+
+	pub fn set_fg_color_simple(&mut self, c: u8) {
+        self.data.push(0x80 + c);
+    }
+
+	pub fn set_bg_color_simple(&mut self, c: u8) {
+        self.data.push(0x90 + c);
+    }
+
+	pub fn set_fg_color(&mut self, c: u8) {
+        self.set_palette(c >> 3);
+        self.set_fg_color_simple(c & 7);
+    }
+
+	pub fn set_bg_color(&mut self, c: u8) {
+        self.set_palette(c >> 3);
+        self.set_bg_color_simple(c & 7);
+    }
+
+	pub fn set_line_bg_color_simple(&mut self, c: u8) {
+        self.data.extend(&[0x1b, 0x23, 0x21]);
+        self.data.push(0x50 + c);
+    }
+
+	pub fn set_line_bg_color(&mut self, c: u8) {
+        self.set_palette(c >> 3);
+        self.set_line_bg_color_simple(c & 7);
+    }
+
+	pub fn set_screen_bg_color_simple(&mut self, c: u8) {
+        self.data.extend(&[0x1b, 0x23, 0x20]);
+        self.data.push(0x50 + c);
+    }
+
+	pub fn set_screen_bg_color(&mut self, c: u8) {
+        self.set_palette(c >> 3);
+        self.set_screen_bg_color_simple(c & 7);
+    }
+
+	pub fn set_line_fg_color_simple(&mut self, c: u8) {
+        self.data.extend(&[0x1b, 0x23, 0x21]);
+        self.data.push(0x40 + c);
+    }
+
+	pub fn set_left_g0(&mut self) {
+		self.data.push(0x0f);
+    }
+
+	pub fn set_left_g3(&mut self) {
+		self.data.extend(&[0x1b, 0x6f]);
+    }
+
+	pub fn load_g0_drcs(&mut self) {
+		self.data.extend(&[0x1b, 0x28, 0x20, 0x40]);
+    }
+
+	pub fn load_g0_g0(&mut self) {
+		self.data.extend(&[0x1b, 0x28, 0x40]);
+    }
+
+	pub fn service_break(&mut self, y: u8) {
+        self.data.extend(&[0x1f, 0x2f, 0x40]);
+        self.data.push(0x40 + y);
+    }
+
+	pub fn service_break_back(&mut self) {
+		self.data.extend(&[0x1f, 0x2f, 0x4f]);
+    }
+
+	pub fn normal_size(&mut self) {
+		self.data.push(0x8c);
+    }
+
+	pub fn double_height(&mut self) {
+		self.data.push(0x8d);
+    }
+
+	pub fn double_width(&mut self) {
+		self.data.push(0x8e);
+    }
+
+	pub fn double_size(&mut self) {
+		self.data.push(0x8f);
+    }
+
+	pub fn underline_off(&mut self) {
+		self.data.push(0x99);
+    }
+
+	pub fn underline_on(&mut self) {
+		self.data.push(0x9a);
+    }
+
+	pub fn hide_text(&mut self) {
+		self.data.push(0x98);
+    }
+
+	pub fn code_9d(&mut self) {
+		self.data.push(0x9d);
+    }
+
+	pub fn code_9e(&mut self) {
+		self.data.push(0x9e);
+    }
+
+
 }
