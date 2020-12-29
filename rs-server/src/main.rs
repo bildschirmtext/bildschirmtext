@@ -1,9 +1,17 @@
 mod cept;
+mod pages;
 
-use cept::*;
+use std::net::TcpListener;
+use std::thread;
 
 fn main() {
-    let mut cept = Cept::new();
-    cept.add_str(&"hello");
-    println!("{:?}", cept.data());
+    let listener = TcpListener::bind("127.0.0.1:20000").unwrap();
+    println!("Neu-Ulm running.");
+    for stream in listener.incoming() {
+        thread::spawn(|| {
+            let mut stream = stream.unwrap();
+            pages::interactive_mode(&mut stream);
+        });
+    }
+
 }

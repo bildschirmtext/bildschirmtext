@@ -19,6 +19,10 @@ impl Cept {
         &self.data
     }
 
+    pub fn add_raw(&mut self, data: &[u8]) {
+        self.data.extend(data);
+    }
+
     fn g2code(&mut self, s: &[u8]) {
         debug_assert!(s.len() != 0);
         debug_assert!(s.len() <= 2);
