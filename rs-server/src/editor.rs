@@ -6,12 +6,12 @@
 // * An editor has a position, a size, a foreground and a background color. If
 //   the color properties are set, it will draw its own background.
 // * An editor can be given a list of legal inputs.
-//   If end_on_illegal_character is True, as soon as a character is entered
+//   If end_on_illegal_character is true, as soon as a character is entered
 //   that makes the current contents of the editor illegal, the edit() method
 //   returns the illegal string.
-//   If end_on_illegal_character is False, characters that would make the input
+//   If end_on_illegal_character is false, characters that would make the input
 //   illegal are ignored.
-//   If end_on_legal_string is True, the edit() method returns as soon as a
+//   If end_on_legal_string is true, the edit() method returns as soon as a
 //   legal string is completed.
 //
 // ## Command Mode
@@ -37,9 +37,11 @@
 use std::io::Write;
 use super::cept::*;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum InputType {
     Normal,
+    Number,
+    Alpha,
     Password,
 }
 
@@ -56,10 +58,11 @@ pub struct InputField {
     pub typ: InputType,
     pub cursor_home: bool,
     pub clear_line: bool,
-    pub legal_values: Vec<String>,
+    pub legal_values: Option<Vec<String>>,
     pub end_on_illegal_character: bool,
     pub end_on_legal_string: bool,
     pub echo_ter: bool,
+    pub command_mode: bool,
     pub no_navigation: bool,
     pub default: Option<String>,
 }
@@ -85,9 +88,9 @@ impl Editor {
         Editor { input_field: input_field.clone(), data, x: 0, y: 0, last_c: '\0' }
     }
 
-	pub fn string(self) -> String {
+	pub fn string(&self) -> String {
 		let mut string = String::new();
-		for l in self.data {
+		for l in &self.data {
             string += l.trim_end();
             string.push('\n');
         }
@@ -95,6 +98,25 @@ impl Editor {
             string.pop();
         }
         string
+    }
+
+	pub fn set_string(&mut self, string: &str) {
+		self.data = vec!();
+		for line in string.lines().take(self.input_field.height as usize) {
+            let mut line = line.to_string();
+            while line.len() < self.input_field.width as usize {
+                line.push(' ');
+            }
+            self.data.push(line);
+        }
+        let mut empty_line = String::new();
+        while empty_line.len() < self.input_field.width as usize {
+            empty_line.push(' ');
+        }
+        while self.data.len() < self.input_field.height as usize {
+            self.data.push(empty_line.clone());
+        }
+//		sys.stderr.write("self.__data:\n" + pprint.pformat(self.__data) + "\n")
     }
 
 	pub fn set_color(&self) -> Cept {
@@ -121,7 +143,7 @@ impl Editor {
             let l = match self.input_field.typ {
                 InputType::Password => "*".repeat(l.len()),
 			    _ => {
-                    if l.starts_with("\x13") { // XXX Cept.ini()
+                    if l.starts_with("\x13") { // XXX cept_ini()
                         "*".to_string() + &l[1..]
                     } else {
                         l.to_string()
@@ -174,16 +196,19 @@ impl Editor {
         }
     }
 
-	pub fn try_insert_character(&mut self, c: char) {
+	pub fn try_insert_character(&mut self, c: char) -> String {
+        let mut s = self.data[self.y as usize].clone();
 		if self.x < self.input_field.width {
             let y = self.y as usize;
-            self.data[y].insert(self.x as usize, c);
+            s.insert(self.x as usize, c);
         }
+        s
     }
 
-    pub fn insert_character(&mut self, s: &mut String, c: char) -> bool {
+    pub fn insert_character(&mut self, c: char) -> bool {
 		if self.x < self.input_field.width {
-            self.try_insert_character(c);
+            self.data[self.y as usize].insert(self.x as usize, c);
+            self.x += 1;
             true
         } else {
             false
@@ -220,12 +245,12 @@ impl Editor {
             '\r' => { // enter
                 // some terminals send CR/LF, others just CR, so we have to do
                 // the work on CR, and ignore LF if it was preceded by a CR
-                self.insert_carriage_return();
-                self.insert_line_feed();
+                self.insert_carriage_return(stream);
+                self.insert_line_feed(stream);
             },
             '\n' => { // down
                 if self.last_c != '\r' { // see above
-                    self.insert_line_feed();
+                    self.insert_line_feed(stream);
                 }
             },
             '\x08' => { // left
@@ -252,7 +277,227 @@ impl Editor {
                     stream.flush();
                 }
             },
+            _ => {},
         }
         self.last_c = c
     }
+
+	pub fn edit(&mut self, skip_entry: bool, stream: &mut impl Write) -> (Option<String>, bool) {
+		let mut start = true;
+		let mut dct = false;
+		let mut prefix = vec!();
+		let mut inject_char: Option<u8> = None;
+
+		loop {
+			if start && !skip_entry {
+				start = false;
+				self.print_hint(stream);
+				let mut cept = Cept::new();
+				self.y = 0;
+				if self.input_field.height > 1 || self.input_field.cursor_home {
+					cept.set_cursor(self.input_field.line, self.input_field.column);
+                    self.x = 0;
+                } else {
+                    let string_len = self.string().len();
+                    cept.set_cursor(self.input_field.line, self.input_field.column + string_len as u8);
+                    self.x = string_len as u8;
+                }
+				if let Some(fgcolor) = self.input_field.fgcolor {
+                    cept.set_fg_color(fgcolor);
+                }
+				if let Some(bgcolor) = self.input_field.bgcolor {
+                    cept.set_bg_color(bgcolor);
+                }
+				cept.show_cursor();
+                stream.write_all(cept.data()).unwrap();
+                stream.flush();
+            }
+
+			if skip_entry {
+				// sys.stderr.write("skipping\n")
+                break;
+            }
+
+            let mut c;
+			if let Some(i) = inject_char {
+				c = i;
+				inject_char = None;
+            } else {
+                c = readchar();
+            }
+			// sys.stderr.write("In: " + hex(c) + "\n")
+
+			if self.input_field.command_mode && c == cept_ini() && self.string().chars().last().unwrap() == cept_ini() as char {
+				// exit command mode, tell parent to clear
+                return (None, false);
+            }
+
+            let mut x = prefix.clone();
+            x.push(c);
+			let c2 = Cept::code_to_char(&x);
+			if !c2.is_some() { // sequence not complete
+				prefix.push(c);
+                continue;
+            }
+			prefix = vec!();
+			if c2.unwrap() == '\0' { // we couldn't decode it
+                continue
+            }
+			c = c2.unwrap() as u8; // XXX
+
+			// if c < 0x20
+			//     c is a CEPT control code
+			// if c >= 0x20
+			//     c is Unicode
+
+			if c < 0x20 { //and c != cept_ini():
+				prefix = vec!();
+				if c == cept_ini() {
+					if !self.input_field.command_mode {
+                        // sys.stderr.write("entering command mode\n");
+                        let mut input_field = InputField {
+                            name: "".to_string(),
+                            line: 24,
+                            column: 1,
+                            height: 1,
+                            width: 20,
+                            fgcolor: None,
+                            bgcolor: None,
+                            hint: None,
+                            typ: InputType::Normal,
+                            cursor_home: false,
+                            clear_line: true,
+                            legal_values: None,
+                            end_on_illegal_character: false,
+                            end_on_legal_string: false,
+                            echo_ter: true,
+                            command_mode: true,
+                            no_navigation: false,
+                            default: None,
+
+                        };
+                        let mut editor = Editor::new(input_field);
+                        editor.set_string(&cept_ini().to_string());
+						editor.draw(stream);
+						let (val, dct) = editor.edit(false, stream);
+                        // sys.stderr.write("exited command mode\n");
+                        if let Some(val) = val {
+                            // Editor.debug_print(val);
+                            let mut x = cept_ini().to_string();
+                            x += "02";
+							if val.starts_with(&x) && val.len() == 4 {
+								// editor codes *021# etc.
+                                let code = val[3..].parse().unwrap();
+                                let c = match code {
+									1 => Some('\r'),   // CR
+									2 => Some('\x0b'), // UP
+									4 => Some('\x08'), // LEFT
+									6 => Some('\x09'), // RIGHT
+									8 => Some('\n'),   // DOWN
+                                    9 => Some('\x1a'),  // DCT
+                                    _ => None,
+								};
+                                if let Some(c) = c {
+                                    inject_char = Some(c as u8);
+                                } else {
+                                        // sys.stderr.write("ignoring invalid editor code\n")
+                                }
+                            } else {
+								// global code
+                                let mut x1 = cept_ini().to_string();
+                                x1 += "00";
+                                let mut x2 = cept_ini().to_string();
+                                x2 += "09";
+                                    if !self.input_field.no_navigation || val == x1 || val == x2 {
+                                    return (Some(val), false);
+                                }
+                                // sys.stderr.write("ignoring navigation\n")
+                            }
+                        } else { // "**" in command mode
+                            self.set_string("");
+                            self.draw(stream);
+                        }
+						start = true;
+                        continue;
+                    }
+                } else if c == cept_ter() {
+					if self.input_field.echo_ter {
+						// sys.stdout.write("#");
+                        // sys.stdout.flush();
+                    }
+                    break
+                } else if c == cept_dct() {
+					dct = true;
+                    break;
+                }
+				self.insert_control_character(c as char, stream)
+            } else { // c >= 0x20
+				let mut character_legal = true;
+				let mut string_legal = false;
+				// CEPT doesn't have a concept of backspace, so the backspace key
+				// sends the sequence CSR_LEFT, SPACE, CSR_LEFT. It is very tricky
+				// to detect this properly, so we will just allow spaces in
+				// "number" and "alpha" input fields.
+				if self.input_field.typ == InputType::Number && !c.is_ascii_digit() && c != b' ' {
+					character_legal = false;
+                } else if self.input_field.typ == InputType::Alpha && !c.is_ascii_alphabetic() && c != b' ' {
+					character_legal = false;
+				} else {
+                    let x = self.try_insert_character(c as char);
+                    let s = x.trim_end();
+                    if let Some(legal_values) = &self.input_field.legal_values {
+                        character_legal = false;
+                        for legal_input in legal_values {
+                            if s == legal_input {
+                                character_legal = true;
+                                string_legal = true;
+                                // sys.stderr.write("string_legal!\n")
+                                break
+                            } else if legal_input.starts_with(s) {
+                                character_legal = true;
+                                // sys.stderr.write("character_legal!\n")
+                                break;
+                            }
+                        }
+                    }
+                }
+				if character_legal || self.input_field.end_on_illegal_character {
+					if self.insert_character(c as char) {
+						if self.input_field.typ == InputType::Password {
+							// sys.stdout.write("*");
+                        } else {
+                            // sys.stdout.buffer.write(Cept.from_str(c));
+                        }
+                        // sys.stdout.flush();
+                    }
+                }
+				if !character_legal && self.input_field.end_on_illegal_character {
+                    break;
+                }
+				if string_legal && self.input_field.end_on_legal_string {
+                    break;
+                }
+            }
+        }
+			// sys.stderr.write("self.data:\n" + pprint.pformat(selfdata) + "\n")
+			// sys.stderr.write("self.string:\n" + pprint.pformat(self.string) + "\n")
+
+        return (Some(self.string()), dct);
+    }
+}
+
+fn readchar() -> u8 {
+    0
+}
+
+fn cept_ini() -> u8 {
+    0x13
+}
+
+fn cept_dct() -> u8 {
+    0x1a
+}
+
+fn cept_ter() -> u8 {
+    0x1c
 }

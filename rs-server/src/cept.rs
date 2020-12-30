@@ -2,6 +2,7 @@
 
 use std::ops;
 
+#[derive(Clone)]
 pub struct Cept {
     data: Vec<u8>,
     mode: i32,
@@ -213,6 +214,49 @@ impl Cept {
         }
     }
 
+    pub fn code_to_char(s1: &[u8]) -> Option<char> {
+        // returns a unicode string of the single-char CEPT sequence
+        // - '\0': there's is nothing we could decode in the string
+        // - None: the sequence is incomplete
+        if s1.len() == 0 {
+            Some('\0')
+        } else if s1.len() == 1 && s1[0] <= 0x7f && s1[0] != 0x19 {
+            Some(s1[0] as char) // CEPT == ASCII for 0x00-0x7F (except 0x19)
+        } else if s1[0] == 0x19 {
+            if s1.len() == 1 {
+                None
+    //			sys.stderr.write("s1[1]: " + pprint.pformat(s1[1]) + "\n")
+    //			sys.stderr.write("len(s1): " + pprint.pformat(len(s1)) + "\n")
+            } else if s1[1] == b'H' { // "¨" prefix
+                if s1.len() == 2 { // not complete
+                    None
+                } else {
+                    if s1[2] == b'a' {
+                        Some('ä')
+                    } else if s1[2] == b'o' {
+                        Some('ö')
+                    } else if s1[2] == b'u' {
+                        Some('ü')
+                    } else if s1[2] == b'A' {
+                        Some('Ä')
+                    } else if s1[2] == b'O' {
+                        Some('Ö')
+                    } else if s1[2] == b'U' {
+                        Some('Ü')
+                    } else {
+                        Some('\0')
+                    }
+                }
+            } else if s1[1] == b'{' { // &szlig
+                Some('ß')
+            } else {
+                Some('\0')
+            }
+        } else {
+            Some('\0')
+        }
+    }
+
     pub fn sequence_end_of_page(&mut self) {
         self.data.extend(&[
         0x1f, 0x58, 0x41, // set cursor to line 24, column 1
@@ -417,5 +461,15 @@ impl Cept {
 
     pub fn extend(&mut self, other: &Cept) {
         self.data.extend(&other.data);
+    }
+}
+
+impl ops::Add<Cept> for Cept {
+    type Output = Cept;
+
+    fn add(self, rhs: Cept) -> Cept {
+        let mut cept = self.clone();
+        cept.add_raw(&rhs.data);
+        cept
     }
 }

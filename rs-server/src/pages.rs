@@ -115,7 +115,7 @@ pub fn interactive_mode(stream: &mut impl Write)
                 // legal_values = list(links.keys())
                 // if "#" in legal_values:
                 //     legal_values.remove("#")
-                let legal_values = vec!();
+                let legal_values = Some(vec!()); // XXX
                 inputs = Inputs {
                     fields: vec!(
                         InputField {
@@ -134,6 +134,7 @@ pub fn interactive_mode(stream: &mut impl Write)
                             end_on_illegal_character: true,
                             end_on_legal_string: true,
                             echo_ter: true,
+                            command_mode: false,
                             no_navigation: false,
                             default: None,
                         }),
