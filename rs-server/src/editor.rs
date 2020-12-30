@@ -74,12 +74,14 @@ pub struct Inputs {
 struct Editor {
     input_field: InputField,
     data: Vec<String>,
+    x: u8,
+    y: u8,
 }
 
 impl Editor {
     fn new(input_field: InputField) -> Self {
         let data = vec!(input_field.default.clone().unwrap_or_default());
-        Editor { input_field: input_field.clone(), data }
+        Editor { input_field: input_field.clone(), data, x: 0, y: 0 }
     }
 
 	pub fn string(self) -> String {
@@ -155,5 +157,25 @@ impl Editor {
         }
         stream.write_all(cept.data()).unwrap();
         stream.flush();
+    }
+
+	pub fn print_hint(&self, stream: &mut impl Write) {
+		if let Some(hint) = &self.input_field.hint {
+            let mut cept = Cept::new();
+            cept.set_mode(1);
+			cept.service_break(24);
+			cept.clear_line();
+			cept.add_str(&hint);
+			cept.hide_text();
+			cept.service_break_back();
+            stream.write_all(cept.data()).unwrap();
+            stream.flush();
+        }
+    }
+
+	pub fn try_insert_character(self, s: &mut String, c: char) {
+		if self.x < self.input_field.width {
+            s.insert(self.x as usize, c);
+        }
     }
 }

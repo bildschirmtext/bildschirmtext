@@ -17,6 +17,10 @@ impl Cept {
         }
     }
 
+    pub fn set_mode(&mut self, mode: i32) {
+        self.mode = mode;
+    }
+
     pub fn data(&self) -> &[u8] {
         &self.data
     }
