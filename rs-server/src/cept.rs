@@ -17,6 +17,18 @@ impl Cept {
         }
     }
 
+    pub fn from_str(s: &str) -> Self {
+        let mut cept = Cept::new();
+        cept.add_str(s);
+        cept
+    }
+
+    pub fn from_raw(s: &[u8]) -> Self {
+        let mut cept = Cept::new();
+        cept.add_raw(s);
+        cept
+    }
+
     pub fn set_mode(&mut self, mode: i32) {
         self.mode = mode;
     }

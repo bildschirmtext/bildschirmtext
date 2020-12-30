@@ -76,12 +76,13 @@ struct Editor {
     data: Vec<String>,
     x: u8,
     y: u8,
+    last_c: char,
 }
 
 impl Editor {
     fn new(input_field: InputField) -> Self {
         let data = vec!(input_field.default.clone().unwrap_or_default());
-        Editor { input_field: input_field.clone(), data, x: 0, y: 0 }
+        Editor { input_field: input_field.clone(), data, x: 0, y: 0, last_c: '\0' }
     }
 
 	pub fn string(self) -> String {
@@ -173,9 +174,85 @@ impl Editor {
         }
     }
 
-	pub fn try_insert_character(self, s: &mut String, c: char) {
+	pub fn try_insert_character(&mut self, c: char) {
 		if self.x < self.input_field.width {
-            s.insert(self.x as usize, c);
+            let y = self.y as usize;
+            self.data[y].insert(self.x as usize, c);
         }
+    }
+
+    pub fn insert_character(&mut self, s: &mut String, c: char) -> bool {
+		if self.x < self.input_field.width {
+            self.try_insert_character(c);
+            true
+        } else {
+            false
+        }
+    }
+
+	pub fn insert_carriage_return(&mut self, stream: &mut impl Write) {
+		if self.x != 0 {
+			self.x = 0;
+            let mut cept = Cept::new();
+			if self.input_field.column == 1 {
+				cept.add_str("\r");
+            } else {
+                cept.set_cursor(self.input_field.line + self.y, self.input_field.column);
+            }
+			cept.extend(&self.set_color());
+            stream.write_all(cept.data()).unwrap();
+            stream.flush();
+        }
+    }
+
+	pub fn insert_line_feed(&mut self, stream: &mut impl Write) {
+		if self.y < self.input_field.height - 1 {
+			self.y += 1;
+            let mut cept = Cept::new();
+            cept.add_str("\r");
+            stream.write_all(cept.data()).unwrap();
+            stream.flush();
+        }
+    }
+
+	pub fn insert_control_character(&mut self, c: char, stream: &mut impl Write) {
+		match c {
+            '\r' => { // enter
+                // some terminals send CR/LF, others just CR, so we have to do
+                // the work on CR, and ignore LF if it was preceded by a CR
+                self.insert_carriage_return();
+                self.insert_line_feed();
+            },
+            '\n' => { // down
+                if self.last_c != '\r' { // see above
+                    self.insert_line_feed();
+                }
+            },
+            '\x08' => { // left
+                if self.x > 0 {
+                    self.x -= 1;
+                    let cept = Cept::from_raw(&[c as u8]);
+                    stream.write_all(cept.data()).unwrap();
+                    stream.flush();
+                }
+            },
+            '\x0b' => { // up
+                if self.y > 0 {
+                    self.y -= 1;
+                    let cept = Cept::from_raw(&[c as u8]);
+                    stream.write_all(cept.data()).unwrap();
+                    stream.flush();
+                }
+            },
+            '\x09' => { // right
+                if self.x < self.input_field.width {
+                    self.x += 1;
+                    let cept = Cept::from_raw(&[c as u8]);
+                    stream.write_all(cept.data()).unwrap();
+                    stream.flush();
+                }
+            },
+        }
+        self.last_c = c
     }
 }
