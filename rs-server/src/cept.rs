@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::ops;
+
 pub struct Cept {
     data: Vec<u8>,
     mode: i32,
@@ -397,5 +399,7 @@ impl Cept {
 		self.data.push(0x9e);
     }
 
-
+    pub fn extend(&mut self, other: &Cept) {
+        self.data.extend(&other.data);
+    }
 }

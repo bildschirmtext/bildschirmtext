@@ -1,33 +1,7 @@
 use std::io::Write;
 use super::cept::*;
+use super::editor::*;
 
-#[derive(Clone)]
-pub struct InputField {
-    pub name: String,
-    pub line: i8,
-    pub column: i8,
-    pub height: i8,
-    pub width: i8,
-    pub fgcolor: Option<u8>,
-    pub bgcolor: Option<u8>,
-    pub hint: Option<String>,
-    pub typ: u8,
-    pub cursor_home: bool,
-    pub clear_line: bool,
-    pub legal_values: Vec<String>,
-    pub end_on_illegal_character: bool,
-    pub end_on_legal_string: bool,
-    pub echo_ter: bool,
-    pub no_navigation: bool,
-    pub default: Option<String>,
-}
-
-#[derive(Default)]
-struct Inputs {
-    fields: Vec<InputField>,
-    confirm: bool,
-    no_55: bool,
-}
 
 
 pub fn interactive_mode(stream: &mut impl Write)
@@ -153,7 +127,7 @@ pub fn interactive_mode(stream: &mut impl Write)
                             fgcolor: None,
                             bgcolor: None,
                             hint: None,
-                            typ: 0,
+                            typ: InputType::Normal,
                             cursor_home: false,
                             clear_line: false,
                             legal_values: legal_values,

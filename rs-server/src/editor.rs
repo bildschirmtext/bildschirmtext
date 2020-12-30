@@ -34,8 +34,42 @@
 // passed the list of links as legal inputs. "*" will create a command mode
 // editor on top of the main editor in line 24.
 
+use std::io::Write;
 use super::cept::*;
-use super::pages::*;
+
+#[derive(Clone)]
+pub enum InputType {
+    Normal,
+    Password,
+}
+
+#[derive(Clone)]
+pub struct InputField {
+    pub name: String,
+    pub line: u8,
+    pub column: u8,
+    pub height: u8,
+    pub width: u8,
+    pub fgcolor: Option<u8>,
+    pub bgcolor: Option<u8>,
+    pub hint: Option<String>,
+    pub typ: InputType,
+    pub cursor_home: bool,
+    pub clear_line: bool,
+    pub legal_values: Vec<String>,
+    pub end_on_illegal_character: bool,
+    pub end_on_legal_string: bool,
+    pub echo_ter: bool,
+    pub no_navigation: bool,
+    pub default: Option<String>,
+}
+
+#[derive(Default)]
+pub struct Inputs {
+    pub fields: Vec<InputField>,
+    pub confirm: bool,
+    pub no_55: bool,
+}
 
 struct Editor {
     input_field: InputField,
@@ -69,5 +103,57 @@ impl Editor {
             cept.set_bg_color(bgcolor);
         }
         cept
+    }
+
+	pub fn draw(&self, stream: &mut impl Write) {
+        let mut cept = Cept::new();
+		cept.parallel_limited_mode();
+		cept.hide_cursor();
+		cept.set_cursor(self.input_field.line, self.input_field.column);
+		let fill_with_clear_line = self.input_field.clear_line && self.input_field.width == 40;
+		let fill_with_spaces = self.input_field.clear_line && !fill_with_clear_line;
+		for i in 0..self.input_field.height as usize {
+			let l = self.data[i].trim_end();
+
+            let l = match self.input_field.typ {
+                InputType::Password => "*".repeat(l.len()),
+			    _ => {
+                    if l.starts_with("\x13") { // XXX Cept.ini()
+                        "*".to_string() + &l[1..]
+                    } else {
+                        l.to_string()
+                    }
+                }
+            };
+
+			if l.len() != 0 {
+                cept.extend(&self.set_color());
+            }
+
+			if fill_with_clear_line {
+                cept.clear_line();
+                if let Some(bgcolor) = self.input_field.bgcolor {
+                    cept.set_line_bg_color(bgcolor);
+                }
+            }
+
+            cept.add_str(&l);
+
+			if fill_with_spaces && l.len() > self.input_field.width as usize {
+                cept.add_str(&" ".repeat(self.input_field.width as usize - l.len()));
+            }
+
+			if i != self.input_field.height as usize - 1 {
+				if self.input_field.column == 1 {
+					if self.input_field.width != 40 || fill_with_clear_line {
+                        cept.add_str("\n");
+                    }
+                } else {
+                    cept.set_cursor(self.input_field.line + i as u8 + 1, self.input_field.column);
+                }
+            }
+        }
+        stream.write_all(cept.data()).unwrap();
+        stream.flush();
     }
 }
