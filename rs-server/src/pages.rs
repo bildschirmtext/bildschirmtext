@@ -28,6 +28,8 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
             desired_pageid += "a";
         }
 
+        let mut links = None;
+
         let mut add_to_history = true;
         if error == 0 {
             add_to_history = true;
@@ -63,7 +65,8 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
                 add_to_history = false;
             } else if desired_pageid != "" {
                 // sys.stderr.write("showing page: '" + desired_pageid + "'\n")
-                let (cept1, cept2, links, inputs, autoplay) = create_page();
+                let (cept1, cept2, l, inputs, autoplay) = create_page();
+                links = Some(l);
                 // except:
                 //     error=10
 
@@ -112,10 +115,13 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
             // input_data = { "$navigation" : "" }
         } else {
             if inputs.fields.is_empty() {
+                let mut legal_values = vec!();
+                for (value, _) in links.unwrap() {
+                    legal_values.push(value);
+                }
                 // legal_values = list(links.keys())
                 // if "#" in legal_values:
                 //     legal_values.remove("#")
-                let legal_values = Some(vec!()); // XXX
                 inputs = Inputs {
                     fields: vec!(
                         InputField {
@@ -130,7 +136,7 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
                             typ: InputType::Normal,
                             cursor_home: false,
                             clear_line: false,
-                            legal_values: legal_values,
+                            legal_values: Some(legal_values),
                             end_on_illegal_character: true,
                             end_on_legal_string: true,
                             echo_ter: true,
@@ -254,7 +260,7 @@ fn handle_inputs(inputs: &Inputs, stream: &mut (impl Write + Read)) -> Vec<(Stri
 }
 
 
-pub fn create_page() -> (Cept, Cept, &'static str, &'static str, bool) {
+pub fn create_page() -> (Cept, Cept, Vec<(String, String)>, &'static str, bool) {
     let pageid = "123";
 
     let page = Page::create_historic_main_page();
@@ -293,7 +299,7 @@ pub fn create_page() -> (Cept, Cept, &'static str, &'static str, bool) {
     cept2.sequence_end_of_page();
 
     // XXX
-    let links = "";
+    let links = page.meta.links;
     let inputs = "";
     let autoplay = false;
 

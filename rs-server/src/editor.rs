@@ -197,7 +197,6 @@ impl Editor {
 	pub fn try_insert_character(&mut self, c: char) -> String {
         let mut s = self.data[self.y as usize].clone();
 		if self.x < self.input_field.width {
-            let y = self.y as usize;
             s.insert(self.x as usize, c);
         }
         s
@@ -347,7 +346,7 @@ impl Editor {
 				if c == cept_ini() {
 					if !self.input_field.command_mode {
                         println!("entering command mode");
-                        let mut input_field = InputField {
+                        let input_field = InputField {
                             name: "".to_string(),
                             line: 24,
                             column: 1,
@@ -458,6 +457,7 @@ impl Editor {
                             write(stream, &[b'*']);
                         } else {
                             let mut cept = Cept::new();
+                            let c = c as char;
                             cept.add_str(&c.to_string());
                             write(stream, cept.data());
                         }
@@ -473,6 +473,7 @@ impl Editor {
         }
 			// sys.stderr.write("self.data:\n" + pprint.pformat(selfdata) + "\n")
 			// sys.stderr.write("self.string:\n" + pprint.pformat(self.string) + "\n")
+
 
         return (Some(self.string()), dct);
     }
