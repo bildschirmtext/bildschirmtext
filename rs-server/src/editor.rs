@@ -178,8 +178,7 @@ impl Editor {
                 }
             }
         }
-        stream.write_all(cept.data()).unwrap();
-        stream.flush();
+        write(stream, cept.data());
     }
 
 	pub fn print_hint(&self, stream: &mut impl Write) {
@@ -191,8 +190,7 @@ impl Editor {
 			cept.add_str(&hint);
 			cept.hide_text();
 			cept.service_break_back();
-            stream.write_all(cept.data()).unwrap();
-            stream.flush();
+            write(stream, cept.data());
         }
     }
 
@@ -225,8 +223,7 @@ impl Editor {
                 cept.set_cursor(self.input_field.line + self.y, self.input_field.column);
             }
 			cept.extend(&self.set_color());
-            stream.write_all(cept.data()).unwrap();
-            stream.flush();
+            write(stream, cept.data());
         }
     }
 
@@ -235,8 +232,7 @@ impl Editor {
 			self.y += 1;
             let mut cept = Cept::new();
             cept.add_str("\r");
-            stream.write_all(cept.data()).unwrap();
-            stream.flush();
+            write(stream, cept.data());
         }
     }
 
@@ -257,24 +253,21 @@ impl Editor {
                 if self.x > 0 {
                     self.x -= 1;
                     let cept = Cept::from_raw(&[c as u8]);
-                    stream.write_all(cept.data()).unwrap();
-                    stream.flush();
+                    write(stream, cept.data());
                 }
             },
             '\x0b' => { // up
                 if self.y > 0 {
                     self.y -= 1;
                     let cept = Cept::from_raw(&[c as u8]);
-                    stream.write_all(cept.data()).unwrap();
-                    stream.flush();
+                    write(stream, cept.data());
                 }
             },
             '\x09' => { // right
                 if self.x < self.input_field.width {
                     self.x += 1;
                     let cept = Cept::from_raw(&[c as u8]);
-                    stream.write_all(cept.data()).unwrap();
-                    stream.flush();
+                    write(stream, cept.data());
                 }
             },
             _ => {},
@@ -309,12 +302,11 @@ impl Editor {
                     cept.set_bg_color(bgcolor);
                 }
 				cept.show_cursor();
-                stream.write_all(cept.data()).unwrap();
-                stream.flush();
+                write(stream, cept.data());
             }
 
 			if skip_entry {
-				// sys.stderr.write("skipping\n")
+				println!("skipping");
                 break;
             }
 
@@ -325,7 +317,7 @@ impl Editor {
             } else {
                 c = readchar();
             }
-			// sys.stderr.write("In: " + hex(c) + "\n")
+			println!("In: {:x}", c);
 
 			if self.input_field.command_mode && c == cept_ini() && self.string().chars().last().unwrap() == cept_ini() as char {
 				// exit command mode, tell parent to clear
@@ -354,7 +346,7 @@ impl Editor {
 				prefix = vec!();
 				if c == cept_ini() {
 					if !self.input_field.command_mode {
-                        // sys.stderr.write("entering command mode\n");
+                        println!("entering command mode");
                         let mut input_field = InputField {
                             name: "".to_string(),
                             line: 24,
@@ -380,7 +372,7 @@ impl Editor {
                         editor.set_string(&cept_ini().to_string());
 						editor.draw(stream);
 						let (val, dct) = editor.edit(false, stream);
-                        // sys.stderr.write("exited command mode\n");
+                        println!("exited command mode");
                         if let Some(val) = val {
                             // Editor.debug_print(val);
                             let mut x = cept_ini().to_string();
@@ -400,7 +392,7 @@ impl Editor {
                                 if let Some(c) = c {
                                     inject_char = Some(c as u8);
                                 } else {
-                                        // sys.stderr.write("ignoring invalid editor code\n")
+                                    println!("ignoring invalid editor code");
                                 }
                             } else {
 								// global code
@@ -411,7 +403,7 @@ impl Editor {
                                     if !self.input_field.no_navigation || val == x1 || val == x2 {
                                     return (Some(val), false);
                                 }
-                                // sys.stderr.write("ignoring navigation\n")
+                                println!("ignoring navigation");
                             }
                         } else { // "**" in command mode
                             self.set_string("");
@@ -422,8 +414,7 @@ impl Editor {
                     }
                 } else if c == cept_ter() {
 					if self.input_field.echo_ter {
-						// sys.stdout.write("#");
-                        // sys.stdout.flush();
+                        write(stream, &[b'#']);
                     }
                     break
                 } else if c == cept_dct() {
@@ -451,11 +442,11 @@ impl Editor {
                             if s == legal_input {
                                 character_legal = true;
                                 string_legal = true;
-                                // sys.stderr.write("string_legal!\n")
+                                println!("string_legal!");
                                 break
                             } else if legal_input.starts_with(s) {
                                 character_legal = true;
-                                // sys.stderr.write("character_legal!\n")
+                                println!("character_legal!");
                                 break;
                             }
                         }
@@ -464,11 +455,12 @@ impl Editor {
 				if character_legal || self.input_field.end_on_illegal_character {
 					if self.insert_character(c as char) {
 						if self.input_field.typ == InputType::Password {
-							// sys.stdout.write("*");
+                            write(stream, &[b'*']);
                         } else {
-                            // sys.stdout.buffer.write(Cept.from_str(c));
+                            let mut cept = Cept::new();
+                            cept.add_str(&c.to_string());
+                            write(stream, cept.data());
                         }
-                        // sys.stdout.flush();
                     }
                 }
 				if !character_legal && self.input_field.end_on_illegal_character {
@@ -500,4 +492,9 @@ fn cept_dct() -> u8 {
 
 fn cept_ter() -> u8 {
     0x1c
+}
+
+fn write(stream: &mut impl Write, data: &[u8]) {
+    stream.write_all(data).unwrap();
+    stream.flush();
 }
