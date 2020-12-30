@@ -74,7 +74,7 @@ pub struct Inputs {
     pub no_55: bool,
 }
 
-struct Editor {
+pub struct Editor {
     input_field: InputField,
     data: Vec<String>,
     x: u8,
@@ -83,7 +83,7 @@ struct Editor {
 }
 
 impl Editor {
-    fn new(input_field: InputField) -> Self {
+    pub fn new(input_field: &InputField) -> Self {
         let data = vec!(input_field.default.clone().unwrap_or_default());
         Editor { input_field: input_field.clone(), data, x: 0, y: 0, last_c: '\0' }
     }
@@ -368,7 +368,7 @@ impl Editor {
                             default: None,
 
                         };
-                        let mut editor = Editor::new(input_field);
+                        let mut editor = Editor::new(&input_field);
                         editor.set_string(&cept_ini().to_string());
 						editor.draw(stream);
 						let (val, dct) = editor.edit(false, stream);

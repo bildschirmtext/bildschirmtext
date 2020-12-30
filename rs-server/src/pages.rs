@@ -143,7 +143,7 @@ pub fn interactive_mode(stream: &mut impl Write)
                 };
             }
 
-            // input_data = handle_inputs(inputs)
+            let input_data = handle_inputs(&inputs, stream);
 
             // sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
         }
@@ -177,63 +177,68 @@ pub fn interactive_mode(stream: &mut impl Write)
     }
 }
 
-fn handle_inputs(inputs: Inputs) {
-	// // create editors and draw backgrounds
-	// let editors = vec!();
-	// for input in inputs.fields {
-	// 	let mut editor = Editor::new(field);
-	// 	editors.push(editor);
-	// 	editor.draw();
+fn handle_inputs(inputs: &Inputs, stream: &mut impl Write) -> Vec<(String, String)> {
+	// create editors and draw backgrounds
+	let mut editors = vec!();
+	for input_field in &inputs.fields {
+		let editor = Editor::new(input_field);
+        editor.draw(stream);
+		editors.push(editor);
+    }
 
-	// // get all inputs
-	// let input_data = vec!();
-	// let mut i = 0;
-	// let mut skip = false;
-	// while i < inputs.fields.len() {
-	// 	input = inputs.fields[i];
-	// 	let editor = editors[i];
+	// get all inputs
+	let mut input_data = vec!();
+	let mut i = 0;
+	let mut skip = false;
+	while i < inputs.fields.len() {
+		let input_field = &inputs.fields[i];
 
-	// 	let (val, dct) = editor.edit(skip);
+		let (val, dct) = editors[i].edit(skip, stream);
 
-    //     if dct {
-    //         skip = true;
-    //     }
+        if dct {
+            skip = true;
+        }
 
-	// 	if val.startswith(0x13) { // XXX Cept.ini()
-    //         return { "$command": val[1:] }
-    //     }
+        if let Some(val) = &val {
+            if val.starts_with(0x13 as char) { // XXX Cept.ini()
+                return vec!(("$command".to_string(), val[1..].to_string()));
+            }
+        }
 
-	// 	input_data[input["name"]] = val;
+		input_data.push((input_field.name.to_string(), val.unwrap().to_string()));
 
-	// 	ret = decode_call(input.get("validate"), input_data);
+		// ret = decode_call(input_field.validate), input_data);
 
-	// 	if not ret or ret == Util.VALIDATE_INPUT_OK {
-    //         i += 1
-    //     }
-	// 	if ret == Util.VALIDATE_INPUT_BAD {
-	// 		skip = False
-    //         continue
-    //     } else if ret == Util.VALIDATE_INPUT_RESTART {
-	// 		i = 0
-	// 		skip = False
-    //         continue
-    //     }
-    // }
+		// if not ret or ret == Util.VALIDATE_INPUT_OK {
+            i += 1;
+        // }
+		// if ret == Util.VALIDATE_INPUT_BAD {
+			// skip = False
+            // continue
+        // } else if ret == Util.VALIDATE_INPUT_RESTART {
+			// i = 0
+			// skip = False
+            // continue
+        // }
+    }
 
-	// # confirmation
-	// if inputs.get("confirm", True):
-	// 	if confirm(inputs):
-	// 		if inputs.get("action") == "send_message":
+	// confirmation
+	// if inputs.confirm {
+	// 	if confirm(inputs) {
+	// 		if inputs.action == "send_message" {
 	// 			User.user().messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
 	// 			system_message_sent_message()
-	// 		else:
-	// 			pass # TODO we stay on the page, in the navigator?
-	// elif not inputs.get("no_55", False):
+    //         } else {
+    //             pass // TODO we stay on the page, in the navigator?
+    //         }
+    //     }
+    // } else if !inputs.no_55 {
 	// 	cept_data = Util.create_system_message(55)
 	// 	sys.stdout.buffer.write(cept_data)
-	// 	sys.stdout.flush()
+    //     sys.stdout.flush()
+    // }
 
-	// # send "input_data" to "inputs["target"]"
+	// send "input_data" to "inputs["target"]"
 
 	// if "target" in inputs:
 	// 	if inputs["target"].startswith("page:"):
@@ -243,9 +248,9 @@ fn handle_inputs(inputs: Inputs) {
 	// 	if ret:
 	// 		return { "$command": ret }
 	// 	else:
-	// 		return None # error
+	// 		return None // error
 	// else:
-	// 	return input_data
+		return input_data;
 }
 
 
