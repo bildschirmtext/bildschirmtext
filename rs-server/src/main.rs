@@ -1,4 +1,5 @@
 mod cept;
+mod editor;
 mod pages;
 
 use std::net::TcpListener;

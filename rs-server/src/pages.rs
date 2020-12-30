@@ -1,24 +1,34 @@
 use std::io::Write;
 use super::cept::*;
 
-struct InputField {
-    name: String,
-    line: i8,
-    column: i8,
-    height: i8,
-    width: i8,
-    clear_line: bool,
-    legal_values: Vec<String>,
-    end_on_illegal_character: bool,
-    end_on_legal_string: bool,
-    echo_ter: bool,
+#[derive(Clone)]
+pub struct InputField {
+    pub name: String,
+    pub line: i8,
+    pub column: i8,
+    pub height: i8,
+    pub width: i8,
+    pub fgcolor: Option<u8>,
+    pub bgcolor: Option<u8>,
+    pub hint: Option<String>,
+    pub typ: u8,
+    pub cursor_home: bool,
+    pub clear_line: bool,
+    pub legal_values: Vec<String>,
+    pub end_on_illegal_character: bool,
+    pub end_on_legal_string: bool,
+    pub echo_ter: bool,
+    pub no_navigation: bool,
+    pub default: Option<String>,
 }
 
-struct Input {
+#[derive(Default)]
+struct Inputs {
     fields: Vec<InputField>,
     confirm: bool,
     no_55: bool,
 }
+
 
 pub fn interactive_mode(stream: &mut impl Write)
 {
@@ -27,7 +37,7 @@ pub fn interactive_mode(stream: &mut impl Write)
 
     let mut current_pageid = "".to_string();
     let autoplay = false;
-    let mut inputs: Vec<Input> = vec!();
+    let mut inputs = Inputs::default(); // XXX no need to init
     let mut history: Vec<String> = vec!();
     let mut error = 0;
 
@@ -127,12 +137,12 @@ pub fn interactive_mode(stream: &mut impl Write)
             // sys.stderr.write("autoplay!\n")
             // input_data = { "$navigation" : "" }
         } else {
-            if inputs.is_empty() {
+            if inputs.fields.is_empty() {
                 // legal_values = list(links.keys())
                 // if "#" in legal_values:
                 //     legal_values.remove("#")
                 let legal_values = vec!();
-                inputs = vec!(Input {
+                inputs = Inputs {
                     fields: vec!(
                         InputField {
                             name: "$navigation".to_string(),
@@ -140,15 +150,22 @@ pub fn interactive_mode(stream: &mut impl Write)
                             column: 1,
                             height: 1,
                             width: 20,
+                            fgcolor: None,
+                            bgcolor: None,
+                            hint: None,
+                            typ: 0,
+                            cursor_home: false,
                             clear_line: false,
                             legal_values: legal_values,
                             end_on_illegal_character: true,
                             end_on_legal_string: true,
                             echo_ter: true,
+                            no_navigation: false,
+                            default: None,
                         }),
                     confirm: false,
                     no_55: true,
-                });
+                };
             }
 
             // input_data = handle_inputs(inputs)
@@ -184,6 +201,78 @@ pub fn interactive_mode(stream: &mut impl Write)
 
     }
 }
+
+fn handle_inputs(inputs: Inputs) {
+	// // create editors and draw backgrounds
+	// let editors = vec!();
+	// for input in inputs.fields {
+	// 	let mut editor = Editor::new(field);
+	// 	editors.push(editor);
+	// 	editor.draw();
+
+	// // get all inputs
+	// let input_data = vec!();
+	// let mut i = 0;
+	// let mut skip = false;
+	// while i < inputs.fields.len() {
+	// 	input = inputs.fields[i];
+	// 	let editor = editors[i];
+
+	// 	let (val, dct) = editor.edit(skip);
+
+    //     if dct {
+    //         skip = true;
+    //     }
+
+	// 	if val.startswith(0x13) { // XXX Cept.ini()
+    //         return { "$command": val[1:] }
+    //     }
+
+	// 	input_data[input["name"]] = val;
+
+	// 	ret = decode_call(input.get("validate"), input_data);
+
+	// 	if not ret or ret == Util.VALIDATE_INPUT_OK {
+    //         i += 1
+    //     }
+	// 	if ret == Util.VALIDATE_INPUT_BAD {
+	// 		skip = False
+    //         continue
+    //     } else if ret == Util.VALIDATE_INPUT_RESTART {
+	// 		i = 0
+	// 		skip = False
+    //         continue
+    //     }
+    // }
+
+	// # confirmation
+	// if inputs.get("confirm", True):
+	// 	if confirm(inputs):
+	// 		if inputs.get("action") == "send_message":
+	// 			User.user().messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
+	// 			system_message_sent_message()
+	// 		else:
+	// 			pass # TODO we stay on the page, in the navigator?
+	// elif not inputs.get("no_55", False):
+	// 	cept_data = Util.create_system_message(55)
+	// 	sys.stdout.buffer.write(cept_data)
+	// 	sys.stdout.flush()
+
+	// # send "input_data" to "inputs["target"]"
+
+	// if "target" in inputs:
+	// 	if inputs["target"].startswith("page:"):
+	// 		return { "$command": inputs["target"][5:] }
+
+	// 	ret = decode_call(inputs["target"], input_data)
+	// 	if ret:
+	// 		return { "$command": ret }
+	// 	else:
+	// 		return None # error
+	// else:
+	// 	return input_data
+}
+
 
 pub fn create_page() -> (Cept, Cept, &'static str, &'static str, bool) {
     let pageid = "123";
