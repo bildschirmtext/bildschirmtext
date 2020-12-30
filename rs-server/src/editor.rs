@@ -103,7 +103,7 @@ impl Editor {
 	pub fn set_string(&mut self, string: &str) {
 		self.data = vec!();
 		for line in string.lines().take(self.input_field.height as usize) {
-            let mut line = line.to_string();
+            let mut line = line.to_owned();
             while line.len() < self.input_field.width as usize {
                 line.push(' ');
             }
@@ -144,9 +144,9 @@ impl Editor {
                 InputType::Password => "*".repeat(l.len()),
 			    _ => {
                     if l.starts_with("\x13") { // XXX cept_ini()
-                        "*".to_string() + &l[1..]
+                        "*".to_owned() + &l[1..]
                     } else {
-                        l.to_string()
+                        l.to_owned()
                     }
                 }
             };
@@ -347,7 +347,7 @@ impl Editor {
 					if !self.input_field.command_mode {
                         println!("entering command mode");
                         let input_field = InputField {
-                            name: "".to_string(),
+                            name: "".to_owned(),
                             line: 24,
                             column: 1,
                             height: 1,
@@ -368,13 +368,13 @@ impl Editor {
 
                         };
                         let mut editor = Editor::new(&input_field);
-                        editor.set_string(&cept_ini().to_string());
+                        editor.set_string(&cept_ini_str());
 						editor.draw(stream);
 						let (val, dct) = editor.edit(false, stream);
                         println!("exited command mode");
                         if let Some(val) = val {
                             // Editor.debug_print(val);
-                            let mut x = cept_ini().to_string();
+                            let mut x = cept_ini_str().to_owned();
                             x += "02";
 							if val.starts_with(&x) && val.len() == 4 {
 								// editor codes *021# etc.
@@ -395,9 +395,9 @@ impl Editor {
                                 }
                             } else {
 								// global code
-                                let mut x1 = cept_ini().to_string();
+                                let mut x1 = cept_ini_str().to_owned();
                                 x1 += "00";
-                                let mut x2 = cept_ini().to_string();
+                                let mut x2 = cept_ini_str().to_owned();
                                 x2 += "09";
                                     if !self.input_field.no_navigation || val == x1 || val == x2 {
                                     return (Some(val), false);
@@ -495,6 +495,10 @@ fn cept_ter() -> u8 {
 
 fn cept_dct() -> u8 {
     0x1a
+}
+
+fn cept_ini_str() -> &'static str {
+    "\x13"
 }
 
 fn write(stream: &mut impl Write, data: &[u8]) {

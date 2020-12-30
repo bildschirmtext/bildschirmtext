@@ -679,7 +679,7 @@ while True:
 	desired_pageid = input_data.get("$command")
 
 	if desired_pageid is None:
-		val = input_data["$navigation"]
+		val = edit["$navigation"]
 		val_or_hash = val if val else "#"
 		if val_or_hash in links:
 			# link

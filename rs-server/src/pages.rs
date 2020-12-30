@@ -110,14 +110,14 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
 
         desired_pageid = "".to_string();
 
-        if autoplay {
-            // sys.stderr.write("autoplay!\n")
-            // input_data = { "$navigation" : "" }
+        let input_data = if autoplay {
+            println!("autoplay!");
+            vec!(( "$navigation".to_owned(), "".to_owned() ))
         } else {
             if inputs.fields.is_empty() {
                 let mut legal_values = vec!();
-                for (value, _) in links.unwrap() {
-                    legal_values.push(value);
+                for (value, _) in &links.clone().unwrap() {
+                    legal_values.push(value.clone());
                 }
                 // legal_values = list(links.keys())
                 // if "#" in legal_values:
@@ -149,36 +149,50 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
                 };
             }
 
-            let input_data = handle_inputs(&inputs, stream);
+            handle_inputs(&inputs, stream)
+        };
+        println!("input_data: {:?}", input_data);
 
-            // sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
+        error = 0;
+        if input_data[0].0 == "$command" {
+            desired_pageid = input_data[0].1.clone();
+        } else {
+            assert_eq!(input_data[0].0, "$navigation");
+            let val = input_data[0].1.clone();
+            let val_or_hash = if val.len() != 0 { val.clone() } else { "#".to_owned() };
+            let mut found = false;
+            for (key, target) in links.unwrap() {
+                if val == key {
+                    // link
+                    desired_pageid = target;
+                    // decode = decode_call(desired_pageid, None)
+                    // if decode {
+                    //     desired_pageid = decode
+                    // }
+                    found = true;
+                    break;
+                }
+            }
+            if !found {
+                if val.len() == 0 {
+                    // next sub-page
+                    let last_char = current_pageid.chars().last().unwrap();
+                    if last_char.is_ascii_digit() {
+                        desired_pageid = current_pageid.clone() + "b"
+                    } else if last_char >= 'a' && last_char <= 'y' {
+                        let mut s = current_pageid.to_owned();
+                        s.pop();
+                        s.push((last_char as u8 + 1) as char);
+                    } else {
+                        error = 101;
+                        desired_pageid = "".to_owned();
+                    }
+                } else {
+                    error = 100;
+                    desired_pageid = "".to_owned();
+                }
+            }
         }
-
-        // error = 0;
-        // desired_pageid = input_data.get("$command")
-
-        // if desired_pageid is None:
-        //     val = input_data["$navigation"]
-        //     val_or_hash = val if val else "#"
-        //     if val_or_hash in links:
-        //         # link
-        //         desired_pageid = links[val_or_hash]
-        //         decode = decode_call(desired_pageid, None)
-        //         if decode:
-        //             desired_pageid = decode
-        //     elif not val:
-        //         # next sub-page
-        //         if current_pageid[-1:].isdigit():
-        //             desired_pageid = current_pageid + "b"
-        //         elif current_pageid[-1:] >= "a" and current_pageid[-1:] <= "y":
-        //             desired_pageid = current_pageid[:-1] + chr(ord(current_pageid[-1:]) + 1)
-        //         else:
-        //             error = 101
-        //             desired_pageid = None
-        //     else:
-        //         error = 100
-        //         desired_pageid = None
-
 
     }
 }
