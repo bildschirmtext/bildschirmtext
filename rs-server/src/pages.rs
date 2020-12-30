@@ -1,10 +1,10 @@
-use std::io::Write;
+use std::io::{Read, Write};
 use super::cept::*;
 use super::editor::*;
 
 
 
-pub fn interactive_mode(stream: &mut impl Write)
+pub fn interactive_mode(stream: &mut (impl Write + Read))
 {
     let mut desired_pageid = "00000".to_string(); // login page
     let compress = false;
@@ -177,7 +177,7 @@ pub fn interactive_mode(stream: &mut impl Write)
     }
 }
 
-fn handle_inputs(inputs: &Inputs, stream: &mut impl Write) -> Vec<(String, String)> {
+fn handle_inputs(inputs: &Inputs, stream: &mut (impl Write + Read)) -> Vec<(String, String)> {
 	// create editors and draw backgrounds
 	let mut editors = vec!();
 	for input_field in &inputs.fields {

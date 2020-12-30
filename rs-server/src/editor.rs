@@ -34,7 +34,7 @@
 // passed the list of links as legal inputs. "*" will create a command mode
 // editor on top of the main editor in line 24.
 
-use std::io::Write;
+use std::io::{Read, Write};
 use super::cept::*;
 
 #[derive(Clone, PartialEq)]
@@ -275,7 +275,7 @@ impl Editor {
         self.last_c = c
     }
 
-	pub fn edit(&mut self, skip_entry: bool, stream: &mut impl Write) -> (Option<String>, bool) {
+	pub fn edit(&mut self, skip_entry: bool, stream: &mut (impl Write + Read)) -> (Option<String>, bool) {
 		let mut start = true;
 		let mut dct = false;
 		let mut prefix = vec!();
@@ -315,7 +315,7 @@ impl Editor {
 				c = i;
 				inject_char = None;
             } else {
-                c = readchar();
+                c = readchar(stream);
             }
 			println!("In: {:x}", c);
 
@@ -478,20 +478,22 @@ impl Editor {
     }
 }
 
-fn readchar() -> u8 {
-    0
+fn readchar(stream: &mut impl Read) -> u8 {
+    let mut buf = [0];
+    stream.read(&mut buf);
+    buf[0]
 }
 
 fn cept_ini() -> u8 {
     0x13
 }
 
-fn cept_dct() -> u8 {
-    0x1a
-}
-
 fn cept_ter() -> u8 {
     0x1c
+}
+
+fn cept_dct() -> u8 {
+    0x1a
 }
 
 fn write(stream: &mut impl Write, data: &[u8]) {
