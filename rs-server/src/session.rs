@@ -82,20 +82,13 @@ impl Session {
                     add_to_history = false;
                 } else if desired_pageid != "" {
                     println!("showing page: {}", desired_pageid);
-                    let (cept1, cept2, l, i, autoplay) = self.create_page(&desired_pageid);
-                    links = l;
-                    inputs = i;
+                    let page = self.get_page(&desired_pageid);
+                    let autoplay = self.show_page(stream, &page, &desired_pageid);
+                    links = page.meta.links;
+                    inputs = page.meta.inputs;
                     // except:
                     //     error=10
 
-                    // if (compress):
-                    //     page_cept_data_1 = Cept.compress(page_cept_data_1)
-                    //     page_cept_data_2 = Cept.compress(page_cept_data_2)
-
-                    println!("Sending pal/char");
-                    stream.write_all(cept1.data()).unwrap();
-                    println!("Sending text");
-                    stream.write_all(cept2.data()).unwrap();
 
                     // # user interrupted palette/charset, so the decoder state is undefined
                     self.last_filename_palette = None;
@@ -291,59 +284,48 @@ impl Session {
             return input_data;
     }
 
-    pub fn create_page(&mut self, pageid: &str) -> (Cept, Cept, Option<Vec<Link>>, Option<Inputs>, bool) {
-        let page = match pageid.chars().next().unwrap() {
+    pub fn get_page(&self, pageid: &str) -> Page {
+        match pageid.chars().next().unwrap() {
             '7' => super::historic::create(&pageid[1..]),
             _ => super::stat::create(pageid).unwrap(),
-        };
+        }
+    }
 
-        let mut cept1 = Cept::new();
-        cept1.hide_cursor();
+    pub fn show_page(&mut self, stream: &mut (impl Write + Read), page: &Page, pageid: &str) -> bool {
+        let cept1 = self.cept_preamble_from_meta(&page, pageid);
+        let cept2 = self.cept_main_from_page(&page, pageid);
+
+        // if compress {
+        //     page_cept_data_1 = Cept.compress(page_cept_data_1)
+        //     page_cept_data_2 = Cept.compress(page_cept_data_2)
+        // }
+
+        println!("Sending pal/char");
+        stream.write_all(cept1.data()).unwrap();
+        println!("Sending text");
+        stream.write_all(cept2.data()).unwrap();
+
+        false
+    }
+
+    //
+    fn cept_preamble_from_meta(&mut self, page: &Page, pageid: &str) -> Cept {
+        let mut cept = Cept::new();
+
+        cept.hide_cursor();
 
         if page.meta.clear_screen == Some(true) {
-            cept1.serial_limited_mode();
-            cept1.clear_screen();
+            cept.serial_limited_mode();
+            cept.clear_screen();
             self.last_filename_include = None;
         }
 
         let basedir = find_basedir(pageid).unwrap().0;
-        cept1.extend(&self.create_preamble(&basedir, &page.meta));
 
-        let mut cept2 = Cept::new();
-
-        if page.meta.cls2 == Some(true) {
-            cept2.serial_limited_mode();
-            cept2.clear_screen();
-            self.last_filename_include = None;
-        }
-
-        headerfooter(&mut cept2, pageid, page.meta.publisher_name.as_deref(), page.meta.publisher_color.unwrap());
-
-        if page.meta.parallel_mode == Some(true) {
-            cept2.parallel_mode();
-        }
-
-        cept2.add_raw(page.cept.data());
-
-        cept2.serial_limited_mode();
-
-        // cept_2.extend(hf) //???
-
-        cept2.sequence_end_of_page();
-
-        // XXX
-        let links = page.meta.links;
-        let inputs = page.meta.inputs;
-        let autoplay = false;
-
-        (cept1, cept2, links, inputs, autoplay)
-    }
-
-    fn create_preamble(&mut self, basedir: &str, meta: &Meta) -> Cept {
         let mut cept = Cept::new();
 
         // define palette
-        if let Some(palette) = &meta.palette {
+        if let Some(palette) = &page.meta.palette {
             let mut filename_palette = basedir.to_owned();
             filename_palette += &palette;
             filename_palette += ".pal";
@@ -361,7 +343,7 @@ impl Session {
             self.last_filename_palette = None;
         }
 
-        if let Some(include) = &meta.include {
+        if let Some(include) = &page.meta.include {
             let mut filename_include = basedir.to_owned();
             filename_include += &include;
             filename_include += ".inc";
@@ -374,7 +356,7 @@ impl Session {
             // }
             println!("Filename_include = {}", filename_include);
 
-            if Some(filename_include.clone()) != self.last_filename_include || meta.clear_screen == Some(true) {
+            if Some(filename_include.clone()) != self.last_filename_include || page.meta.clear_screen == Some(true) {
                 self.last_filename_include = Some(filename_include.clone());
                 // if os.path.isfile(filename_include) {
                     let mut cept_include : Vec<u8> = vec!();
@@ -402,6 +384,33 @@ impl Session {
             // cept = Util.create_system_message(291) + cept
         // }
         }
+        cept
+    }
+
+    fn cept_main_from_page(&mut self, page: &Page, pageid: &str) -> Cept {
+        let mut cept = Cept::new();
+
+        if page.meta.cls2 == Some(true) {
+            cept.serial_limited_mode();
+            cept.clear_screen();
+            self.last_filename_include = None;
+        }
+
+        headerfooter(&mut cept, pageid, page.meta.publisher_name.as_deref(), page.meta.publisher_color.unwrap());
+
+        if page.meta.parallel_mode == Some(true) {
+            cept.parallel_mode();
+        }
+
+        cept.add_raw(page.cept.data());
+
+        cept.serial_limited_mode();
+
+        // XXX ???
+        headerfooter(&mut cept, pageid, page.meta.publisher_name.as_deref(), page.meta.publisher_color.unwrap());
+
+        cept.sequence_end_of_page();
+
         cept
     }
 }
