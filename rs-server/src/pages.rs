@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
+use std::fs::File;
 use super::cept::*;
 use super::editor::*;
 use super::historic::*;
@@ -292,7 +293,8 @@ pub fn create_page(pageid: &str) -> (Cept, Cept, Option<Vec<Link>>, Option<Input
         //last_filename_include = ""
     }
 
-    // cept1.extend(create_preamble(basedir, meta))
+    let basedir = find_basedir(pageid).unwrap().0;
+    cept1.extend(&create_preamble(&basedir, &page.meta));
 
     let mut cept2 = Cept::new();
 
@@ -412,6 +414,76 @@ pub fn headerfooter(cept: &mut Cept, pageid: &str, publisher_name: Option<&str>,
 	cept.add_raw(b"\n");
 }
 
+fn create_preamble(basedir: &str, meta: &Meta) -> Cept {
+	// global last_filename_include
+	// global last_filename_palette
+
+	let mut cept = Cept::new();
+
+	// define palette
+	if let Some(palette) = &meta.palette {
+        let mut filename_palette = basedir.to_owned();
+        filename_palette += &palette;
+        filename_palette += ".pal";
+		println!("filename_palette = {}", filename_palette);
+		// println!("last_filename_palette = {}", last_filename_palette);
+		// if filename_palette != last_filename_palette {
+			// last_filename_palette = filename_palette
+            let mut f = File::open(&filename_palette).unwrap();
+            let mut palette: Palette = serde_json::from_reader(f).unwrap();
+			// palette_data = Cept.define_palette(palette["palette"], palette.get("start_color", 16))
+			// cept += palette_data
+        // } else {
+            // sys.stderr.write("skipping palette\n")
+        // }
+    } else {
+        // last_filename_palette = ""
+    }
+
+	if let Some(include) = &meta.include {
+        let mut filename_include = basedir.to_owned();
+        filename_include += &include;
+        filename_include += ".inc";
+		// if is_file(filename_include) {
+		// 	filename_include_cm = basedir + meta["include"] + ".inc.cm"
+		// 	filename_include = basedir + meta["include"] + ".inc"
+        // } else {
+		// 	filename_include_cm =""
+        //     filename_include = basedir + meta["include"] + ".cept"
+        // }
+		println!("Filename_include = {}", filename_include);
+
+		// if ((filename_include != last_filename_include) or meta.get("clear_screen", False)) {
+			// last_filename_include = filename_include;
+			// if os.path.isfile(filename_include) {
+                let mut cept_include : Vec<u8> = vec!();
+                let mut f = File::open(&filename_include).unwrap();
+                f.read_to_end(&mut cept_include);
+                println!("loading: {}", filename_include);
+            // } else if os.path.isfile(filename_include_cm) {
+			// 	data_include = CM.read(filename_include_cm)
+            // } else {
+            //     sys.stderr.write("include file not found.\n")
+            // }
+			// palette definition has to end with 0x1f; add one if
+			// the include data doesn't start with one
+			if cept_include[0] != 0x1f {
+                cept.set_cursor(1, 1)
+            }
+            cept.add_raw(&cept_include);
+        // }
+    // } else {
+        // last_filename_include = ""
+    // }
+
+	// b = baud if baud else 1200
+	// if len(cept) > (b/9) * SH291_THRESHOLD_SEC {
+        // cept = Util.create_system_message(291) + cept
+    // }
+    }
+    cept
+}
+
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
 #[derive(Clone)]
@@ -436,6 +508,8 @@ pub struct Meta {
     pub links: Option<Vec<Link>>,
     pub publisher_color: Option<u8>,
     pub inputs: Option<Inputs>,
+    pub palette: Option<String>,
+    pub include: Option<String>,
 }
 
 impl Meta {
@@ -476,6 +550,12 @@ impl Page {
             meta: meta,
         }
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Palette {
+    palette: Vec<String>,
+    start_color: Option<i8>,
 }
 
 fn format_currency(price: f32) -> String {

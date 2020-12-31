@@ -60,7 +60,7 @@ fn is_dir(path: &str) -> bool {
     }
 }
 
-fn is_file(path: &str) -> bool {
+pub fn is_file(path: &str) -> bool {
     if let Ok(md) = metadata(path) {
         md.is_file()
     } else {
@@ -68,7 +68,7 @@ fn is_file(path: &str) -> bool {
     }
 }
 
-fn find_basedir(pageid: &str) -> Option<(String, &str)> {
+pub fn find_basedir(pageid: &str) -> Option<(String, &str)> {
     let pageid = pageid.as_bytes();
     for dir in [ "", "hist/10/", "hist/11/" ].iter() {
         for i in (0..pageid.len()).rev() {

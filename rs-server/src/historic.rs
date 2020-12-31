@@ -75,6 +75,8 @@ pub fn create_historic_main_page() -> Page {
         ]),
         publisher_color: Some(7),
         inputs: None,
+        palette: None,
+        include: None,
     };
 
     let mut page = Page::new(meta);
@@ -229,6 +231,8 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
         links: Some(links),
         publisher_color: Some(7),
         inputs: None,
+        palette: None,
+        include: None,
     };
 
     let mut page = Page::new(meta);
