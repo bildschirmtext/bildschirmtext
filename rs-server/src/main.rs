@@ -1,6 +1,8 @@
 mod cept;
 mod editor;
+mod historic;
 mod pages;
+mod stat;
 
 use std::net::TcpListener;
 use std::thread;
