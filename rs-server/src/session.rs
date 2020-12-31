@@ -8,17 +8,21 @@ use super::stat::*;
 use super::pages::*;
 
 pub struct Session {
-
+    last_filename_palette: Option<String>,
+    last_filename_include: Option<String>,
 }
 
 impl Session {
     pub fn new() -> Self {
-        Self { }
+        Self {
+            last_filename_palette: None,
+            last_filename_include: None,
+         }
     }
 
     pub fn run(&mut self, stream: &mut (impl Write + Read))
     {
-        let mut desired_pageid = "78a".to_string(); // login page
+        let mut desired_pageid = "78a".to_string();
         let compress = false;
 
         let mut current_pageid = "".to_string();
@@ -28,8 +32,8 @@ impl Session {
 
         let showing_message = false;
 
-        // let mut last_filename_palette = "";
-        // let mut last_filename_include = "";
+        self.last_filename_palette = None;
+        self.last_filename_include = None;
 
         loop {
             let mut inputs = None;
@@ -69,8 +73,8 @@ impl Session {
                     desired_pageid = history.last().unwrap().to_string();
                     add_to_history = false;
                     // force load palette and include
-                    // last_filename_palette = "";
-                    // last_filename_include = "";
+                    self.last_filename_palette = None;
+                    self.last_filename_include = None;
                 }
                 if desired_pageid == "00" { // re-send CEPT data of current page
                     println!("resend");
@@ -78,7 +82,7 @@ impl Session {
                     add_to_history = false;
                 } else if desired_pageid != "" {
                     println!("showing page: {}", desired_pageid);
-                    let (cept1, cept2, l, i, autoplay) = create_page(&desired_pageid);
+                    let (cept1, cept2, l, i, autoplay) = self.create_page(&desired_pageid);
                     links = l;
                     inputs = i;
                     // except:
@@ -94,8 +98,8 @@ impl Session {
                     stream.write_all(cept2.data()).unwrap();
 
                     // # user interrupted palette/charset, so the decoder state is undefined
-                    // last_filename_palette = ""
-                    // last_filename_include = ""
+                    self.last_filename_palette = None;
+                    self.last_filename_include = None;
 
 
                     error = 0
@@ -286,4 +290,213 @@ impl Session {
         // else:
             return input_data;
     }
+
+    pub fn create_page(&mut self, pageid: &str) -> (Cept, Cept, Option<Vec<Link>>, Option<Inputs>, bool) {
+        let page = match pageid.chars().next().unwrap() {
+            '7' => super::historic::create(&pageid[1..]),
+            _ => super::stat::create(pageid).unwrap(),
+        };
+
+        let mut cept1 = Cept::new();
+        cept1.hide_cursor();
+
+        if page.meta.clear_screen == Some(true) {
+            cept1.serial_limited_mode();
+            cept1.clear_screen();
+            self.last_filename_include = None;
+        }
+
+        let basedir = find_basedir(pageid).unwrap().0;
+        cept1.extend(&self.create_preamble(&basedir, &page.meta));
+
+        let mut cept2 = Cept::new();
+
+        if page.meta.cls2 == Some(true) {
+            cept2.serial_limited_mode();
+            cept2.clear_screen();
+            self.last_filename_include = None;
+        }
+
+        headerfooter(&mut cept2, pageid, page.meta.publisher_name.as_deref(), page.meta.publisher_color.unwrap());
+
+        if page.meta.parallel_mode == Some(true) {
+            cept2.parallel_mode();
+        }
+
+        cept2.add_raw(page.cept.data());
+
+        cept2.serial_limited_mode();
+
+        // cept_2.extend(hf) //???
+
+        cept2.sequence_end_of_page();
+
+        // XXX
+        let links = page.meta.links;
+        let inputs = page.meta.inputs;
+        let autoplay = false;
+
+        (cept1, cept2, links, inputs, autoplay)
+    }
+
+    fn create_preamble(&mut self, basedir: &str, meta: &Meta) -> Cept {
+        let mut cept = Cept::new();
+
+        // define palette
+        if let Some(palette) = &meta.palette {
+            let mut filename_palette = basedir.to_owned();
+            filename_palette += &palette;
+            filename_palette += ".pal";
+            println!("filename_palette = {}", filename_palette);
+            // println!("last_filename_palette = {}", last_filename_palette);
+            if Some(filename_palette.clone()) != self.last_filename_palette {
+                self.last_filename_palette = Some(filename_palette.clone());
+                let mut f = File::open(&filename_palette).unwrap();
+                let mut palette: Palette = serde_json::from_reader(f).unwrap();
+                cept.define_palette(&palette.palette, palette.start_color);
+            } else {
+                println!("skipping palette");
+            }
+        } else {
+            self.last_filename_palette = None;
+        }
+
+        if let Some(include) = &meta.include {
+            let mut filename_include = basedir.to_owned();
+            filename_include += &include;
+            filename_include += ".inc";
+            // if is_file(filename_include) {
+            // 	filename_include_cm = basedir + meta["include"] + ".inc.cm"
+            // 	filename_include = basedir + meta["include"] + ".inc"
+            // } else {
+            // 	filename_include_cm =""
+            //     filename_include = basedir + meta["include"] + ".cept"
+            // }
+            println!("Filename_include = {}", filename_include);
+
+            if Some(filename_include.clone()) != self.last_filename_include || meta.clear_screen == Some(true) {
+                self.last_filename_include = Some(filename_include.clone());
+                // if os.path.isfile(filename_include) {
+                    let mut cept_include : Vec<u8> = vec!();
+                    let mut f = File::open(&filename_include).unwrap();
+                    f.read_to_end(&mut cept_include);
+                    println!("loading: {}", filename_include);
+                // } else if os.path.isfile(filename_include_cm) {
+                // 	data_include = CM.read(filename_include_cm)
+                // } else {
+                //     sys.stderr.write("include file not found.\n")
+                // }
+                // palette definition has to end with 0x1f; add one if
+                // the include data doesn't start with one
+                if cept_include[0] != 0x1f {
+                    cept.set_cursor(1, 1)
+                }
+                cept.add_raw(&cept_include);
+            // }
+            } else {
+                self.last_filename_include = None;
+            }
+
+        // b = baud if baud else 1200
+        // if len(cept) > (b/9) * SH291_THRESHOLD_SEC {
+            // cept = Util.create_system_message(291) + cept
+        // }
+        }
+        cept
+    }
 }
+
+
+pub fn headerfooter(cept: &mut Cept, pageid: &str, publisher_name: Option<&str>, publisher_color: u8) {
+    let mut hide_price = false;
+    let mut publisher_name = publisher_name;
+
+
+    let hide_header_footer = if let Some(p) = publisher_name {
+        // Early screenshots had a two-line publisher name with
+        // the BTX logo in it for BTX-internal pages. Some .meta
+        // files still reference this, but we should remove this.
+        publisher_name = if p == "!BTX" {
+            hide_price = true;
+            Some("Bildschirmtext")
+        } else {
+            if p.len() > 30 {
+                Some(&p[..30])
+            } else {
+                Some(p)
+            }
+        };
+        false
+    } else {
+        true
+    };
+
+	cept.set_res_40_24();
+	cept.set_cursor(23, 1);
+	cept.unprotect_line();
+	cept.set_line_fg_color_simple(12);
+	cept.parallel_limited_mode();
+	cept.set_cursor(24, 1);
+	cept.unprotect_line();
+	cept.add_raw(b" \x08");
+	cept.clear_line();
+	cept.cursor_home();
+	cept.unprotect_line();
+	cept.add_raw(b" \x08");
+	cept.clear_line();
+	cept.serial_limited_mode();
+	cept.set_cursor(24, 1);
+	cept.set_fg_color(8);
+	cept.add_raw(b"\x08");
+	cept.code_9d();
+	cept.add_raw(b"\x08");
+
+    let color_string = if publisher_color < 8 {
+        let mut c = Cept::new();
+        c.set_fg_color(publisher_color);
+        c
+    } else {
+        let mut c = Cept::new();
+        c.set_fg_color_simple(publisher_color - 8);
+        c
+    };
+
+    cept.add_raw(color_string.data());
+
+	cept.set_cursor(24, 19);
+
+	if !hide_header_footer {
+        cept.add_str(&format!("{pageid:>width$}", pageid=pageid, width=22));
+    }
+
+	cept.cursor_home();
+	cept.set_palette(1);
+	cept.set_fg_color(8);
+	cept.add_raw(b"\x08");
+	cept.code_9d();
+	cept.add_raw(b"\x08");
+
+	cept.add_raw(color_string.data());
+
+	cept.add_raw(b"\r");
+
+
+	// TODO: price
+	if !hide_header_footer & !hide_price {
+        cept.add_str(publisher_name.unwrap());
+		cept.set_cursor(1, 31);
+		cept.add_raw(b"  ");
+        cept.add_str(&format_currency(0.0));
+    }
+
+	cept.cursor_home();
+	cept.set_palette(0);
+	cept.protect_line();
+	cept.add_raw(b"\n");
+}
+
+
+fn format_currency(price: f32) -> String {
+    format!("DM  {},{:02}", (price / 100.0).floor(), (price % 100.0).floor())
+}
+
