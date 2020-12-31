@@ -2,10 +2,12 @@ mod cept;
 mod editor;
 mod historic;
 mod pages;
+mod session;
 mod stat;
 
 use std::net::TcpListener;
 use std::thread;
+use session::*;
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:20000").unwrap();
@@ -13,7 +15,8 @@ fn main() {
     for stream in listener.incoming() {
         thread::spawn(|| {
             let mut stream = stream.unwrap();
-            pages::interactive_mode(&mut stream);
+            let mut session = Session::new();
+            session.run(&mut stream);
         });
     }
 
