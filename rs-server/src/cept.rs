@@ -349,7 +349,8 @@ impl Cept {
         self.data.push(0x40 + n - 1);
     }
 
-    pub fn define_palette(&mut self, palette: &[String], start_color: Option<u8>) {
+    pub fn define_palette<T: AsRef<str>>(&mut self, palette: &[T], start_color: Option<u8>) {
+        // let palette: &[&str] = palette.iter().collect();
         let start_color = start_color.unwrap_or(16);
 		self.data.extend(&[
 			0x1f, 0x26, 0x20,		  // start defining colors
@@ -359,6 +360,7 @@ impl Cept {
 		self.data.push(0x30 + (start_color % 10));
 
 		for hexcolor in palette {
+            let hexcolor = hexcolor.as_ref();
             let (r, g, b) = if hexcolor.len() == 7 {
                 (
                     u8::from_str_radix(&hexcolor[1..3], 16).unwrap_or(0),

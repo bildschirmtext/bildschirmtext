@@ -18,8 +18,8 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
 
     let showing_message = false;
 
-    let mut last_filename_palette = "";
-    let mut last_filename_include = "";
+    // let mut last_filename_palette = "";
+    // let mut last_filename_include = "";
 
     loop {
         let mut inputs = None;
@@ -59,8 +59,8 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
                 desired_pageid = history.last().unwrap().to_string();
                 add_to_history = false;
                 // force load palette and include
-                last_filename_palette = "";
-                last_filename_include = "";
+                // last_filename_palette = "";
+                // last_filename_include = "";
             }
             if desired_pageid == "00" { // re-send CEPT data of current page
                 println!("resend");
