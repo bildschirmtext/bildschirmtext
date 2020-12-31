@@ -1,11 +1,17 @@
 {
-    "include": "152a",
-    "palette": "152a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "200961a",
-        "2": "8211882a"
-    },
+    "include": "152a",
+    "links": [
+        {
+            "code": "0",
+            "target": "200961a"
+        },
+        {
+            "code": "2",
+            "target": "8211882a"
+        }
+    ],
+    "palette": "152a",
     "publisher_color": 7
 }

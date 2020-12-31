@@ -1,10 +1,16 @@
 {
-    "include": "04a",
     "clear_screen": false,
     "cls2": true,
-    "links": {
-        "0": "20096164a",
-        "2": "54004042a"
-    },
+    "include": "04a",
+    "links": [
+        {
+            "code": "0",
+            "target": "20096164a"
+        },
+        {
+            "code": "2",
+            "target": "54004042a"
+        }
+    ],
     "publisher_color": 0
 }

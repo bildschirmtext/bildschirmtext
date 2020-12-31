@@ -8,7 +8,7 @@ use super::pages::*;
 const PATH_DATA: &str = "../data/";
 
 
-pub fn create(pageid: &str) -> Page {
+pub fn create(pageid: &str) -> Option<Page> {
     let mut cept = None;
 
     if let Some((basedir, filename)) = find_basedir(pageid) {
@@ -28,12 +28,9 @@ pub fn create(pageid: &str) -> Page {
             let mut f = File::open(&filename_meta).unwrap();
             f.read_to_end(&mut buf);
             let buf = std::str::from_utf8(&buf).unwrap();
-            // let v: Value = serde_json::from_str(buf).unwrap();
-            // println!("{:?}", v);
 
-            let m: Meta = serde_json::from_str(&buf).unwrap();
-            println!("{:?}", m);
-
+            let meta: Meta = serde_json::from_str(&buf).unwrap();
+            println!("{:?}", meta);
 
             if is_file(&filename_cept) {
                 let mut buf : Vec<u8> = vec!();
@@ -43,30 +40,13 @@ pub fn create(pageid: &str) -> Page {
             // } elif os.path.isfile(filename_cm) {
             //     data_cept = CM.read(filename_cm)
             }
-            // break;
+            let mut page = Page::new(meta);
+            page.cept.add_raw(&cept.unwrap());
+            return Some(page);
         }
     }
 
-    // if data_cept is None {
-    //     return None
-    // }
-    let meta = Meta {
-        publisher_name: Some("!BTX".to_owned()),
-        clear_screen: true,
-        cls2: false,
-        parallel_mode: None,
-        links: vec![
-            Link::new("0", "0"),
-            Link::new("10", "710"),
-            Link::new("11", "711"),
-            Link::new("#", "711"),
-        ],
-        publisher_color: 7,
-        inputs: None,
-    };
-    let mut page = Page::new(meta);
-    page.cept.add_raw(&cept.unwrap());
-    page
+    None
 }
 
 fn is_dir(path: &str) -> bool {

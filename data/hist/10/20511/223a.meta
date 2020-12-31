@@ -1,11 +1,17 @@
 {
-    "include": "223a",
-    "palette": "223a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "20096162a",
-        "13": "2051122331a"
-    },
+    "include": "223a",
+    "links": [
+        {
+            "code": "0",
+            "target": "20096162a"
+        },
+        {
+            "code": "13",
+            "target": "2051122331a"
+        }
+    ],
+    "palette": "223a",
     "publisher_color": 15
 }

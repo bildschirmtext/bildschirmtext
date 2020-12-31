@@ -1,1 +1,50 @@
-{"publisher_name": "Chaos Computer Club","clear_screen": "true","links": {"#": "6553218a","0": "655321a","1": "6553211a","2": "6553212a","3": "6553213a","4": "6553214a","5": "6553215a","6": "6553216a","7": "6553217a","8": "6553218a","9": "6553219a"}}
+{
+    "clear_screen": "true",
+    "links": [
+        {
+            "code": "#",
+            "target": "6553218a"
+        },
+        {
+            "code": "1",
+            "target": "6553211a"
+        },
+        {
+            "code": "0",
+            "target": "655321a"
+        },
+        {
+            "code": "3",
+            "target": "6553213a"
+        },
+        {
+            "code": "2",
+            "target": "6553212a"
+        },
+        {
+            "code": "5",
+            "target": "6553215a"
+        },
+        {
+            "code": "4",
+            "target": "6553214a"
+        },
+        {
+            "code": "7",
+            "target": "6553217a"
+        },
+        {
+            "code": "6",
+            "target": "6553216a"
+        },
+        {
+            "code": "9",
+            "target": "6553219a"
+        },
+        {
+            "code": "8",
+            "target": "6553218a"
+        }
+    ],
+    "publisher_name": "Chaos Computer Club"
+}

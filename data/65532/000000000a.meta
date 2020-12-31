@@ -1,1 +1,10 @@
-{"publisher_name": "Chaos Computer Club","clear_screen": "false","links": {"#": "65532a"}}
+{
+    "clear_screen": "false",
+    "links": [
+        {
+            "code": "#",
+            "target": "65532a"
+        }
+    ],
+    "publisher_name": "Chaos Computer Club"
+}

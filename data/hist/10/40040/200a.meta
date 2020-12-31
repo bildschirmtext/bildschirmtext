@@ -1,11 +1,17 @@
 {
-    "include": "200a",
-    "palette": "200a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "20096141a",
-        "14": "40040272a"
-    },
+    "include": "200a",
+    "links": [
+        {
+            "code": "0",
+            "target": "20096141a"
+        },
+        {
+            "code": "14",
+            "target": "40040272a"
+        }
+    ],
+    "palette": "200a",
     "publisher_color": 15
 }

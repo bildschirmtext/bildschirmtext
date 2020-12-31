@@ -1,9 +1,12 @@
 {
-    "include": "1a",
     "clear_screen": false,
     "cls2": true,
-    "links": {
-        "#": "200961a"
-    },
+    "include": "1a",
+    "links": [
+        {
+            "code": "#",
+            "target": "200961a"
+        }
+    ],
     "publisher_color": 7
 }

@@ -1,12 +1,24 @@
 {
-    "include": "0a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "200961a",
-        "10": "654320a",
-        "11": "40040200a",
-        "17": "34034a"
-    },
+    "include": "0a",
+    "links": [
+        {
+            "code": "11",
+            "target": "40040200a"
+        },
+        {
+            "code": "0",
+            "target": "200961a"
+        },
+        {
+            "code": "17",
+            "target": "34034a"
+        },
+        {
+            "code": "10",
+            "target": "654320a"
+        }
+    ],
     "publisher_color": 7
 }

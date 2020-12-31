@@ -1,8 +1,11 @@
 {
-	"include": "a",
     "clear_screen": true,
-    "links": {
-    	"0": "0"
-    },
+    "include": "a",
+    "links": [
+        {
+            "code": "0",
+            "target": "0"
+        }
+    ],
     "publisher_color": 7
 }

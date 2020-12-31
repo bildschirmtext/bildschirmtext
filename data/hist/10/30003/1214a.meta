@@ -1,9 +1,12 @@
 {
-    "include": "a",
-    "palette": "a",
     "clear_screen": false,
-    "links": {
-        "0": "30003a"
-    },
+    "include": "a",
+    "links": [
+        {
+            "code": "0",
+            "target": "30003a"
+        }
+    ],
+    "palette": "a",
     "publisher_color": 7
 }

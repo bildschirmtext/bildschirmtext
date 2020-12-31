@@ -1,9 +1,15 @@
 {
-    "include": "a",
     "clear_screen": false,
-    "links": {
-        "0": "64064a",
-        "1": "64064121a"
-    },
+    "include": "a",
+    "links": [
+        {
+            "code": "1",
+            "target": "64064121a"
+        },
+        {
+            "code": "0",
+            "target": "64064a"
+        }
+    ],
     "publisher_color": 0
 }

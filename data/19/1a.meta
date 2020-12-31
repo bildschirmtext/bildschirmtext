@@ -1,8 +1,14 @@
 {
-	"clear_screen": false,
-    "links": {
-		"0": "0",
-		"1": "1921"
-    },
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "1",
+            "target": "1921"
+        },
+        {
+            "code": "0",
+            "target": "0"
+        }
+    ],
     "publisher_color": 0
 }

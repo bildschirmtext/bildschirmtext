@@ -1,10 +1,30 @@
-{ "clear_screen": false,
-"links":{	
-	"0": "1049050a",
-	"1": "10490521a",
-	"2": "10490522a",
-	"3": "10490523a",
-	"4": "10490524a",
-	"#": "10490521a"
-}, "publisher_color": 7
+{
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "#",
+            "target": "10490521a"
+        },
+        {
+            "code": "1",
+            "target": "10490521a"
+        },
+        {
+            "code": "0",
+            "target": "1049050a"
+        },
+        {
+            "code": "3",
+            "target": "10490523a"
+        },
+        {
+            "code": "2",
+            "target": "10490522a"
+        },
+        {
+            "code": "4",
+            "target": "10490524a"
+        }
+    ],
+    "publisher_color": 7
 }

@@ -1,11 +1,17 @@
 {
-    "include": "100a",
-    "palette": "100a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "20096162a",
-        "2": "34034102a"
-    },
+    "include": "100a",
+    "links": [
+        {
+            "code": "0",
+            "target": "20096162a"
+        },
+        {
+            "code": "2",
+            "target": "34034102a"
+        }
+    ],
+    "palette": "100a",
     "publisher_color": 0
 }

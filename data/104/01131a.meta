@@ -1,9 +1,15 @@
 {
-	"include": "a",
     "clear_screen": true,
-    "links": {
-    	"0": "0",
-    	"1": "10401132"
-    },
+    "include": "a",
+    "links": [
+        {
+            "code": "1",
+            "target": "10401132"
+        },
+        {
+            "code": "0",
+            "target": "0"
+        }
+    ],
     "publisher_color": 7
 }

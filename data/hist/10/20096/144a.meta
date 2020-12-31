@@ -1,11 +1,20 @@
 {
-    "include": "0a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "200961a",
-        "20": "5400415a",
-        "22": "21212a"
-    },
+    "include": "0a",
+    "links": [
+        {
+            "code": "0",
+            "target": "200961a"
+        },
+        {
+            "code": "20",
+            "target": "5400415a"
+        },
+        {
+            "code": "22",
+            "target": "21212a"
+        }
+    ],
     "publisher_color": 7
 }

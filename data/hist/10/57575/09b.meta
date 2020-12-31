@@ -1,7 +1,10 @@
 {
     "clear_screen": false,
-    "links": {
-        "0": "57575a"
-    },
+    "links": [
+        {
+            "code": "0",
+            "target": "57575a"
+        }
+    ],
     "publisher_color": 7
 }

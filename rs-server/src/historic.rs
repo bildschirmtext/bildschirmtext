@@ -65,7 +65,7 @@ pub fn create_historic_main_page() -> Page {
     let meta = Meta {
         publisher_name: Some("!BTX".to_owned()),
         clear_screen: true,
-        cls2: false,
+        cls2: None,
         parallel_mode: None,
         links: vec![
             Link::new("0", "0"),
@@ -224,7 +224,7 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
     let meta = Meta {
         publisher_name: Some("!BTX".to_owned()),
         clear_screen: true,
-        cls2: false,
+        cls2: None,
         parallel_mode: None,
         links: links,
         publisher_color: 7,

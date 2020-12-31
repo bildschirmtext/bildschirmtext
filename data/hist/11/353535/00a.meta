@@ -1,7 +1,12 @@
 {
-"include": "a",
-"clear_screen": false,
-"cls2": false,
-"publisher_color": 0,
-"links": { "0": "711" }
+    "clear_screen": false,
+    "cls2": false,
+    "include": "a",
+    "links": [
+        {
+            "code": "0",
+            "target": "711"
+        }
+    ],
+    "publisher_color": 0
 }

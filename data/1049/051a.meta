@@ -1,8 +1,22 @@
-{ "clear_screen": false,
-"links":{	
-	"0": "1049050a",
-	"1": "10490511a",
-	"2": "10490512a",
-	"#": "1049050aa"
-}, "publisher_color": 7
+{
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "1",
+            "target": "10490511a"
+        },
+        {
+            "code": "0",
+            "target": "1049050a"
+        },
+        {
+            "code": "#",
+            "target": "1049050aa"
+        },
+        {
+            "code": "2",
+            "target": "10490512a"
+        }
+    ],
+    "publisher_color": 7
 }

@@ -280,7 +280,7 @@ fn handle_inputs(inputs: &Inputs, stream: &mut (impl Write + Read)) -> Vec<(Stri
 pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<Link>, Option<Inputs>, bool) {
     let page = match pageid.chars().next().unwrap() {
         '7' => super::historic::create(&pageid[1..]),
-        _ => super::stat::create(pageid),
+        _ => super::stat::create(pageid).unwrap(),
     };
 
     let mut cept1 = Cept::new();
@@ -296,7 +296,7 @@ pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<Link>, Option<Inputs>, bool
 
     let mut cept2 = Cept::new();
 
-    if page.meta.cls2 {
+    if page.meta.cls2 == Some(true) {
         cept2.serial_limited_mode();
         cept2.clear_screen();
         // last_filename_include = ""
@@ -427,7 +427,7 @@ impl Link {
 pub struct Meta {
     pub publisher_name: Option<String>,
     pub clear_screen: bool,
-    pub cls2: bool,
+    pub cls2: Option<bool>,
     pub parallel_mode: Option<bool>,
     pub links: Vec<(Link)>,
     pub publisher_color: u8,

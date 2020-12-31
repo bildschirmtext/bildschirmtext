@@ -1,8 +1,8 @@
 {
-    "include": "1522a",
-    "palette": "1522a",
     "clear_screen": true,
     "cls2": true,
-    "links": {},
+    "include": "1522a",
+    "links": [],
+    "palette": "1522a",
     "publisher_color": 7
 }

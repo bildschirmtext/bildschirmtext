@@ -1,13 +1,25 @@
 {
-    "include": "a",
-    "palette": "a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "200961a",
-        "11": "5757514a",
-        "16": "5757507a",
-        "20": "5757509a"
-    },
+    "include": "a",
+    "links": [
+        {
+            "code": "11",
+            "target": "5757514a"
+        },
+        {
+            "code": "0",
+            "target": "200961a"
+        },
+        {
+            "code": "20",
+            "target": "5757509a"
+        },
+        {
+            "code": "16",
+            "target": "5757507a"
+        }
+    ],
+    "palette": "a",
     "publisher_color": 7
 }

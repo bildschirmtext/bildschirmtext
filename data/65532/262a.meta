@@ -1,1 +1,22 @@
-{"include": "22a","publisher_name": "Chaos Computer Club","links": {"#": "6553222a","0": "6553215a","1": "65532261a","3": "65532263a"}}
+{
+    "include": "22a",
+    "links": [
+        {
+            "code": "1",
+            "target": "65532261a"
+        },
+        {
+            "code": "0",
+            "target": "6553215a"
+        },
+        {
+            "code": "#",
+            "target": "6553222a"
+        },
+        {
+            "code": "3",
+            "target": "65532263a"
+        }
+    ],
+    "publisher_name": "Chaos Computer Club"
+}

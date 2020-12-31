@@ -1,10 +1,16 @@
 {
-    "include": "a",
-    "palette": "a",
     "clear_screen": true,
-    "links": {
-        "0": "200961a",
-        "16": "33033116A"
-    },
+    "include": "a",
+    "links": [
+        {
+            "code": "0",
+            "target": "200961a"
+        },
+        {
+            "code": "16",
+            "target": "33033116A"
+        }
+    ],
+    "palette": "a",
     "publisher_color": 7
 }

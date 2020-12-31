@@ -1,10 +1,13 @@
 {
-    "include": "0010002a",
-    "palette": "0010002a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "20096164a"
-    },
+    "include": "0010002a",
+    "links": [
+        {
+            "code": "0",
+            "target": "20096164a"
+        }
+    ],
+    "palette": "0010002a",
     "publisher_color": 0
 }

@@ -1,9 +1,26 @@
-{ "clear_screen": false,
-"links":{	
-	"0": "104900a",
-	"1": "1049011a",
-	"2": "1049012a",
-	"3": "1049013a",
-	"4": "1049014a"
-}, "publisher_color": 7
+{
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "1",
+            "target": "1049011a"
+        },
+        {
+            "code": "0",
+            "target": "104900a"
+        },
+        {
+            "code": "3",
+            "target": "1049013a"
+        },
+        {
+            "code": "2",
+            "target": "1049012a"
+        },
+        {
+            "code": "4",
+            "target": "1049014a"
+        }
+    ],
+    "publisher_color": 7
 }

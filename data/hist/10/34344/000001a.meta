@@ -1,8 +1,14 @@
 {
     "clear_screen": true,
-    "links": {
-        "#": "12001551i",
-        "0": "200961330a"
-    },
+    "links": [
+        {
+            "code": "0",
+            "target": "200961330a"
+        },
+        {
+            "code": "#",
+            "target": "12001551i"
+        }
+    ],
     "publisher_color": 0
 }

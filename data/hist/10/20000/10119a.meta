@@ -1,11 +1,17 @@
 {
-    "include": "10119a",
-    "palette": "a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "#": "20000143a",
-        "0": "200961a"
-    },
+    "include": "10119a",
+    "links": [
+        {
+            "code": "0",
+            "target": "200961a"
+        },
+        {
+            "code": "#",
+            "target": "20000143a"
+        }
+    ],
+    "palette": "a",
     "publisher_color": 0
 }

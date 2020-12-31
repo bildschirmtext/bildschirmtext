@@ -1,9 +1,14 @@
 {
-"include": "a",
-"palette": "a",
-"clear_screen": false,
-"set_cursor": true,
-"cls2": false,
-"publisher_color": 7,
-"links": { "0": "711" }
+    "clear_screen": false,
+    "cls2": false,
+    "include": "a",
+    "links": [
+        {
+            "code": "0",
+            "target": "711"
+        }
+    ],
+    "palette": "a",
+    "publisher_color": 7,
+    "set_cursor": true
 }

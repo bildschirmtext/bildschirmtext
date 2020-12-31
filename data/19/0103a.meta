@@ -1,7 +1,10 @@
 {
-	"clear_screen": false,
-    "links": {
-		"0": "190"
-    },
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "0",
+            "target": "190"
+        }
+    ],
     "publisher_color": 0
 }

@@ -1,1 +1,33 @@
-{"publisher_name": "Chaos Computer Club","links": {"#": "a","00": "a","01": "a","06": "a","13": "a","14": "a","15": "a"}}
+{
+    "links": [
+        {
+            "code": "#",
+            "target": "a"
+        },
+        {
+            "code": "01",
+            "target": "a"
+        },
+        {
+            "code": "06",
+            "target": "a"
+        },
+        {
+            "code": "14",
+            "target": "a"
+        },
+        {
+            "code": "00",
+            "target": "a"
+        },
+        {
+            "code": "15",
+            "target": "a"
+        },
+        {
+            "code": "13",
+            "target": "a"
+        }
+    ],
+    "publisher_name": "Chaos Computer Club"
+}

@@ -1,8 +1,14 @@
 {
     "clear_screen": true,
-    "links": {
-        "0": "200961330a",
-        "3": "12001551g"
-    },
+    "links": [
+        {
+            "code": "0",
+            "target": "200961330a"
+        },
+        {
+            "code": "3",
+            "target": "12001551g"
+        }
+    ],
     "publisher_color": 0
 }

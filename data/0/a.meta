@@ -1,11 +1,23 @@
 {
-	"include": "a",
     "clear_screen": true,
-    "links": {
-    	"6": "10401131",
-    	"7": "78",
-    	"8": "8",
-    	"9": "9"
-    },
+    "include": "a",
+    "links": [
+        {
+            "code": "9",
+            "target": "9"
+        },
+        {
+            "code": "8",
+            "target": "8"
+        },
+        {
+            "code": "7",
+            "target": "78"
+        },
+        {
+            "code": "6",
+            "target": "10401131"
+        }
+    ],
     "publisher_color": 7
 }

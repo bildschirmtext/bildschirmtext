@@ -1,4 +1,10 @@
-{ "clear_screen": false,
-"links":{	"2": "22"
-}, "publisher_color": 7
+{
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "2",
+            "target": "22"
+        }
+    ],
+    "publisher_color": 7
 }

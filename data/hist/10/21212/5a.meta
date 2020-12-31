@@ -1,11 +1,17 @@
 {
-    "include": "5a",
-    "palette": "a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "20096144a",
-        "12": "212121012a"
-    },
+    "include": "5a",
+    "links": [
+        {
+            "code": "0",
+            "target": "20096144a"
+        },
+        {
+            "code": "12",
+            "target": "212121012a"
+        }
+    ],
+    "palette": "a",
     "publisher_color": 0
 }

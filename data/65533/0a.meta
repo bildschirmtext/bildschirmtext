@@ -1,5 +1,10 @@
-{ "clear_screen": true,
-"links":{	"0": "1a"
-}, "publisher_color": 7
+{
+    "clear_screen": true,
+    "links": [
+        {
+            "code": "0",
+            "target": "1a"
+        }
+    ],
+    "publisher_color": 7
 }
-

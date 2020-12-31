@@ -1,9 +1,12 @@
 {
-	"include": "a",
     "clear_screen": false,
-	"cls2": true,
-    "links": {
-        "21": "25800b"
-		},
+    "cls2": true,
+    "include": "a",
+    "links": [
+        {
+            "code": "21",
+            "target": "25800b"
+        }
+    ],
     "publisher_color": 0
 }

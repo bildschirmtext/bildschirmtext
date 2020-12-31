@@ -1,5 +1,10 @@
 {
-	"cls2": false,
-	"publisher_color": 15,
-	"links": { "0": "0" }
+    "cls2": false,
+    "links": [
+        {
+            "code": "0",
+            "target": "0"
+        }
+    ],
+    "publisher_color": 15
 }

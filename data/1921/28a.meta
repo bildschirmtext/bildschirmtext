@@ -1,9 +1,12 @@
 {
-	"include": "a",
-	"palette": "a",
-	"clear_screen": false,
-    "links": {
-		"1": "19212"
-    },
+    "clear_screen": false,
+    "include": "a",
+    "links": [
+        {
+            "code": "1",
+            "target": "19212"
+        }
+    ],
+    "palette": "a",
     "publisher_color": 0
 }

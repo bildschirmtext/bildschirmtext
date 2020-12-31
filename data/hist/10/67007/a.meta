@@ -1,10 +1,16 @@
 {
-    "include": "a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "200961330a",
-        "10": "6700710a"
-    },
+    "include": "a",
+    "links": [
+        {
+            "code": "0",
+            "target": "200961330a"
+        },
+        {
+            "code": "10",
+            "target": "6700710a"
+        }
+    ],
     "publisher_color": 7
 }

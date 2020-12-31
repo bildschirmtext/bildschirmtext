@@ -1,9 +1,12 @@
 {
-    "include": "075a",
     "clear_screen": true,
     "cls2": true,
-    "links": {
-        "0": "57575a"
-    },
+    "include": "075a",
+    "links": [
+        {
+            "code": "0",
+            "target": "57575a"
+        }
+    ],
     "publisher_color": 7
 }

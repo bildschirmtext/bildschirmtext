@@ -1,9 +1,14 @@
 {
-"include": "88a",
-"palette": "88a",
-"clear_screen": false,
-"set_cursor": true,
-"parallel_mode": false,
-"publisher_color": 1,
-"links": { "0": "711" }
+    "clear_screen": false,
+    "include": "88a",
+    "links": [
+        {
+            "code": "0",
+            "target": "711"
+        }
+    ],
+    "palette": "88a",
+    "parallel_mode": false,
+    "publisher_color": 1,
+    "set_cursor": true
 }

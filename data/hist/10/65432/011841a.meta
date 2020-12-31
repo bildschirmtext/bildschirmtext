@@ -1,7 +1,10 @@
 {
     "clear_screen": true,
-    "links": {
-        "0": "20096141a"
-    },
+    "links": [
+        {
+            "code": "0",
+            "target": "20096141a"
+        }
+    ],
     "publisher_color": 15
 }

@@ -1,4 +1,10 @@
-{ "clear_screen": false,
-"links":{	"#": "655332a"
-}, "publisher_color": 7
+{
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "#",
+            "target": "655332a"
+        }
+    ],
+    "publisher_color": 7
 }

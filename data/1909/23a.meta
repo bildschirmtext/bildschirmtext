@@ -1,8 +1,14 @@
 {
-	"clear_screen": false,
-    "links": {
-		"0": "1909",
-		"#": "190924"
-    },
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "0",
+            "target": "1909"
+        },
+        {
+            "code": "#",
+            "target": "190924"
+        }
+    ],
     "publisher_color": 7
 }

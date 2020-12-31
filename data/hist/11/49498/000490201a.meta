@@ -1,9 +1,14 @@
 {
-"palette": "000490201a",
-"include": "0004902a",
-"clear_screen": false,
-"set_cursor": false,
-"cls2": false,
-"publisher_color": 7,
-"links": { "0": "711" }
+    "clear_screen": false,
+    "cls2": false,
+    "include": "0004902a",
+    "links": [
+        {
+            "code": "0",
+            "target": "711"
+        }
+    ],
+    "palette": "000490201a",
+    "publisher_color": 7,
+    "set_cursor": false
 }

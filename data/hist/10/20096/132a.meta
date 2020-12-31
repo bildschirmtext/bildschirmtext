@@ -1,7 +1,7 @@
 {
-    "include": "0a",
     "clear_screen": true,
     "cls2": true,
-    "links": {},
+    "include": "0a",
+    "links": [],
     "publisher_color": 7
 }
