@@ -278,8 +278,8 @@ fn handle_inputs(inputs: &Inputs, stream: &mut (impl Write + Read)) -> Vec<(Stri
 
 pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<(String, String)>, Option<Inputs>, bool) {
     let page = match pageid.chars().next().unwrap() {
-        '7' => HistoricPageGenerator::create(&pageid[1..]).page,
-        _ => StaticPageGenerator::create(pageid).page,
+        '7' => super::historic::create(&pageid[1..]),
+        _ => super::stat::create(pageid),
     };
 
     let mut cept1 = Cept::new();

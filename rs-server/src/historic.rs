@@ -1,124 +1,111 @@
 use super::cept::*;
 use super::pages::*;
 
-pub struct HistoricPageGenerator {
-    pub page: Page,
-}
-
-impl HistoricPageGenerator {
-    pub fn new(page: Page) -> Self {
-        Self {
-            page: page,
-        }
-    }
-
-    pub fn create(pageid: &str) -> Self {
-        if pageid == "8a" {
-            Self::create_historic_main_page()
-        } else if pageid == "10a" || pageid == "11a" || pageid == "12a" {
-            create_historic_overview(pageid[0..2].parse().unwrap(), 0).unwrap()
-        } else {
-            panic!();
-        }
-    }
-
-    fn create_title(&mut self, title: &str) {
-        self.page.cept.set_cursor(2, 1);
-        self.page.cept.set_palette(1);
-        self.page.cept.set_screen_bg_color_simple(4);
-        self.page.cept.add_raw(
-            &[0x1b, 0x28, 0x40,       // load G0 into G0
-             0x0f]                   // G0 into left charset
-        );
-        self.page.cept.parallel_mode();
-        self.page.cept.set_palette(0);
-        self.page.cept.code_9e();
-        self.page.cept.set_line_bg_color_simple(4);
-        self.page.cept.add_raw(b"\n");
-        self.page.cept.set_line_bg_color_simple(4);
-        self.page.cept.set_palette(1);
-        self.page.cept.double_height();
-        self.page.cept.add_raw(b"\r");
-        self.page.cept.add_str(title);
-        self.page.cept.add_raw(b"\n\r");
-        self.page.cept.set_palette(0);
-        self.page.cept.normal_size();
-        self.page.cept.code_9e();
-        self.page.cept.set_fg_color_simple(7);
-    }
-
-	fn footer(&mut self, left: &str, right: Option<&str>) {
-		self.page.cept.set_cursor(23, 1);
-		self.page.cept.set_palette(0);
-		self.page.cept.set_line_bg_color_simple(4);
-		self.page.cept.add_str(left);
-
-		if let Some(right) = right {
-            self.page.cept.set_cursor(23, 41 - right.len() as u8);
-            self.page.cept.add_str(right);
-        }
-    }
-
-    fn historic_line(&mut self, page: (&str, &str), index: i32) {
-        let link = historic_pretty_link_from_str(page.0);
-        let mut s = page.1.to_string();
-        s += " ";
-        s += &link;
-        while s.chars().count() < 38 {
-            s.push('.');
-        }
-        self.page.cept.add_str(&s);
-        self.page.cept.add_str(&index.to_string());
-    }
-
-
-	pub fn create_historic_main_page() -> Self {
-        let meta = Meta {
-            publisher_name: Some("!BTX".to_owned()),
-            clear_screen: true,
-            cls2: false,
-            parallel_mode: false,
-            links: vec![
-        		("0".to_owned(), "0".to_owned()),
-				("10".to_owned(), "710".to_owned()),
-				("11".to_owned(), "711".to_owned()),
-				("#".to_owned(), "711".to_owned()),
-            ],
-            publisher_color: 7,
-            inputs: None,
-		};
-
-        let mut generator = Self::new(Page::new(meta));
-		generator.create_title("Historische Seiten");
-		generator.page.cept.add_raw(b"\r\n");
-		generator.page.cept.add_str(
-			"Nur wenige hundert der mehreren hundert-\
-			tausend BTX-Seiten sind überliefert.\n\
-			Die meisten entstammen dem Demomodus von\
-			Software-BTX-Decoderprogrammen.\n\
-			\n\
-			1988: C64 BTX Demo (Input 64 12/88)...--\
-			1989: Amiga BTX Terminal..............10\
-			1989: C64 BTX Demo (64'er 1/90).......--\
-			1991: BTX-VTX Manager v1.2............--\
-			1993: PC online 1&1...................11\
-			1994: MacBTX 1&1......................--\
-			1995: BTXTEST.........................--\
-			1996: RUN_ME..........................--\
-			\n\
-			Da historische Seiten erst angepaßt wer-\
-			den müssen, um nutzbar zu sein, sind\n\
-			noch nicht alle Sammlungen verfügbar."
-			//XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-		);
-
-		generator.footer("0 Zurück", None);
-        generator
+pub fn create(pageid: &str) -> Page {
+    if pageid == "8a" {
+        create_historic_main_page()
+    } else if pageid == "10a" || pageid == "11a" || pageid == "12a" {
+        create_historic_overview(pageid[0..2].parse().unwrap(), 0).unwrap()
+    } else {
+        panic!();
     }
 }
 
+fn create_title(page: &mut Page, title: &str) {
+    page.cept.set_cursor(2, 1);
+    page.cept.set_palette(1);
+    page.cept.set_screen_bg_color_simple(4);
+    page.cept.add_raw(
+        &[0x1b, 0x28, 0x40,       // load G0 into G0
+            0x0f]                   // G0 into left charset
+    );
+    page.cept.parallel_mode();
+    page.cept.set_palette(0);
+    page.cept.code_9e();
+    page.cept.set_line_bg_color_simple(4);
+    page.cept.add_raw(b"\n");
+    page.cept.set_line_bg_color_simple(4);
+    page.cept.set_palette(1);
+    page.cept.double_height();
+    page.cept.add_raw(b"\r");
+    page.cept.add_str(title);
+    page.cept.add_raw(b"\n\r");
+    page.cept.set_palette(0);
+    page.cept.normal_size();
+    page.cept.code_9e();
+    page.cept.set_fg_color_simple(7);
+}
 
-pub fn create_historic_overview(collection: i32, index: i32) -> Option<HistoricPageGenerator> {
+fn footer(page: &mut Page, left: &str, right: Option<&str>) {
+    page.cept.set_cursor(23, 1);
+    page.cept.set_palette(0);
+    page.cept.set_line_bg_color_simple(4);
+    page.cept.add_str(left);
+
+    if let Some(right) = right {
+        page.cept.set_cursor(23, 41 - right.len() as u8);
+        page.cept.add_str(right);
+    }
+}
+
+fn historic_line(page: &mut Page, p: (&str, &str), index: i32) {
+    let link = historic_pretty_link_from_str(p.0);
+    let mut s = p.1.to_string();
+    s += " ";
+    s += &link;
+    while s.chars().count() < 38 {
+        s.push('.');
+    }
+    page.cept.add_str(&s);
+    page.cept.add_str(&index.to_string());
+}
+
+
+pub fn create_historic_main_page() -> Page {
+    let meta = Meta {
+        publisher_name: Some("!BTX".to_owned()),
+        clear_screen: true,
+        cls2: false,
+        parallel_mode: false,
+        links: vec![
+            ("0".to_owned(), "0".to_owned()),
+            ("10".to_owned(), "710".to_owned()),
+            ("11".to_owned(), "711".to_owned()),
+            ("#".to_owned(), "711".to_owned()),
+        ],
+        publisher_color: 7,
+        inputs: None,
+    };
+
+    let mut page = Page::new(meta);
+    create_title(&mut page, "Historische Seiten");
+    page.cept.add_raw(b"\r\n");
+    page.cept.add_str(
+        "Nur wenige hundert der mehreren hundert-\
+        tausend BTX-Seiten sind überliefert.\n\
+        Die meisten entstammen dem Demomodus von\
+        Software-BTX-Decoderprogrammen.\n\
+        \n\
+        1988: C64 BTX Demo (Input 64 12/88)...--\
+        1989: Amiga BTX Terminal..............10\
+        1989: C64 BTX Demo (64'er 1/90).......--\
+        1991: BTX-VTX Manager v1.2............--\
+        1993: PC online 1&1...................11\
+        1994: MacBTX 1&1......................--\
+        1995: BTXTEST.........................--\
+        1996: RUN_ME..........................--\
+        \n\
+        Da historische Seiten erst angepaßt wer-\
+        den müssen, um nutzbar zu sein, sind\n\
+        noch nicht alle Sammlungen verfügbar."
+        //XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    );
+
+    footer(&mut page, "0 Zurück", None);
+    page
+}
+
+pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
     let name;
     let description;
     let distribution;
@@ -244,21 +231,21 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<HistoricP
         inputs: None,
     };
 
-    let mut generator = HistoricPageGenerator::new(Page::new(meta));
+    let mut page = Page::new(meta);
 
     // sys.stderr.write("meta: " + pprint.pformat(meta) + "\n")
 
     let mut cept = Cept::new();
     let mut t = "Historische Seiten: ".to_owned();
     t += name;
-    generator.create_title(&t);
+    create_title(&mut page, &t);
     cept.add_str("\r\n");
 
     if index == 0 {
         cept.add_str(description);
         cept.add_str("\r\n\n");
         if let Some(start_page) = start_page {
-            generator.historic_line(start_page, 10);
+            historic_line(&mut page, start_page, 10);
             cept.add_str("\n")
         }
     }
@@ -269,14 +256,14 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<HistoricP
         start_with + distribution[index as usize]
     };
     for i in start_with..end {
-        generator.historic_line(pages[i], i as i32 + 20);
+        historic_line(&mut page, pages[i], i as i32 + 20);
     }
 
     let right = if (index as usize) < distribution.len() { Some("Weiter #") } else { None };
-    generator.footer("0 Zurück", right);
+    footer(&mut page, "0 Zurück", right);
     // cept.compress();
 
-    Some(generator)
+    Some(page)
 }
 
 fn historic_link_from_str(s: &str) -> String {

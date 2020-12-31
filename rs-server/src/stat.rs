@@ -5,71 +5,57 @@ use super::pages::*;
 
 const PATH_DATA: &str = "../data/";
 
-pub struct StaticPageGenerator {
-    pub page: Page,
-}
+pub fn create(pageid: &str) -> Page {
+    let mut cept = None;
 
-impl StaticPageGenerator {
-    pub fn new(page: Page) -> Self {
-        Self {
-            page: page,
-        }
-    }
+    if let Some((basedir, filename)) = find_basedir(pageid) {
+        let mut basename = basedir.clone();
+        basename += filename;
 
-    pub fn create(pageid: &str) -> Self {
-        let mut cept = None;
+        let mut filename_meta = basename.clone();
+        filename_meta += ".meta";
+        let mut filename_cept = basename.clone();
+        filename_cept += ".cept";
+        let mut filename_cept = basename.clone();
+        filename_cept += ".cept";
 
-        if let Some((basedir, filename)) = find_basedir(pageid) {
-            let mut basename = basedir.clone();
-            basename += filename;
-
-            let mut filename_meta = basename.clone();
-            filename_meta += ".meta";
-            let mut filename_cept = basename.clone();
-            filename_cept += ".cept";
-            let mut filename_cept = basename.clone();
-            filename_cept += ".cept";
-
-            if is_file(&filename_meta) {
-                println!("found: {}", filename_meta);
-                // let data_cept = None;
-                // with open(filename_meta) as f
-                // meta = json.load(f)
-                if is_file(&filename_cept) {
-                    let mut buf : Vec<u8> = vec!();
-                    let mut f = File::open(&filename_cept).unwrap();
-                    f.read_to_end(&mut buf);
-                    cept = Some(buf);
-                // } elif os.path.isfile(filename_cm) {
-                //     data_cept = CM.read(filename_cm)
-                }
-                // break;
+        if is_file(&filename_meta) {
+            println!("found: {}", filename_meta);
+            // let data_cept = None;
+            // with open(filename_meta) as f
+            // meta = json.load(f)
+            if is_file(&filename_cept) {
+                let mut buf : Vec<u8> = vec!();
+                let mut f = File::open(&filename_cept).unwrap();
+                f.read_to_end(&mut buf);
+                cept = Some(buf);
+            // } elif os.path.isfile(filename_cm) {
+            //     data_cept = CM.read(filename_cm)
             }
+            // break;
         }
-
-		// if data_cept is None {
-        //     return None
-        // }
-        let meta = Meta {
-            publisher_name: Some("!BTX".to_owned()),
-            clear_screen: true,
-            cls2: false,
-            parallel_mode: false,
-            links: vec![
-        		("0".to_owned(), "0".to_owned()),
-				("10".to_owned(), "710".to_owned()),
-				("11".to_owned(), "711".to_owned()),
-				("#".to_owned(), "711".to_owned()),
-            ],
-			publisher_color: 7,
-            inputs: None,
-        };
-        let mut page = Page::new(meta);
-        page.cept.add_raw(&cept.unwrap());
-        Self::new(page)
     }
 
-
+    // if data_cept is None {
+    //     return None
+    // }
+    let meta = Meta {
+        publisher_name: Some("!BTX".to_owned()),
+        clear_screen: true,
+        cls2: false,
+        parallel_mode: false,
+        links: vec![
+            ("0".to_owned(), "0".to_owned()),
+            ("10".to_owned(), "710".to_owned()),
+            ("11".to_owned(), "711".to_owned()),
+            ("#".to_owned(), "711".to_owned()),
+        ],
+        publisher_color: 7,
+        inputs: None,
+    };
+    let mut page = Page::new(meta);
+    page.cept.add_raw(&cept.unwrap());
+    page
 }
 
 fn is_dir(path: &str) -> bool {
