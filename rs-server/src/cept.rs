@@ -349,6 +349,51 @@ impl Cept {
         self.data.push(0x40 + n - 1);
     }
 
+    pub fn define_palette(&mut self, palette: &[String], start_color: Option<u8>) {
+        let start_color = start_color.unwrap_or(16);
+		self.data.extend(&[
+			0x1f, 0x26, 0x20,		  // start defining colors
+            0x1f, 0x26,		          // define colors
+        ]);
+		self.data.push(0x30 + (start_color / 10));
+		self.data.push(0x30 + (start_color % 10));
+
+		for hexcolor in palette {
+            let (r, g, b) = if hexcolor.len() == 7 {
+                (
+                    u8::from_str_radix(&hexcolor[1..3], 16).unwrap_or(0),
+				    u8::from_str_radix(&hexcolor[3..5], 16).unwrap_or(0),
+                    u8::from_str_radix(&hexcolor[5..7], 16).unwrap_or(0),
+                )
+            } else if hexcolor.len() == 4 {
+                (
+				    u8::from_str_radix(&hexcolor[1..2], 16).unwrap_or(0) << 4,
+				    u8::from_str_radix(&hexcolor[2..3], 16).unwrap_or(0) << 4,
+                    u8::from_str_radix(&hexcolor[3..4], 16).unwrap_or(0) << 4,
+                )
+            } else {
+                println!("incorrect palette encoding.");
+                ( 0, 0, 0)
+            };
+			let r0 = (r >> 4) & 1;
+			let r1 = (r >> 5) & 1;
+			let r2 = (r >> 6) & 1;
+			let r3 = (r >> 7) & 1;
+			let g0 = (g >> 4) & 1;
+			let g1 = (g >> 5) & 1;
+			let g2 = (g >> 6) & 1;
+			let g3 = (g >> 7) & 1;
+			let b0 = (b >> 4) & 1;
+			let b1 = (b >> 5) & 1;
+			let b2 = (b >> 6) & 1;
+			let b3 = (b >> 7) & 1;
+			let byte0 = 0x40 | r3 << 5 | g3 << 4 | b3 << 3 | r2 << 2 | g2 << 1 | b2;
+			let byte1 = 0x40 | r1 << 5 | g1 << 4 | b1 << 3 | r0 << 2 | g0 << 1 | b0;
+			self.data.push(byte0);
+            self.data.push(byte1);
+        }
+    }
+
 	pub fn set_palette(&mut self, pal: u8) {
         self.data.push(0x9b);
         self.data.push(0x30 + pal);

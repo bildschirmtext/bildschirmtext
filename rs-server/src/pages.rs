@@ -431,8 +431,7 @@ fn create_preamble(basedir: &str, meta: &Meta) -> Cept {
 			// last_filename_palette = filename_palette
             let mut f = File::open(&filename_palette).unwrap();
             let mut palette: Palette = serde_json::from_reader(f).unwrap();
-			// palette_data = Cept.define_palette(palette["palette"], palette.get("start_color", 16))
-			// cept += palette_data
+			cept.define_palette(&palette.palette, palette.start_color);
         // } else {
             // sys.stderr.write("skipping palette\n")
         // }
@@ -555,7 +554,7 @@ impl Page {
 #[derive(Serialize, Deserialize)]
 pub struct Palette {
     palette: Vec<String>,
-    start_color: Option<i8>,
+    start_color: Option<u8>,
 }
 
 fn format_currency(price: f32) -> String {
