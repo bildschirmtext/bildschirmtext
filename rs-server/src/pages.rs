@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use super::cept::*;
 use super::editor::*;
@@ -118,8 +119,8 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
         } else {
             if inputs.is_none() {
                 let mut legal_values = vec!();
-                for (value, _) in &links.clone().unwrap() {
-                    legal_values.push(value.clone());
+                for link in &links.clone().unwrap() {
+                    legal_values.push(link.code.clone());
                 }
                 // legal_values = list(links.keys())
                 // if "#" in legal_values:
@@ -163,10 +164,10 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
             let val = input_data[0].1.clone();
             let val_or_hash = if val.len() != 0 { val.clone() } else { "#".to_owned() };
             let mut found = false;
-            for (key, target) in links.unwrap() {
-                if val_or_hash == key {
+            for link in links.unwrap() {
+                if val_or_hash == link.code {
                     // link
-                    desired_pageid = target;
+                    desired_pageid = link.target;
                     // decode = decode_call(desired_pageid, None)
                     // if decode {
                     //     desired_pageid = decode
@@ -276,7 +277,7 @@ fn handle_inputs(inputs: &Inputs, stream: &mut (impl Write + Read)) -> Vec<(Stri
 }
 
 
-pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<(String, String)>, Option<Inputs>, bool) {
+pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<Link>, Option<Inputs>, bool) {
     let page = match pageid.chars().next().unwrap() {
         '7' => super::historic::create(&pageid[1..]),
         _ => super::stat::create(pageid),
@@ -303,7 +304,7 @@ pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<(String, String)>, Option<I
 
     headerfooter(&mut cept2, pageid, page.meta.publisher_name.as_deref(), page.meta.publisher_color);
 
-    if page.meta.parallel_mode {
+    if page.meta.parallel_mode == Some(true) {
         cept2.parallel_mode();
     }
 
@@ -407,12 +408,28 @@ pub fn headerfooter(cept: &mut Cept, pageid: &str, publisher_name: Option<&str>,
 	cept.add_raw(b"\n");
 }
 
+#[derive(Serialize, Deserialize)]
+#[derive(Debug)]
+#[derive(Clone)]
+pub struct Link {
+    code: String,
+    target: String,
+}
+
+impl Link {
+    pub fn new(code: &str, target: &str) -> Self {
+        Self { code: code.to_owned(), target: target.to_owned() }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Meta {
     pub publisher_name: Option<String>,
     pub clear_screen: bool,
     pub cls2: bool,
-    pub parallel_mode: bool,
-    pub links: Vec<(String, String)>,
+    pub parallel_mode: Option<bool>,
+    pub links: Vec<(Link)>,
     pub publisher_color: u8,
     pub inputs: Option<Inputs>,
 }

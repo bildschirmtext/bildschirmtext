@@ -1,9 +1,12 @@
+use serde::{Deserialize, Serialize};
+use serde_json::{Result, Value};
 use std::fs::File;
 use std::io::Read;
 use std::fs::metadata;
 use super::pages::*;
 
 const PATH_DATA: &str = "../data/";
+
 
 pub fn create(pageid: &str) -> Page {
     let mut cept = None;
@@ -21,9 +24,17 @@ pub fn create(pageid: &str) -> Page {
 
         if is_file(&filename_meta) {
             println!("found: {}", filename_meta);
-            // let data_cept = None;
-            // with open(filename_meta) as f
-            // meta = json.load(f)
+            let mut buf : Vec<u8> = vec!();
+            let mut f = File::open(&filename_meta).unwrap();
+            f.read_to_end(&mut buf);
+            let buf = std::str::from_utf8(&buf).unwrap();
+            // let v: Value = serde_json::from_str(buf).unwrap();
+            // println!("{:?}", v);
+
+            let m: Meta = serde_json::from_str(&buf).unwrap();
+            println!("{:?}", m);
+
+
             if is_file(&filename_cept) {
                 let mut buf : Vec<u8> = vec!();
                 let mut f = File::open(&filename_cept).unwrap();
@@ -43,12 +54,12 @@ pub fn create(pageid: &str) -> Page {
         publisher_name: Some("!BTX".to_owned()),
         clear_screen: true,
         cls2: false,
-        parallel_mode: false,
+        parallel_mode: None,
         links: vec![
-            ("0".to_owned(), "0".to_owned()),
-            ("10".to_owned(), "710".to_owned()),
-            ("11".to_owned(), "711".to_owned()),
-            ("#".to_owned(), "711".to_owned()),
+            Link::new("0", "0"),
+            Link::new("10", "710"),
+            Link::new("11", "711"),
+            Link::new("#", "711"),
         ],
         publisher_color: 7,
         inputs: None,

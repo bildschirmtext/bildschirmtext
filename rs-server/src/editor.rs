@@ -34,10 +34,13 @@
 // passed the list of links as legal inputs. "*" will create a command mode
 // editor on top of the main editor in line 24.
 
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use super::cept::*;
 
 #[derive(Clone, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[derive(Debug)]
 pub enum InputType {
     Normal,
     Number,
@@ -45,6 +48,8 @@ pub enum InputType {
     Password,
 }
 
+#[derive(Serialize, Deserialize)]
+#[derive(Debug)]
 #[derive(Clone)]
 pub struct InputField {
     pub name: String,
@@ -67,6 +72,8 @@ pub struct InputField {
     pub default: Option<String>,
 }
 
+#[derive(Serialize, Deserialize)]
+#[derive(Debug)]
 #[derive(Default)]
 pub struct Inputs {
     pub fields: Vec<InputField>,

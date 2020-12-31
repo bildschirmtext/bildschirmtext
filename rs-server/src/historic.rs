@@ -66,12 +66,12 @@ pub fn create_historic_main_page() -> Page {
         publisher_name: Some("!BTX".to_owned()),
         clear_screen: true,
         cls2: false,
-        parallel_mode: false,
+        parallel_mode: None,
         links: vec![
-            ("0".to_owned(), "0".to_owned()),
-            ("10".to_owned(), "710".to_owned()),
-            ("11".to_owned(), "711".to_owned()),
-            ("#".to_owned(), "711".to_owned()),
+            Link::new("0", "0"),
+            Link::new("10", "710"),
+            Link::new("11", "711"),
+            Link::new("#", "711"),
         ],
         publisher_color: 7,
         inputs: None,
@@ -210,14 +210,14 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
 
 
     let mut links = vec!(
-        ("0".to_owned(), "78".to_owned()),
+        Link::new("0", "78"),
     );
     if let Some(start_page) = start_page {
-        links.push(("10".to_owned(), historic_link_from_str(start_page.0)));
+        links.push(Link::new("10", &historic_link_from_str(start_page.0)));
     }
     let mut i = 20;
     for page in &pages {
-        links.push((i.to_string(), historic_link_from_str(page.0)));
+        links.push(Link::new(&i.to_string(), &historic_link_from_str(page.0)));
         i += 1
     }
 
@@ -225,7 +225,7 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
         publisher_name: Some("!BTX".to_owned()),
         clear_screen: true,
         cls2: false,
-        parallel_mode: false,
+        parallel_mode: None,
         links: links,
         publisher_color: 7,
         inputs: None,
