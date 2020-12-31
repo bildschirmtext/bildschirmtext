@@ -26,7 +26,7 @@ impl Session {
         let compress = false;
 
         let mut current_pageid = "".to_string();
-        let autoplay = false;
+        let mut autoplay = false;
         let mut history: Vec<String> = vec!();
         let mut error = 0;
 
@@ -83,9 +83,10 @@ impl Session {
                 } else if desired_pageid != "" {
                     println!("showing page: {}", desired_pageid);
                     let page = self.get_page(&desired_pageid);
-                    let autoplay = self.show_page(stream, &page, &desired_pageid);
+                    self.show_page(stream, &page, &desired_pageid);
                     links = page.meta.links;
                     inputs = page.meta.inputs;
+                    autoplay = page.meta.autoplay == Some(true);
                     // except:
                     //     error=10
 

@@ -77,6 +77,7 @@ pub fn create_historic_main_page() -> Page {
         inputs: None,
         palette: None,
         include: None,
+        autoplay: None,
     };
 
     let mut page = Page::new(meta);
@@ -233,6 +234,7 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
         inputs: None,
         palette: None,
         include: None,
+        autoplay: None,
     };
 
     let mut page = Page::new(meta);

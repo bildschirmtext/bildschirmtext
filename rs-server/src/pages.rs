@@ -36,6 +36,7 @@ pub struct Meta {
     pub inputs: Option<Inputs>,
     pub palette: Option<String>,
     pub include: Option<String>,
+    pub autoplay: Option<bool>,
 }
 
 impl Meta {
