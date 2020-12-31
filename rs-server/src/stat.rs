@@ -1,7 +1,9 @@
+use std::fs::File;
+use std::io::Read;
 use std::fs::metadata;
 use super::pages::*;
 
-const PATH_DATA: &str = "../data";
+const PATH_DATA: &str = "../data/";
 
 pub struct StaticPageGenerator {
     pub page: Page,
@@ -15,8 +17,9 @@ impl StaticPageGenerator {
     }
 
     pub fn create(pageid: &str) -> Self {
-        if let Some((basedir, filename)) = find_basedir(pageid) {
+        let mut cept = None;
 
+        if let Some((basedir, filename)) = find_basedir(pageid) {
             let mut basename = basedir.clone();
             basename += filename;
 
@@ -32,12 +35,14 @@ impl StaticPageGenerator {
                 // let data_cept = None;
                 // with open(filename_meta) as f
                 // meta = json.load(f)
-                // if os.path.isfile(filename_cept) {
-                //     with open(filename_cept, mode='rb') as f:
-                //     data_cept = f.read()
+                if is_file(&filename_cept) {
+                    let mut buf : Vec<u8> = vec!();
+                    let mut f = File::open(&filename_cept).unwrap();
+                    f.read_to_end(&mut buf);
+                    cept = Some(buf);
                 // } elif os.path.isfile(filename_cm) {
                 //     data_cept = CM.read(filename_cm)
-                // }
+                }
                 // break;
             }
         }
@@ -57,8 +62,11 @@ impl StaticPageGenerator {
 				("#".to_owned(), "711".to_owned()),
             ],
 			publisher_color: 7,
-		};
-        Self::new(Page::new(meta))
+            inputs: None,
+        };
+        let mut page = Page::new(meta);
+        page.cept.add_raw(&cept.unwrap());
+        Self::new(page)
     }
 
 

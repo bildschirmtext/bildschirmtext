@@ -11,7 +11,6 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
 
     let mut current_pageid = "".to_string();
     let autoplay = false;
-    let mut inputs = Inputs::default(); // XXX no need to init
     let mut history: Vec<String> = vec!();
     let mut error = 0;
 
@@ -21,6 +20,8 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
     let mut last_filename_include = "";
 
     loop {
+        let mut inputs = None;
+
         // if User.user() is not None:
     	// 	User.user().stats.update()
 
@@ -65,8 +66,9 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
                 add_to_history = false;
             } else if desired_pageid != "" {
                 println!("showing page: {}", desired_pageid);
-                let (cept1, cept2, l, inputs, autoplay) = create_page(&desired_pageid);
+                let (cept1, cept2, l, i, autoplay) = create_page(&desired_pageid);
                 links = Some(l);
+                inputs = i;
                 // except:
                 //     error=10
 
@@ -114,7 +116,7 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
             println!("autoplay!");
             vec!(( "$navigation".to_owned(), "".to_owned() ))
         } else {
-            if inputs.fields.is_empty() {
+            if inputs.is_none() {
                 let mut legal_values = vec!();
                 for (value, _) in &links.clone().unwrap() {
                     legal_values.push(value.clone());
@@ -122,7 +124,7 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
                 // legal_values = list(links.keys())
                 // if "#" in legal_values:
                 //     legal_values.remove("#")
-                inputs = Inputs {
+                inputs = Some(Inputs {
                     fields: vec!(
                         InputField {
                             name: "$navigation".to_string(),
@@ -146,10 +148,10 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
                         }),
                     confirm: false,
                     no_55: true,
-                };
+                });
             }
 
-            handle_inputs(&inputs, stream)
+            handle_inputs(&inputs.unwrap(), stream)
         };
         println!("input_data: {:?}", input_data);
 
@@ -274,7 +276,7 @@ fn handle_inputs(inputs: &Inputs, stream: &mut (impl Write + Read)) -> Vec<(Stri
 }
 
 
-pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<(String, String)>, &'static str, bool) {
+pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<(String, String)>, Option<Inputs>, bool) {
     let page = match pageid.chars().next().unwrap() {
         '7' => HistoricPageGenerator::create(&pageid[1..]).page,
         _ => StaticPageGenerator::create(pageid).page,
@@ -315,7 +317,7 @@ pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<(String, String)>, &'static
 
     // XXX
     let links = page.meta.links;
-    let inputs = "";
+    let inputs = page.meta.inputs;
     let autoplay = false;
 
     (cept1, cept2, links, inputs, autoplay)
@@ -412,6 +414,7 @@ pub struct Meta {
     pub parallel_mode: bool,
     pub links: Vec<(String, String)>,
     pub publisher_color: u8,
+    pub inputs: Option<Inputs>,
 }
 
 pub struct Page {

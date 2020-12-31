@@ -84,7 +84,8 @@ impl HistoricPageGenerator {
 				("11".to_owned(), "711".to_owned()),
 				("#".to_owned(), "711".to_owned()),
             ],
-			publisher_color: 7,
+            publisher_color: 7,
+            inputs: None,
 		};
 
         let mut generator = Self::new(Page::new(meta));
@@ -240,6 +241,7 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<HistoricP
         parallel_mode: false,
         links: links,
         publisher_color: 7,
+        inputs: None,
     };
 
     let mut generator = HistoricPageGenerator::new(Page::new(meta));
