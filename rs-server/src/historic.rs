@@ -64,16 +64,16 @@ fn historic_line(page: &mut Page, p: (&str, &str), index: i32) {
 pub fn create_historic_main_page() -> Page {
     let meta = Meta {
         publisher_name: Some("!BTX".to_owned()),
-        clear_screen: true,
+        clear_screen: Some(true),
         cls2: None,
         parallel_mode: None,
-        links: vec![
+        links: Some(vec![
             Link::new("0", "0"),
             Link::new("10", "710"),
             Link::new("11", "711"),
             Link::new("#", "711"),
-        ],
-        publisher_color: 7,
+        ]),
+        publisher_color: Some(7),
         inputs: None,
     };
 
@@ -223,11 +223,11 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
 
     let meta = Meta {
         publisher_name: Some("!BTX".to_owned()),
-        clear_screen: true,
+        clear_screen: Some(true),
         cls2: None,
         parallel_mode: None,
-        links: links,
-        publisher_color: 7,
+        links: Some(links),
+        publisher_color: Some(7),
         inputs: None,
     };
 

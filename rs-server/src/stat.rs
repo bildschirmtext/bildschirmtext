@@ -19,26 +19,29 @@ pub fn create(pageid: &str) -> Option<Page> {
         filename_meta += ".meta";
         let mut filename_cept = basename.clone();
         filename_cept += ".cept";
-        let mut filename_cept = basename.clone();
-        filename_cept += ".cept";
+        let mut filename_glob = basedir.clone();
+        filename_glob += "a.glob";
 
         if is_file(&filename_meta) {
-            println!("found: {}", filename_meta);
-            let mut buf : Vec<u8> = vec!();
+            // read meta
+            println!("filename_meta: {}", filename_meta);
             let mut f = File::open(&filename_meta).unwrap();
-            f.read_to_end(&mut buf);
-            let buf = std::str::from_utf8(&buf).unwrap();
+            let mut meta: Meta = serde_json::from_reader(f).unwrap();
+            // println!("{:?}", meta);
 
-            let meta: Meta = serde_json::from_str(&buf).unwrap();
-            println!("{:?}", meta);
+            // read glob
+            println!("filename_glob: {}", filename_glob);
+            let mut f = File::open(&filename_glob).unwrap();
+            let glob_meta: Meta = serde_json::from_reader(f).unwrap();
 
+            meta.merge(glob_meta);
+
+            println!("filename_cept: {}", filename_cept);
             if is_file(&filename_cept) {
                 let mut buf : Vec<u8> = vec!();
                 let mut f = File::open(&filename_cept).unwrap();
                 f.read_to_end(&mut buf);
                 cept = Some(buf);
-            // } elif os.path.isfile(filename_cm) {
-            //     data_cept = CM.read(filename_cm)
             }
             let mut page = Page::new(meta);
             page.cept.add_raw(&cept.unwrap());

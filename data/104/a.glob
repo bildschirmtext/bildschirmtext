@@ -1,6 +1,18 @@
-{ "clear_screen": false,
-"links":{	"0": "104a",
-	"1": "1041a",
-	"2": "10412a"
-}, "publisher_color": 7
+{
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "1",
+            "target": "1041a"
+        },
+        {
+            "code": "0",
+            "target": "104a"
+        },
+        {
+            "code": "2",
+            "target": "10412a"
+        }
+    ],
+    "publisher_color": 7
 }

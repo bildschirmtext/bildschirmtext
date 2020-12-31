@@ -68,7 +68,7 @@ pub fn interactive_mode(stream: &mut (impl Write + Read))
             } else if desired_pageid != "" {
                 println!("showing page: {}", desired_pageid);
                 let (cept1, cept2, l, i, autoplay) = create_page(&desired_pageid);
-                links = Some(l);
+                links = l;
                 inputs = i;
                 // except:
                 //     error=10
@@ -277,7 +277,7 @@ fn handle_inputs(inputs: &Inputs, stream: &mut (impl Write + Read)) -> Vec<(Stri
 }
 
 
-pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<Link>, Option<Inputs>, bool) {
+pub fn create_page(pageid: &str) -> (Cept, Cept, Option<Vec<Link>>, Option<Inputs>, bool) {
     let page = match pageid.chars().next().unwrap() {
         '7' => super::historic::create(&pageid[1..]),
         _ => super::stat::create(pageid).unwrap(),
@@ -286,7 +286,7 @@ pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<Link>, Option<Inputs>, bool
     let mut cept1 = Cept::new();
     cept1.hide_cursor();
 
-    if page.meta.clear_screen {
+    if page.meta.clear_screen == Some(true) {
         cept1.serial_limited_mode();
         cept1.clear_screen();
         //last_filename_include = ""
@@ -302,7 +302,7 @@ pub fn create_page(pageid: &str) -> (Cept, Cept, Vec<Link>, Option<Inputs>, bool
         // last_filename_include = ""
     }
 
-    headerfooter(&mut cept2, pageid, page.meta.publisher_name.as_deref(), page.meta.publisher_color);
+    headerfooter(&mut cept2, pageid, page.meta.publisher_name.as_deref(), page.meta.publisher_color.unwrap());
 
     if page.meta.parallel_mode == Some(true) {
         cept2.parallel_mode();
@@ -337,7 +337,11 @@ pub fn headerfooter(cept: &mut Cept, pageid: &str, publisher_name: Option<&str>,
             hide_price = true;
             Some("Bildschirmtext")
         } else {
-            Some(&p[..30])
+            if p.len() > 30 {
+                Some(&p[..30])
+            } else {
+                Some(p)
+            }
         };
         false
     } else {
@@ -426,12 +430,38 @@ impl Link {
 #[derive(Debug)]
 pub struct Meta {
     pub publisher_name: Option<String>,
-    pub clear_screen: bool,
+    pub clear_screen: Option<bool>,
     pub cls2: Option<bool>,
     pub parallel_mode: Option<bool>,
-    pub links: Vec<(Link)>,
-    pub publisher_color: u8,
+    pub links: Option<Vec<Link>>,
+    pub publisher_color: Option<u8>,
     pub inputs: Option<Inputs>,
+}
+
+impl Meta {
+    pub fn merge(&mut self, other: Meta) {
+        if other.publisher_name.is_some() {
+            self.publisher_name = other.publisher_name;
+        }
+        if other.clear_screen.is_some() {
+            self.clear_screen = other.clear_screen;
+        }
+        if other.cls2.is_some() {
+            self.cls2 = other.cls2;
+        }
+        if other.parallel_mode.is_some() {
+            self.parallel_mode = other.parallel_mode;
+        }
+        if other.links.is_some() {
+            self.links = other.links;
+        }
+        if other.publisher_color.is_some() {
+            self.publisher_color = other.publisher_color;
+        }
+        if other.inputs.is_some() {
+            self.inputs = other.inputs;
+        }
+    }
 }
 
 pub struct Page {
