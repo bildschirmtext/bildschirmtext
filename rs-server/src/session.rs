@@ -1,9 +1,7 @@
-use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::fs::File;
 use super::cept::*;
 use super::editor::*;
-use super::historic::*;
 use super::stat::*;
 use super::pages::*;
 
@@ -201,7 +199,6 @@ impl Session {
             if input_data[0].0 == "$command" {
                 desired_pageid = input_data[0].1.clone();
             } else {
-                let i = &input_data[0];
                 assert_eq!(input_data[0].0, "$navigation");
                 let val = input_data[0].1.clone();
                 let val_or_hash = if val.len() != 0 { val.clone() } else { "#".to_owned() };
@@ -312,9 +309,11 @@ impl Session {
 
         // send "input_data" to "inputs["target"]"
 
-        // if "target" in inputs:
-        // 	if inputs["target"].startswith("page:"):
-        // 		return { "$command": inputs["target"][5:] }
+        if let Some(target) = &inputs.target {
+        	if target.starts_with("page:") {
+                return vec!(("$command".to_owned(), target[5..].to_owned()));
+            }
+        }
 
         // 	ret = decode_call(inputs["target"], input_data)
         // 	if ret:
@@ -385,8 +384,8 @@ impl Session {
             // println!("last_filename_palette = {}", last_filename_palette);
             if Some(filename_palette.clone()) != self.last_filename_palette {
                 self.last_filename_palette = Some(filename_palette.clone());
-                let mut f = File::open(&filename_palette).unwrap();
-                let mut palette: Palette = serde_json::from_reader(f).unwrap();
+                let f = File::open(&filename_palette).unwrap();
+                let palette: Palette = serde_json::from_reader(f).unwrap();
                 cept.define_palette(&palette.palette, palette.start_color);
             } else {
                 println!("skipping palette");

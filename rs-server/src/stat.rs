@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-use serde_json::{Result, Value};
 use std::fs::File;
 use std::io::Read;
 use std::fs::metadata;
@@ -25,13 +23,12 @@ pub fn create(pageid: &str) -> Option<Page> {
         if is_file(&filename_meta) {
             // read meta
             println!("filename_meta: {}", filename_meta);
-            let mut f = File::open(&filename_meta).unwrap();
+            let f = File::open(&filename_meta).unwrap();
             let mut meta: Meta = serde_json::from_reader(f).unwrap();
-            // println!("{:?}", meta);
 
             // read glob
             println!("filename_glob: {}", filename_glob);
-            let mut f = File::open(&filename_glob).unwrap();
+            let f = File::open(&filename_glob).unwrap();
             let glob_meta: Meta = serde_json::from_reader(f).unwrap();
 
             meta.merge(glob_meta);
