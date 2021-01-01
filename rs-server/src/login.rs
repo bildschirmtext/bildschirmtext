@@ -28,7 +28,6 @@ pub fn validate(pageid: &str, input_data: &[(String, String)]) -> Validate {
     Validate::Ok
 }
 
-
 fn create_login() -> Page {
     let meta = Meta {
         clear_screen: Some(false),

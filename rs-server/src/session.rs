@@ -307,21 +307,19 @@ impl Session {
         //     sys.stdout.flush()
         // }
 
-        // send "input_data" to "inputs["target"]"
-
+        // send "input_data" to "inputs.target"
         if let Some(target) = &inputs.target {
         	if target.starts_with("page:") {
-                return vec!(("$command".to_owned(), target[5..].to_owned()));
+                vec!(("$command".to_owned(), target[5..].to_owned()))
+            } else {
+                // XXX we should loop
+                let handle_result = Self::handle(pageid, &input_data);
+                vec!(("$command".to_owned(), handle_result))
             }
+        } else {
+            input_data
         }
 
-        // 	ret = decode_call(inputs["target"], input_data)
-        // 	if ret:
-        // 		return { "$command": ret }
-        // 	else:
-        // 		return None // error
-        // else:
-            return input_data;
     }
 
     pub fn get_page(&self, pageid: &str) -> Page {
@@ -340,6 +338,10 @@ impl Session {
         } else {
             Validate::Ok
         }
+    }
+
+    pub fn handle(pageid: &str, input_data: &[(String, String)]) -> String {
+        panic!();
     }
 
     pub fn show_page(&mut self, stream: &mut (impl Write + Read), page: &Page, pageid: &str) -> bool {
