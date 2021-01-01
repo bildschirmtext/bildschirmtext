@@ -15,6 +15,20 @@ pub fn create(pageid: &str, user: Option<&User>) -> Option<Page> {
     }
 }
 
+pub fn validate(pageid: &str, input_data: &[(String, String)]) -> Validate {
+    // if !User.login(input_data["user_id"], input_data["ext"], input_data["password"]):
+    //     sys.stderr.write("login incorrect\n")
+    //     msg = Util.create_custom_system_message("Ungültiger Teilnehmer/Kennwort -> #")
+    //     sys.stdout.buffer.write(msg)
+    //     sys.stdout.flush()
+    //     Util.wait_for_ter()
+    //     return Util.VALIDATE_INPUT_RESTART
+    // else:
+    //     sys.stderr.write("login ok\n")
+    Validate::Ok
+}
+
+
 fn create_login() -> Page {
     let meta = Meta {
         clear_screen: Some(false),
@@ -76,7 +90,7 @@ fn create_login() -> Page {
                     bgcolor: Some(12),
                     fgcolor: Some(3),
                     typ: InputType::Password,
-                    validate: Some("call:Login_UI.callback_login".to_owned()),
+                    validate: Some(true),
 
                     cursor_home: false,
                     clear_line: false,
@@ -91,7 +105,7 @@ fn create_login() -> Page {
             ),
             confirm: false,
             no_55: false,
-            // target: "page:000001a".to_owned(),
+            target: Some("page:000001a".to_owned()),
             // no_navigation: true
         }),
         publisher_name: None,

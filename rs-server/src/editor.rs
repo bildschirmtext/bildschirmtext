@@ -70,7 +70,7 @@ pub struct InputField {
     pub command_mode: bool,
     pub no_navigation: bool,
     pub default: Option<String>,
-    pub validate: Option<String>,
+    pub validate: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -80,6 +80,7 @@ pub struct Inputs {
     pub fields: Vec<InputField>,
     pub confirm: bool,
     pub no_55: bool,
+    pub target: Option<String>,
 }
 
 pub struct Editor {
@@ -298,9 +299,9 @@ impl Editor {
 					cept.set_cursor(self.input_field.line, self.input_field.column);
                     self.x = 0;
                 } else {
-                    let string_len = self.string().len();
-                    cept.set_cursor(self.input_field.line, self.input_field.column + string_len as u8);
-                    self.x = string_len as u8;
+                    let string_len = self.string().len() as u8;
+                    cept.set_cursor(self.input_field.line, self.input_field.column + string_len);
+                    self.x = string_len;
                 }
 				if let Some(fgcolor) = self.input_field.fgcolor {
                     cept.set_fg_color(fgcolor);

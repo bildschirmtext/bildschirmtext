@@ -29,6 +29,12 @@ pub struct User {
 	// messaging: None
 }
 
+pub enum Validate {
+    Ok,
+	Error,
+	Restart,
+}
+
 pub struct Session {
     user: Option<User>,
     last_filename_palette: Option<String>,
@@ -46,7 +52,7 @@ impl Session {
 
     pub fn run(&mut self, stream: &mut (impl Write + Read))
     {
-        let mut desired_pageid = "78a".to_string();
+        let mut desired_pageid = "00000".to_string();
         let compress = false;
 
         let mut current_pageid = "".to_string();
@@ -183,10 +189,11 @@ impl Session {
                             }),
                         confirm: false,
                         no_55: true,
+                        target: None,
                     });
                 }
 
-                Self::handle_inputs(&inputs.unwrap(), stream)
+                Self::handle_inputs(&desired_pageid, &inputs.unwrap(), stream)
             };
             println!("input_data: {:?}", input_data);
 
@@ -194,6 +201,7 @@ impl Session {
             if input_data[0].0 == "$command" {
                 desired_pageid = input_data[0].1.clone();
             } else {
+                let i = &input_data[0];
                 assert_eq!(input_data[0].0, "$navigation");
                 let val = input_data[0].1.clone();
                 let val_or_hash = if val.len() != 0 { val.clone() } else { "#".to_owned() };
@@ -234,7 +242,7 @@ impl Session {
         }
     }
 
-    fn handle_inputs(inputs: &Inputs, stream: &mut (impl Write + Read)) -> Vec<(String, String)> {
+    fn handle_inputs(pageid: &str, inputs: &Inputs, stream: &mut (impl Write + Read)) -> Vec<(String, String)> {
         // create editors and draw backgrounds
         let mut editors = vec!();
         for input_field in &inputs.fields {
@@ -264,19 +272,26 @@ impl Session {
 
             input_data.push((input_field.name.to_string(), val.unwrap().to_string()));
 
-            // ret = decode_call(input_field.validate), input_data);
 
-            // if not ret or ret == Util.VALIDATE_INPUT_OK {
-                i += 1;
-            // }
-            // if ret == Util.VALIDATE_INPUT_BAD {
-                // skip = False
-                // continue
-            // } else if ret == Util.VALIDATE_INPUT_RESTART {
-                // i = 0
-                // skip = False
-                // continue
-            // }
+            let mut validate_result = Validate::Ok;
+            if input_field.validate == Some(true) {
+                validate_result = Self::validate(pageid, &input_data);
+            }
+
+            match validate_result {
+                Validate::Ok => {
+                    i += 1;
+                },
+                Validate::Error => {
+                    skip = false;
+                    continue;
+                },
+                Validate::Restart => {
+                    i = 0;
+                    skip = false;
+                    continue;
+                }
+            }
         }
 
         // confirmation
@@ -317,6 +332,14 @@ impl Session {
             super::historic::create(&pageid[1..])
         } else {
             super::stat::create(pageid).unwrap()
+        }
+    }
+
+    pub fn validate(pageid: &str, input_data: &[(String, String)]) -> Validate {
+        if pageid.starts_with("00000") || pageid == "9a" {
+            super::login::validate(pageid, input_data)
+        } else {
+            Validate::Ok
         }
     }
 
