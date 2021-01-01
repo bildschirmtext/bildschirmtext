@@ -1,6 +1,7 @@
 mod cept;
 mod editor;
 mod historic;
+mod login;
 mod pages;
 mod session;
 mod stat;

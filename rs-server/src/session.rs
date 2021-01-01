@@ -155,6 +155,7 @@ impl Session {
                                 command_mode: false,
                                 no_navigation: false,
                                 default: None,
+                                validate: None,
                             }),
                         confirm: false,
                         no_55: true,
@@ -286,9 +287,12 @@ impl Session {
     }
 
     pub fn get_page(&self, pageid: &str) -> Page {
-        match pageid.chars().next().unwrap() {
-            '7' => super::historic::create(&pageid[1..]),
-            _ => super::stat::create(pageid).unwrap(),
+        if pageid.starts_with("00000") || pageid == "9a" {
+            super::login::create(pageid).unwrap()
+        } else if pageid.starts_with('7') {
+            super::historic::create(&pageid[1..])
+        } else {
+            super::stat::create(pageid).unwrap()
         }
     }
 

@@ -257,6 +257,75 @@ impl Cept {
         }
     }
 
+    pub fn from_aa(&mut self, aa: &[&str], indent: i32) {
+        const CEPT_CODES: [u8; 64] = [
+            0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+            0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+            0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+            0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+            0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+            0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
+            0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
+            0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x5f,
+        ];
+        let i = [0x20, 0x12, 0x40 + indent as u8 - 1]; // XXX "dropped" if used directly
+        let cept_indent: &[u8] = match indent {
+            0 => &[],
+            1 => &[0x20],
+            2 => &[0x20, 0x20],
+            3 => &[0x20, 0x20, 0x20],
+            _ => &i,
+        };
+
+        let mut cept = vec!();
+        cept.push(0x0e);                      // G1 into left charset
+        let height = ((aa.len() + 2) / 3) * 3;
+        for y in (0..height).step_by(3) {
+            cept.extend(cept_indent);
+            let width = ((aa[y].chars().count() + 1) / 2) * 2;
+            for x in (0..width).step_by(2) {
+                let mut b = 0;
+                if Self::get_char(aa, x, y) {
+                    b |= 1;
+                }
+                if Self::get_char(aa, x + 1, y) {
+                    b |= 2;
+                }
+                if Self::get_char(aa, x, y + 1) {
+                    b |= 4;
+                }
+                if Self::get_char(aa, x + 1, y + 1) {
+                    b |= 8;
+                }
+                if Self::get_char(aa, x, y + 2) {
+                    b |= 16;
+                }
+                if Self::get_char(aa, x + 1, y + 2) {
+                    b |= 32;
+                }
+                cept.push(CEPT_CODES[b]);
+            }
+            cept.extend(b"\r\n");
+        }
+        cept.push(0x0f);                       // G0 into left charset
+        // XXX compress
+        self.data.extend(cept)
+    }
+
+    fn get_char(aa: &[&str], x: usize, y: usize) -> bool {
+        if y >= aa.len() {
+            false
+        } else {
+            if let Some(c) = aa[y].chars().nth(x) {
+                c != ' '
+            } else {
+                false
+            }
+        }
+    }
+
+    // CEPT sequences
+
     pub fn sequence_end_of_page(&mut self) {
         self.data.extend(&[
         0x1f, 0x58, 0x41, // set cursor to line 24, column 1
@@ -264,6 +333,8 @@ impl Cept {
         0x1a,             // end of page
         ]);
     }
+
+    // CEPT codes
 
 	pub fn ini(&mut self) {
         self.data.push(0x13);

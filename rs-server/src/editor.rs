@@ -70,6 +70,7 @@ pub struct InputField {
     pub command_mode: bool,
     pub no_navigation: bool,
     pub default: Option<String>,
+    pub validate: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -372,7 +373,7 @@ impl Editor {
                             command_mode: true,
                             no_navigation: false,
                             default: None,
-
+                            validate: None,
                         };
                         let mut editor = Editor::new(&input_field);
                         editor.set_string(&cept_ini_str());
