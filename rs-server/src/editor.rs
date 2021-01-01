@@ -81,6 +81,7 @@ pub struct Inputs {
     pub confirm: bool,
     pub no_55: bool,
     pub target: Option<String>,
+    pub no_navigation: bool,
 }
 
 pub struct Editor {

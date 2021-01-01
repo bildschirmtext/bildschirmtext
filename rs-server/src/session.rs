@@ -188,10 +188,11 @@ impl Session {
                         confirm: false,
                         no_55: true,
                         target: None,
+                        no_navigation: false,
                     });
                 }
 
-                Self::handle_inputs(&desired_pageid, &inputs.unwrap(), stream)
+                Self::handle_inputs(&desired_pageid, &mut inputs.unwrap(), stream)
             };
             println!("input_data: {:?}", input_data);
 
@@ -239,10 +240,11 @@ impl Session {
         }
     }
 
-    fn handle_inputs(pageid: &str, inputs: &Inputs, stream: &mut (impl Write + Read)) -> Vec<(String, String)> {
+    fn handle_inputs(pageid: &str, inputs: &mut Inputs, stream: &mut (impl Write + Read)) -> Vec<(String, String)> {
         // create editors and draw backgrounds
         let mut editors = vec!();
-        for input_field in &inputs.fields {
+        for input_field in &mut inputs.fields {
+            input_field.no_navigation = inputs.no_navigation;
             let editor = Editor::new(input_field);
             editor.draw(stream);
             editors.push(editor);

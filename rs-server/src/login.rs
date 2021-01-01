@@ -105,7 +105,7 @@ fn create_login() -> Page {
             confirm: false,
             no_55: false,
             target: Some("page:000001a".to_owned()),
-            // no_navigation: true
+            no_navigation: true,
         }),
         publisher_name: None,
         cls2: None,
