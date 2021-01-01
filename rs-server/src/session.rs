@@ -7,7 +7,30 @@ use super::historic::*;
 use super::stat::*;
 use super::pages::*;
 
+pub struct User {
+    pub user_id: String,
+	pub ext: i8,
+	pub personal_data: bool,
+
+	// public - person
+	pub salutation: Option<String>,
+	pub first_name: Option<String>,
+	pub last_name: Option<String>,
+	// public - organization
+	pub org_name: Option<String>,
+	pub org_add_name: Option<String>,
+	// personal_data
+	pub street: Option<String>,
+	pub zip: Option<String>,
+	pub city: Option<String>,
+	pub country: Option<String>,
+
+	// stats: None
+	// messaging: None
+}
+
 pub struct Session {
+    user: Option<User>,
     last_filename_palette: Option<String>,
     last_filename_include: Option<String>,
 }
@@ -15,6 +38,7 @@ pub struct Session {
 impl Session {
     pub fn new() -> Self {
         Self {
+            user: None,
             last_filename_palette: None,
             last_filename_include: None,
          }
@@ -288,7 +312,7 @@ impl Session {
 
     pub fn get_page(&self, pageid: &str) -> Page {
         if pageid.starts_with("00000") || pageid == "9a" {
-            super::login::create(pageid).unwrap()
+            super::login::create(pageid, self.user.as_ref()).unwrap()
         } else if pageid.starts_with('7') {
             super::historic::create(&pageid[1..])
         } else {
