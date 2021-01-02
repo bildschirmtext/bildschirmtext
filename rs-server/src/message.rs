@@ -57,6 +57,7 @@ impl XMessage {
 	fn body(&mut self) {
         self.dict.body
     }
+}
 
 struct Messaging {
 	user: String,
@@ -228,7 +229,7 @@ fn messaging_create_main_menu() -> (Meta, Cept) {
             Link("5", "810"),
         )),
         publisher_color: Some(7),
-    }
+    };
 
     let cept = messaging_create_menu(
         "Mitteilungsdienst",
@@ -280,6 +281,7 @@ fn messaging_create_list(user: &User, is_read: bool) -> (Meta, Cept) {
         } else {
             cept.add_raw(b"\r\n\r\n");
         }
+    }
 
     let meta = Meta {
         publisher_name: Some("!BTX"),
@@ -325,13 +327,13 @@ fn messaging_create_message_detail(user: &User, index: usize, is_read: bool) -> 
         from_city = "";
     }
 
-    cept = bytearray(Cept.parallel_limited_mode();
+    cept = bytearray(Cept.parallel_limited_mode());
     cept.set_cursor(2, 1);
     cept.set_fg_color(3);
     cept.add_str(b"von ");
     cept.add_str(message.from_user.user_id.ljust(12));
     cept.add_str(" ");
-    cept.(message.from_user.ext.rjust(5, '0'));
+    cept.add_raw(message.from_user.ext.rjust(5, '0'));
     cept.set_cursor(2, 41 - from_date.len());
     cept.add_str(from_date);
     cept.repeat(" ", 4);
@@ -377,144 +379,148 @@ fn messaging_create_message_detail(user: &User, index: usize, is_read: bool) -> 
     (meta, cept)
 }
 
-fn callback_validate_user_id(cls, input_data, dummy):
-    if User.exists(input_data["user_id"]):
-        return Util.VALIDATE_INPUT_OK
-    else:
-        msg = Util.create_custom_system_message("Teilnehmerkennung ungültig! -> #")
-        sys.stdout.buffer.write(msg)
-        sys.stdout.flush()
-        Util.wait_for_ter()
-        return Util.VALIDATE_INPUT_BAD
-
-fn callback_validate_ext(cls, input_data, dummy):
-    if User.exists(input_data["user_id"], input_data["ext"]):
-        return Util.VALIDATE_INPUT_OK
-    else:
-        msg = Util.create_custom_system_message("Mitbenutzernummer ungültig! -> #")
-        sys.stdout.buffer.write(msg)
-        sys.stdout.flush()
-        Util.wait_for_ter()
-        return Util.VALIDATE_INPUT_RESTART
-
-fn messaging_create_compose(user):
-    meta = {
-        "include": "a",
-        "clear_screen": True,
-        "links": {
-            "0": "8"
-        },
-        "publisher_color": 7,
-        "inputs": {
-            "fields": [
-                {
-                    "name": "user_id",
-                    "type": "user_id",
-                    "line": 8,
-                    "column": 20,
-                    "height": 1,
-                    "width": 16,
-                    "bgcolor": 4,
-                    "fgcolor": 3,
-                    "validate": "call:Messaging_UI.callback_validate_user_id"
-                },
-                {
-                    "name": "ext",
-                    "type": "ext",
-                    "line": 8,
-                    "column": 37,
-                    "height": 1,
-                    "width": 1,
-                    "bgcolor": 4,
-                    "fgcolor": 3,
-                    "default": "1",
-                    "validate": "call:Messaging_UI.callback_validate_ext"
-                },
-                {
-                    "name": "body",
-                    "line": 12,
-                    "column": 1,
-                    "height": 10,
-                    "width": 40,
-                    "bgcolor": 4,
-                    "fgcolor": 3
-                }
-            ],
-            "action": "send_message",
-            "price": 30,
-            "target": "page:8"
-        }
+fn callback_validate_user_id(input_data: &InputData) {
+    if User.exists(input_data.user_id) {
+        return util::VALIDATE_INPUT_OK;
+    } else {
+        let msg = util::create_custom_system_message("Teilnehmerkennung ungültig! -> #");
+        write(stream, msg);
+        util::wait_for_ter();
+        return util::VALIDATE_INPUT_BAD;
     }
+}
 
-    current_date = datetime.datetime.now().strftime("%d.%m.%Y")
-    current_time = datetime.datetime.now().strftime("%H:%M")
+fn callback_validate_ext(input_data: &InputData) {
+    if User.exists(input_data.user_id, input_data.ext) {
+        return util::VALIDATE_INPUT_OK;
+    } else {
+        let msg = util::create_custom_system_message("Mitbenutzernummer ungültig! -> #");
+        write(stream, msg);
+        util::wait_for_ter();
+        return util::VALIDATE_INPUT_RESTART;
+    }
+}
 
-    cept = bytearray(Cept.set_cursor(2, 1))
-    cept.set_palette(1))
-    cept.set_screen_bg_color_simple(4))
-    cept.add_raw(
-        b'\x1b\x28\x40'                                    // load G0 into G0
-    )
-    cept.add_raw(
-        b'\x0f'                                            // G0 into left charset
-    )
-    cept.parallel_mode())
-    cept.set_palette(0))
-    cept.code_9e())
-    cept.add_raw(b"\n\r")
-    cept.set_line_bg_color_simple(4))
-    cept.add_raw(b"\n")
-    cept.set_line_bg_color_simple(4))
-    cept.set_palette(1))
-    cept.double_height())
-    cept.add_raw(b"\r")
-    cept.add_str("Mitteilungsdienst"))
-    cept.add_raw(b"\n\r")
-    cept.set_palette(0))
-    cept.normal_size())
-    cept.code_9e())
-    cept.set_fg_color_simple(7))
-    cept.add_str("Absender:"))
-    cept.add_str(user.user_id))
-    cept.set_cursor(5, 25))
-    cept.add_str(user.ext))
-    cept.set_cursor(6, 10))
-    cept.add_str(user.first_name))
-    cept.set_cursor(7, 10))
-    cept.add_str(user.last_name))
-    cept.set_cursor(5, 31))
-    cept.add_str(current_date))
-    cept.set_cursor(6, 31))
-    cept.add_str(current_time))
+fn messaging_create_compose(user: &User) -> (Meta, Cept) {
+    let meta = Meta {
+        include: "a",
+        clear_screen: True,
+        links: {
+            Link("0", "8");
+        },
+        publisher_color: 7,
+        inputs: Inputs {
+            fields: vec!(
+                InputField {
+                    name: "user_id",
+                    type: "user_id",
+                    line: 8,
+                    column: 20,
+                    height: 1,
+                    width: 16,
+                    bgcolor: 4,
+                    fgcolor: 3,
+                    validate: "call:Messaging_UI.callback_validate_user_id"
+                },
+                InputField {
+                    name: "ext",
+                    type: "ext",
+                    line: 8,
+                    column: 37,
+                    height: 1,
+                    width: 1,
+                    bgcolor: 4,
+                    fgcolor: 3,
+                    default: 1,
+                    validate: "call:Messaging_UI.callback_validate_ext"
+                },
+                InputField {
+                    name: "body",
+                    line: 12,
+                    column: 1,
+                    height: 10,
+                    width: 40,
+                    bgcolor: 4,
+                    fgcolor: 3
+                }
+            ),
+            action: "send_message",
+            price: 30,
+            target: "page:8"
+        }
+    };
+
+    let now = Utc::now();
+    let current_date = now.format("%d.%m.%Y").to_string();
+    let current_time = now.format("%H:%M").to_string();
+
+    cept = bytearray(Cept.set_cursor(2, 1));
+    cept.set_palette(1);
+    cept.set_screen_bg_color_simple(4);
+    cept.add_raw(&[
+        0x1b, 0x28, 0x40                                    // load G0 into G0
+    ]);
+    cept.add_raw(&[
+        0x0f                                            // G0 into left charset
+    ]);
+    cept.parallel_mode();
+    cept.set_palette(0);
+    cept.code_9e();
+    cept.add_raw(b"\n\r");
+    cept.set_line_bg_color_simple(4);
+    cept.add_raw(b"\n");
+    cept.set_line_bg_color_simple(4);
+    cept.set_palette(1);
+    cept.double_height();
+    cept.add_raw(b"\r");
+    cept.add_str("Mitteilungsdienst");
+    cept.add_raw(b"\n\r");
+    cept.set_palette(0);
+    cept.normal_size();
+    cept.code_9e();
+    cept.set_fg_color_simple(7);
+    cept.add_str("Absender:");
+    cept.add_str(user.user_id);
+    cept.set_cursor(5, 25);
+    cept.add_str(user.ext);
+    cept.set_cursor(6, 10);
+    cept.add_str(user.first_name);
+    cept.set_cursor(7, 10);
+    cept.add_str(user.last_name);
+    cept.set_cursor(5, 31);
+    cept.add_str(current_date);
+    cept.set_cursor(6, 31);
+    cept.add_str(current_time);
     cept.add_raw(b"\r\n\n");
-    cept.add_str("Tln.-Nr. Empfänger:"))
-    cept.set_cursor(8, 36))
-    cept.add_raw(
-        b'-'
-        b'\r\n\n\n'
-    )
-    cept.add_raw(b'Text:')
-    cept.add_raw(b'\r\n\n\n\n\n\n\n\n\n\n\n\n')
-    cept.set_line_bg_color_simple(4))
-    cept.add_raw(b'0')
-    cept.add_raw(
-        b'\x19'                                            // switch to G2 for one character
-        b'\x2b\xfe\x7f'                                    // "+."
-    )
-    return (meta, cept)
+    cept.add_str("Tln.-Nr. Empfänger:");
+    cept.set_cursor(8, 36);
+    cept.add_str("-");
+    cept.add_raw(b"\r\n\n\n");
+    cept.add_str("Text:");
+    cept.add_raw(b"\r\n\n\n\n\n\n\n\n\n\n\n\n");
+    cept.set_line_bg_color_simple(4);
+    cept.add_str("0");
+    cept.add_raw(&[
+        0x19,                                            // switch to G2 for one character
+        0x2b, 0xfe, 0x7f,                                    // "+."
+    ]);
+    (meta, cept)
+}
 
-fn create_page(user, pagenumber):
-    if pagenumber == "8a":
+fn create_page(user: &User, pageid: &str) -> Option<Page> {
+    if pageid == "8a" {
         return Messaging_UI.messaging_create_main_menu()
-    elif pagenumber == "88a":
+    } else if pageid == "88a" {
         return Messaging_UI.messaging_create_list(user, False)
-    elif pagenumber == "89a":
+    } else if pageid == "89a" {
         return Messaging_UI.messaging_create_list(user, True)
-    elif re.search("^88\da$", pagenumber):
-        return Messaging_UI.messaging_create_message_detail(user, int(pagenumber[2:-1]) - 1, False)
-    elif re.search("^89\da$", pagenumber):
-        return Messaging_UI.messaging_create_message_detail(user, int(pagenumber[2:-1]) - 1, True)
-    elif pagenumber == "810a":
+    // } else if re.search("^88\da$", pageid) {
+    //     return Messaging_UI.messaging_create_message_detail(user, int(pageid[2..-1]) - 1, False)
+    // } else if re.search("^89\da$", pageid) {
+    //     return Messaging_UI.messaging_create_message_detail(user, int(pageid[2..-1]) - 1, True)
+    } else if pageid == "810a" {
         return Messaging_UI.messaging_create_compose(user)
-    else:
+    } else {
         return None
+    }
+}
