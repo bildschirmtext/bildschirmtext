@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::{fs::File, io::Write};
 use chrono::Utc;
 use chrono::TimeZone;
+use uuid::Uuid;
 use super::cept::*;
 use super::pages::*;
 use super::session::*;
@@ -10,11 +11,11 @@ use super::stat::*;
 const PATH_MESSAGES: &str = "../messages/";
 
 #[derive(Serialize, Deserialize)]
-struct MessageDict {
+struct MessageDatabase {
     messages: Vec<Message>,
 }
 
-impl MessageDict {
+impl MessageDatabase {
     fn new() -> Self {
         Self {
             messages: vec!()
@@ -31,59 +32,36 @@ struct Message {
     personal_data: bool,
     timestamp: i64,
     is_read: bool,
+    uuid: Uuid,
 }
 
-struct XMessage {
-	dict: Message,
-	from_user: &User,
-    index: usize,
-}
-
-impl XMessage {
-	fn new(message: &Message, index: usize) -> Option<Self> {
-		let from_user = User::get(&message.from_user_id, &message.from_ext, message.personal_data);
-		if let Some(from_user) = from_user {
-            Some(Self {
-                dict: message.clone(),
-                from_user: &from_user,
-                index: index,
-            })
-        } else {
-            println!("from user not found!");
-            None
-        }
-    }
-
+impl Message {
 	fn from_date(&self) -> String {
-        let t = Utc.timestamp(self.dict.timestamp, 0);
+        let t = Utc.timestamp(self.timestamp, 0);
         t.format("%d.%m.%Y").to_string()
     }
 
 	fn from_time(&self) -> String {
-        let t = Utc.timestamp(self.dict.timestamp, 0);
+        let t = Utc.timestamp(self.timestamp, 0);
         t.format("%H:%M").to_string()
     }
-
-	fn body(&mut self) -> String {
-        self.dict.body
-    }
 }
 
-struct Messaging {
-	user: &User,
-    dict: MessageDict,
+struct Messaging<'a> {
+	user: &'a User,
+    database: MessageDatabase,
 }
 
 
-impl Messaging {
+impl Messaging<'_> {
 	fn new(user: &User) -> Self {
         Self {
-            user: u,
-            dict: MessageDict::new(),
+            user: user,
+            database: MessageDatabase::new(),
         }
     }
 
-	fn dict_filename(user_id: &str, ext: &str) -> String {
+	fn database_filename(user_id: &str, ext: &str) -> String {
         let mut s = String::new();
         s += PATH_MESSAGES;
         s += user_id;
@@ -93,39 +71,39 @@ impl Messaging {
         s
     }
 
-	fn load_dict(user_id: &str, ext: &str) -> MessageDict {
-		let filename = Self::dict_filename(user_id, ext);
+	fn load_database(user_id: &str, ext: &str) -> MessageDatabase {
+		let filename = Self::database_filename(user_id, ext);
 		if !is_file(&filename) {
 			println!("messages file not found");
-			MessageDict::new()
+			MessageDatabase::new()
         } else {
             let f = File::open(&filename).unwrap();
-            let message_dict: MessageDict = serde_json::from_reader(f).unwrap();
-            message_dict
+            let database: MessageDatabase = serde_json::from_reader(f).unwrap();
+            database
         }
     }
 
-	fn save_dict(user_id: &str, ext: &str, dict: &MessageDict) {
-        let json_data = serde_json::to_string(dict).unwrap();
-        let mut file = File::create(Self::dict_filename(user_id, ext)).unwrap();
+	fn save_database(user_id: &str, ext: &str, database: &MessageDatabase) {
+        let json_data = serde_json::to_string(database).unwrap();
+        let mut file = File::create(Self::database_filename(user_id, ext)).unwrap();
         file.write_all(&json_data.as_bytes());
     }
 
 	fn load(&mut self) {
-        self.dict = Messaging::load_dict(&self.user.user_id, &self.user.ext);
+        self.database = Messaging::load_database(&self.user.user_id, &self.user.ext);
     }
 
 	fn save(&mut self) {
-        Messaging::save_dict(&self.user.user_id, &self.user.ext, &self.dict);
+        Messaging::save_database(&self.user.user_id, &self.user.ext, &self.database);
     }
 
-	fn select(&mut self, is_read: bool, start: usize, count: Option<usize>) -> Vec<XMessage> {
+	fn select(&mut self, is_read: bool, start: usize, count: Option<usize>) -> Vec<Message> {
 		self.load();
 
 		let mut ms = vec!();
 		let mut j = 0;
-		for i in (0..self.dict.messages.len()).rev() {
-			let m = self.dict.messages[i];
+		for i in (0..self.database.messages.len()).rev() {
+			let m = self.database.messages[i];
 			if m.is_read != is_read {
                 continue;
             }
@@ -137,7 +115,7 @@ impl Messaging {
                     continue;
                 }
             }
-            ms.push(XMessage::new(&m, i).unwrap());
+            ms.push(m);
             j += 1;
         }
 
@@ -146,8 +124,8 @@ impl Messaging {
 
 	fn mark_as_read(&mut self, index: usize) {
 		self.load();
-		if !self.dict.messages[index].is_read {
-			self.dict.messages[index].is_read = true;
+		if !self.database.messages[index].is_read {
+			self.database.messages[index].is_read = true;
             self.save();
         }
     }
@@ -158,8 +136,8 @@ impl Messaging {
     }
 
 	fn send(&mut self, user_id: &str, ext: &str, body: &str) {
-		let dict = Messaging::load_dict(user_id, ext);
-		dict.messages.push(
+		let database = Messaging::load_database(user_id, ext);
+		database.messages.push(
             Message {
 				from_user_id: self.user.user_id,
 				from_ext: self.user.ext,
@@ -169,7 +147,7 @@ impl Messaging {
                 is_read: false,
 			},
 		);
-        Messaging::save_dict(user_id, ext, &dict);
+        Messaging::save_database(user_id, ext, &database);
     }
 }
 
