@@ -378,5 +378,119 @@ impl CeptPage {
 
         return data_cept
     }
+}
+
+struct CeptFromHtmlGenerator {
+    cept_page: CeptPage,
+	link_index: Option<u32>,
+	wiki_link_targets: Vector<String>,
+	page_and_link_index_for_link: Vector<String>,
+	first_paragraph: bool,
+	link_count: u32,
+	links_for_page: Vector<String>,
+	pageid_base: Option<String>,
+	ignore_lf: bool,
+	article_prefix: Option<String>,
+}
+
+impl CeptFromHtmlGenerator {
+	fn insert_toc(&mut self) {
+		self.page_and_link_index_for_link = vec!();
+		for t1 in soup.contents[0].children {
+			if ["h2", "h3", "h4", "h5", "h6"].contains(t1.name) {
+				if self.current_sheet() != self.prev_sheet {
+					self.link_index = 10;
+                }
+				level = int(t1.name[1]);
+				// non-breaking space, otherwise it will be filtered at the beginning of lines
+				indent = (level - 2) * b"\xa0\xa0";
+				entry = indent + t1.get_text().replace("\n", "");
+				padded = entry + ("." * 36);
+				padded = padded[..36];
+				self.print(padded + "[" + str(self.link_index) + "]");
+				self.page_and_link_index_for_link.append((self.current_sheet(), self.link_index));
+                self.link_index += 1;
+            }
+        }
+    }
+
+	fn insert_html_tags(&mut self, tags: Vec<String>) {
+		for t1 in tags {
+			if t1.name == "p" {
+				self.insert_html_tags(t1.children);
+				self.print("\n");
+
+				if self.first_paragraph {
+					self.first_paragraph = false;
+					self.insert_toc(self.soup);
+//					sys.stderr.write("self.page_and_link_index_for_link: " + pprint.pformat(self.page_and_link_index_for_link) + "\n")
+                    self.print("\n");
+                }
+            } else if ["h2", "h3", "h4", "h5", "h6"].contains(t1.name) {
+				level = int(t1.name[1]);
+				self.print_heading(level, t1.contents[0].get_text().replace("\n", ""));
+				if self.page_and_link_index_for_link { // only if there is a TOC
+					(link_page, link_name) = self.page_and_link_index_for_link[self.link_count];
+					self.link_count += 1;
+					while len(self.links_for_page) < link_page + 1 {
+                        self.links_for_page.append({})
+                    }
+                    self.links_for_page[link_page][str(link_name)] = self.pageid_base + chr(0x61 + self.current_sheet())
+                }
+            } else if t1.name.is_none() {
+				self.print(t1, self.ignore_lf)
+			} else if t1.name == "span" {
+				self.print(t1.get_text(), self.ignore_lf)
+			} else if t1.name == "i" {
+				self.set_italics_on();
+				self.print(t1.get_text(), self.ignore_lf);
+				self.set_italics_off();
+			} else if t1.name == "b" {
+				self.set_bold_on();
+				self.print(t1.get_text(), self.ignore_lf);
+				self.set_bold_off();
+			} else if t1.name == "a" {
+				if t1["href"].startswith(self.article_prefix) { // links to different article
+					if self.current_sheet() != self.prev_sheet {
+						self.link_index = 10;
+						// TODO: this breaks if the link
+                        // goes across two sheets!
+                    }
+
+					while len(self.wiki_link_targets) < self.current_sheet() + 1 {
+                        self.wiki_link_targets.append({});
+                    }
+					self.wiki_link_targets[self.current_sheet()][self.link_index] = t1["href"][len(self.article_prefix)..];
+
+					link_text = t1.get_text().replace("\n", "") + " [" + str(self.link_index) + "]";
+					self.set_link_on();
+					self.print(link_text);
+					self.link_index += 1;
+                    self.set_link_off();
+                } else { // link to section or external link, just print the text
+                    self.print(t1.get_text(), self.ignore_lf);
+            }
+            } else if t1.name == "ul" {
+            self.insert_html_tags(t1.children)
+            } else if t1.name == "ol" {
+                self.insert_html_tags(t1.children)
+            } else if t1.name == "code" {
+                self.set_code_on();
+                self.insert_html_tags(t1.children);
+                self.set_code_off();
+            } else if t1.name == "li" {
+                // TODO indentation
+                self.print("* "); // TODO: ordered list
+                self.insert_html_tags(t1.children);
+                self.print("\n");
+            } else if t1.name == "pre" {
+                self.ignore_lf = false;
+                self.insert_html_tags(t1.children);
+                self.ignore_lf = true;
+            } else {
+                sys.stderr.write("ignoring tag: " + pprint.pformat(t1.name) + "\n")
+            }
+        }
+    }
 
 }
