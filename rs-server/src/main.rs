@@ -3,6 +3,7 @@ mod cept_page;
 mod editor;
 mod historic;
 mod login;
+mod message;
 mod pages;
 mod session;
 mod stat;

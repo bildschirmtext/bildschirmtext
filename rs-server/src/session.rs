@@ -7,7 +7,7 @@ use super::pages::*;
 
 pub struct User {
     pub user_id: String,
-	pub ext: i8,
+	pub ext: String,
 	pub personal_data: bool,
 
 	// public - person
@@ -25,6 +25,27 @@ pub struct User {
 
 	// stats: None
 	// messaging: None
+}
+
+impl User {
+    pub fn get(user_id: &str, ext: &str, personal_data: bool) -> Option<User> {
+        Some(User {
+            user_id: "0".to_owned(),
+            ext: "0".to_owned(),
+            personal_data: false,
+
+            salutation: None,
+            first_name: None,
+            last_name: None,
+            org_name: None,
+            org_add_name: None,
+
+            street: None,
+            zip: None,
+            city: None,
+            country: None,
+        })
+    }
 }
 
 pub enum Validate {

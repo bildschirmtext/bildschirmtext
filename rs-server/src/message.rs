@@ -1,7 +1,15 @@
+use serde::{Deserialize, Serialize};
+use std::{fs::File, io::Write};
 use chrono::Utc;
+use chrono::TimeZone;
+use super::cept::*;
+use super::pages::*;
+use super::session::*;
+use super::stat::*;
 
 const PATH_MESSAGES: &str = "../messages/";
 
+#[derive(Serialize, Deserialize)]
 struct MessageDict {
     messages: Vec<Message>,
 }
@@ -14,28 +22,30 @@ impl MessageDict {
     }
 }
 
+#[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 struct Message {
     body: String,
     from_user_id: String,
     from_ext: String,
     personal_data: bool,
-    timestamp: usize,
+    timestamp: i64,
     is_read: bool,
 }
 
 struct XMessage {
-	dict: MessageDict,
-	from_user: String,
+	dict: Message,
+	from_user: &User,
     index: usize,
 }
 
 impl XMessage {
-	fn new(dict: &MessageDict, index: usize) -> Option<Self> {
-		let from_user = User.get(dict.from_user_id, dict.from_ext, dict.personal_data, false);
+	fn new(message: &Message, index: usize) -> Option<Self> {
+		let from_user = User::get(&message.from_user_id, &message.from_ext, message.personal_data);
 		if let Some(from_user) = from_user {
             Some(Self {
-                dict: dict,
-                from_user: String,
+                dict: message.clone(),
+                from_user: &from_user,
                 index: index,
             })
         } else {
@@ -45,22 +55,22 @@ impl XMessage {
     }
 
 	fn from_date(&self) -> String {
-        let t = Utc::timestamp(self.dict.timestamp);
+        let t = Utc.timestamp(self.dict.timestamp, 0);
         t.format("%d.%m.%Y").to_string()
     }
 
-	fn from_time(&self) {
-        let t = Utc::timestamp(self.dict.timestamp);
+	fn from_time(&self) -> String {
+        let t = Utc.timestamp(self.dict.timestamp, 0);
         t.format("%H:%M").to_string()
     }
 
-	fn body(&mut self) {
+	fn body(&mut self) -> String {
         self.dict.body
     }
 }
 
 struct Messaging {
-	user: String,
+	user: &User,
     dict: MessageDict,
 }
 
@@ -74,7 +84,7 @@ impl Messaging {
     }
 
 	fn dict_filename(user_id: &str, ext: &str) -> String {
-        let mut s = String::new;
+        let mut s = String::new();
         s += PATH_MESSAGES;
         s += user_id;
         s.push('-');
@@ -83,32 +93,33 @@ impl Messaging {
         s
     }
 
-	fn load_dict(user_id: &str, ext: &str) {
-		let filename = Messaging::dict_filename(user_id, ext);
-		if !is_file(filename) {
+	fn load_dict(user_id: &str, ext: &str) -> MessageDict {
+		let filename = Self::dict_filename(user_id, ext);
+		if !is_file(&filename) {
 			println!("messages file not found");
 			MessageDict::new()
         } else {
             let f = File::open(&filename).unwrap();
-            serde_json::from_reader(f).unwrap()
+            let message_dict: MessageDict = serde_json::from_reader(f).unwrap();
+            message_dict
         }
     }
 
 	fn save_dict(user_id: &str, ext: &str, dict: &MessageDict) {
         let json_data = serde_json::to_string(dict).unwrap();
-        let mut file = File::create(dict_filename(user_id, ext)).unwrap();
-        file.write_all(json_data);
+        let mut file = File::create(Self::dict_filename(user_id, ext)).unwrap();
+        file.write_all(&json_data.as_bytes());
     }
 
 	fn load(&mut self) {
-        self.dict = Messaging::load_dict(self.user.user_id, self.user.ext);
+        self.dict = Messaging::load_dict(&self.user.user_id, &self.user.ext);
     }
 
 	fn save(&mut self) {
-        Messaging::save_dict(self.user.user_id, self.user.ext, self.dict);
+        Messaging::save_dict(&self.user.user_id, &self.user.ext, &self.dict);
     }
 
-	fn select(&mut self, is_read: bool, start: usize, count: Option<usize>) -> Vec<Message> {
+	fn select(&mut self, is_read: bool, start: usize, count: Option<usize>) -> Vec<XMessage> {
 		self.load();
 
 		let mut ms = vec!();
@@ -126,7 +137,7 @@ impl Messaging {
                     continue;
                 }
             }
-            ms.push(Message(m, i));
+            ms.push(XMessage::new(&m, i).unwrap());
             j += 1;
         }
 
@@ -152,13 +163,13 @@ impl Messaging {
             Message {
 				from_user_id: self.user.user_id,
 				from_ext: self.user.ext,
-				personal_data: False,
-				timestamp: time.time(),
-                body: body,
+				personal_data: false,
+				timestamp: Utc::now().timestamp(),
+                body: body.to_owned(),
                 is_read: false,
 			},
 		);
-        Messaging::save_dict(user_id, ext, dict);
+        Messaging::save_dict(user_id, ext, &dict);
     }
 }
 
@@ -172,7 +183,7 @@ fn messaging_create_title(title: &str) -> Cept {
     cept.set_cursor(2, 1);
     cept.set_palette(1);
     cept.set_screen_bg_color_simple(4);
-    cept.add_raw([
+    cept.add_raw(&[
         0x1b, 0x28, 0x40,           // load G0 into G0
         0x0f                   // G0 into left charset
     ]);
@@ -202,7 +213,7 @@ fn messaging_create_menu(title: &str, items: &[&str]) -> Cept {
     let mut i = 1;
     for item in items {
         let s = String::new();
-        cept.add_str(i.to_string());
+        cept.add_str(&i.to_string());
         cept.add_str("  ");
         cept.add_str(item);
         cept.add_raw(b"\r\n\r\n");
@@ -219,16 +230,22 @@ fn messaging_create_menu(title: &str, items: &[&str]) -> Cept {
 
 fn messaging_create_main_menu() -> (Meta, Cept) {
     let meta = Meta {
-        publisher_name: Some("!BTX"),
-        include: Some("a"),
-        clear_screen: True,
+        publisher_name: Some("!BTX".to_owned()),
+        include: Some("a".to_owned()),
+        clear_screen: Some(true),
         links: Some(vec!(
-            Link("0", "0"),
-            Link("1", "88"),
-            Link("2", "89"),
-            Link("5", "810"),
+            Link::new("0", "0"),
+            Link::new("1", "88"),
+            Link::new("2", "89"),
+            Link::new("5", "810"),
         )),
         publisher_color: Some(7),
+
+        cls2: None,
+        parallel_mode: None,
+        inputs: None,
+        palette: None,
+        autoplay: None,
     };
 
     let cept = messaging_create_menu(
@@ -245,15 +262,15 @@ fn messaging_create_main_menu() -> (Meta, Cept) {
 }
 
 fn messaging_create_list(user: &User, is_read: bool) -> (Meta, Cept) {
-    if is_read {
-        title = "Zurückgelegte Mitteilungen"
+    let title = if is_read {
+        "Zurückgelegte Mitteilungen"
     } else {
-        title = "Neue Mitteilungen"
+        "Neue Mitteilungen"
     }
-    let cept = Messaging_UI.messaging_create_title(title);
+    let cept = messaging_create_title(title);
 
     let mut links = vec!(
-        Link("0", "8"),
+        Link::new("0", "8"),
     );
 
     let target_prefix = if is_read {"89" } else { "88" };
@@ -261,10 +278,10 @@ fn messaging_create_list(user: &User, is_read: bool) -> (Meta, Cept) {
     let messages = user.messaging.select(is_read, 0, 9);
 
     for index in 0..9 {
-        cept.add_str((index + 1).to_string());
+        cept.add_str(&(index + 1).to_string());
         cept.add_str("  ");
         if index < messages.len() {
-            message = messages[index];
+            let message = messages[index];
             if message.from_user.org_name {
                 cept.add_str(message.from_user.org_name);
             } else {
@@ -277,37 +294,37 @@ fn messaging_create_list(user: &User, is_read: bool) -> (Meta, Cept) {
             cept.add_raw(b"   ");
             cept.add_str(message.from_time());
             cept.add_raw(b"\r\n");
-            links[str(index + 1)] = target_prefix + (index + 1).to_string();
+            links[(index + 1).to_string()] = target_prefix + (index + 1).to_string();
         } else {
             cept.add_raw(b"\r\n\r\n");
         }
     }
 
     let meta = Meta {
-        publisher_name: Some("!BTX"),
-        include: Some("a"),
-        clear_screen: true,
+        publisher_name: Some("!BTX".to_owned()),
+        include: Some("a".to_owned()),
+        clear_screen: Some(true),
         links: links,
         publisher_color: Some(7_),
     };
     (meta, cept)
 }
 
-fn messaging_create_message_detail(user: &User, index: usize, is_read: bool) -> (Meta, Cept) {
-    messages = user.messaging.select(is_read, index, 1);
+fn messaging_create_message_detail(user: &User, index: usize, is_read: bool) -> Option<(Meta, Cept)> {
+    let messages = user.messaging.select(is_read, index, 1);
     if messages.len() == 0 {
         return None;
     }
 
-    message = messages[0];
+    let message = messages[0];
 
-    meta = Meta {
-        publisher_name: Some("Bildschirmtext"),
-        include: Some("11a"),
-        palette: Some("11a"),
-        clear_screen: True,
-        links: Some(vec(
-            Link("0", if is_read { "89" } else { "88"}),
+    let meta = Meta {
+        publisher_name: Some("Bildschirmtext".to_owned()),
+        include: Some("11a".to_owned()),
+        palette: Some("11a".to_owned()),
+        clear_screen: true,
+        links: Some(vec!(
+            Link::new("0", if is_read { "89" } else { "88"}),
         )),
         publisher_color: Some(7),
     };
@@ -327,88 +344,89 @@ fn messaging_create_message_detail(user: &User, index: usize, is_read: bool) -> 
         from_city = "";
     }
 
-    cept = bytearray(Cept.parallel_limited_mode());
+    let cept = Cept::new();
+    cept.parallel_limited_mode();
     cept.set_cursor(2, 1);
     cept.set_fg_color(3);
-    cept.add_str(b"von ");
+    cept.add_str("von ");
     cept.add_str(message.from_user.user_id.ljust(12));
     cept.add_str(" ");
     cept.add_raw(message.from_user.ext.rjust(5, '0'));
     cept.set_cursor(2, 41 - from_date.len());
     cept.add_str(from_date);
-    cept.repeat(" ", 4);
+    cept.repeat(b' ', 4);
     cept.add_str(message.from_user.org_name);
     cept.set_cursor(3, 41 - from_time.len());
     cept.add_str(from_time);
-    cept.repeat(" ", 4);
+    cept.repeat(b' ', 4);
     cept.set_fg_color_simple(0);
     cept.add_str(message.from_user.first_name);
     cept.add_str(" ");
     cept.add_str(message.from_user.last_name);
     cept.add_raw(b"\r\n");
-    cept.repeat(" ", 4);
-    cept.add_str(add_street);
+    cept.repeat(b' ', 4);
+    cept.add_str(from_street);
     cept.add_raw(b"\r\n");
-    cept.repeat(" ", 4);
+    cept.repeat(b' ', 4);
     cept.add_str(from_zip);
     cept.add_raw(b' ');
     cept.add_str(from_city);
     cept.add_raw(b"\r\n");
-    cept.add_str(b"an  ");
+    cept.add_str("an  ");
     cept.add_str(user.user_id.ljust(12));
     cept.add_str(" ");
     cept.add_str(user.ext.rjust(5, '0'));
     cept.add_raw(b"\r\n");
-    cept.repeat(" ", 4);
-    cept.add_str(user.first_name);
+    cept.repeat(b' ', 4);
+    cept.add_str(&user.first_name.unwrap());
     cept.add_str(" ");
-    cept.add_str(user.last_name);
+    cept.add_str(&user.last_name.unwrap());
     cept.add_raw(b"\r\n\n");
     cept.add_str(message.body());
     cept.set_cursor(23, 1);
-    cept.add_raw(b'0');
+    cept.add_raw(b"0");
     cept.add_raw(&[
         0x1b, 0x29, 0x20, 0x40,                                    // load DRCs into G1
         0x1b, 0x7e                                            // G1 into right charset
     ]);
     cept.add_str(" Gesamtübersicht");
-    cept.repeat(" ", 22);
+    cept.repeat(' ', 22);
 
     user.messaging.mark_as_read(message.index);
 
-    (meta, cept)
+    Some((meta, cept))
 }
 
-fn callback_validate_user_id(input_data: &InputData) {
-    if User.exists(input_data.user_id) {
-        return util::VALIDATE_INPUT_OK;
-    } else {
-        let msg = util::create_custom_system_message("Teilnehmerkennung ungültig! -> #");
-        write(stream, msg);
-        util::wait_for_ter();
-        return util::VALIDATE_INPUT_BAD;
-    }
-}
+// fn callback_validate_user_id(input_data: &[(String, String)]) {
+//     if User.exists(input_data.user_id) {
+//         return util::VALIDATE_INPUT_OK;
+//     } else {
+//         let msg = util::create_custom_system_message("Teilnehmerkennung ungültig! -> #");
+//         write(stream, msg);
+//         util::wait_for_ter();
+//         return util::VALIDATE_INPUT_BAD;
+//     }
+// }
 
-fn callback_validate_ext(input_data: &InputData) {
-    if User.exists(input_data.user_id, input_data.ext) {
-        return util::VALIDATE_INPUT_OK;
-    } else {
-        let msg = util::create_custom_system_message("Mitbenutzernummer ungültig! -> #");
-        write(stream, msg);
-        util::wait_for_ter();
-        return util::VALIDATE_INPUT_RESTART;
-    }
-}
+// fn callback_validate_ext(input_data: &[(String, String)]) {
+//     if User.exists(input_data.user_id, input_data.ext) {
+//         return util::VALIDATE_INPUT_OK;
+//     } else {
+//         let msg = util::create_custom_system_message("Mitbenutzernummer ungültig! -> #");
+//         write(stream, msg);
+//         util::wait_for_ter();
+//         return util::VALIDATE_INPUT_RESTART;
+//     }
+// }
 
 fn messaging_create_compose(user: &User) -> (Meta, Cept) {
     let meta = Meta {
-        include: "a",
-        clear_screen: True,
-        links: {
-            Link("0", "8");
-        },
-        publisher_color: 7,
+        include: Some("a".to_owned()),
+        clear_screen: Some(true),
+        links: Some(vec!(
+            Link::new("0", "8"),
+        )),
+        publisher_color: Some(7,)
         inputs: Inputs {
             fields: vec!(
                 InputField {
@@ -454,7 +472,8 @@ fn messaging_create_compose(user: &User) -> (Meta, Cept) {
     let current_date = now.format("%d.%m.%Y").to_string();
     let current_time = now.format("%H:%M").to_string();
 
-    cept = bytearray(Cept.set_cursor(2, 1));
+    let mut cept = Cept::new();
+    cept.set_cursor(2, 1);
     cept.set_palette(1);
     cept.set_screen_bg_color_simple(4);
     cept.add_raw(&[
@@ -480,17 +499,17 @@ fn messaging_create_compose(user: &User) -> (Meta, Cept) {
     cept.code_9e();
     cept.set_fg_color_simple(7);
     cept.add_str("Absender:");
-    cept.add_str(user.user_id);
+    cept.add_str(&user.user_id);
     cept.set_cursor(5, 25);
-    cept.add_str(user.ext);
+    cept.add_str(&user.ext);
     cept.set_cursor(6, 10);
-    cept.add_str(user.first_name);
+    cept.add_str(&user.first_name.unwrap());
     cept.set_cursor(7, 10);
-    cept.add_str(user.last_name);
+    cept.add_str(&user.last_name.unwrap());
     cept.set_cursor(5, 31);
-    cept.add_str(current_date);
+    cept.add_str(&current_date);
     cept.set_cursor(6, 31);
-    cept.add_str(current_time);
+    cept.add_str(&current_time);
     cept.add_raw(b"\r\n\n");
     cept.add_str("Tln.-Nr. Empfänger:");
     cept.set_cursor(8, 36);
@@ -509,17 +528,17 @@ fn messaging_create_compose(user: &User) -> (Meta, Cept) {
 
 fn create_page(user: &User, pageid: &str) -> Option<Page> {
     if pageid == "8a" {
-        return Messaging_UI.messaging_create_main_menu()
+        return messaging_create_main_menu()
     } else if pageid == "88a" {
-        return Messaging_UI.messaging_create_list(user, False)
+        return messaging_create_list(user, False)
     } else if pageid == "89a" {
-        return Messaging_UI.messaging_create_list(user, True)
+        return messaging_create_list(user, True)
     // } else if re.search("^88\da$", pageid) {
-    //     return Messaging_UI.messaging_create_message_detail(user, int(pageid[2..-1]) - 1, False)
+    //     return messaging_create_message_detail(user, int(pageid[2..-1]) - 1, False)
     // } else if re.search("^89\da$", pageid) {
-    //     return Messaging_UI.messaging_create_message_detail(user, int(pageid[2..-1]) - 1, True)
+    //     return messaging_create_message_detail(user, int(pageid[2..-1]) - 1, True)
     } else if pageid == "810a" {
-        return Messaging_UI.messaging_create_compose(user)
+        return messaging_create_compose(user)
     } else {
         return None
     }
