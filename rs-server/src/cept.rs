@@ -60,7 +60,7 @@ impl Cept {
     }
 
 	pub fn add_str(&mut self, s_in: &str) {
-        self.add_str_characterset(s, None);
+        self.add_str_characterset(s_in, None);
     }
 
     pub fn add_str_characterset(&mut self, s_in: &str, characterset: Option<&CharacterSet>) {
@@ -601,6 +601,6 @@ impl ops::Add<Cept> for Cept {
 
 impl ops::AddAssign for Cept {
     fn add_assign(&mut self, other: Self) {
-        *self = *self + other;
+        self.add_raw(&other.data);
     }
 }

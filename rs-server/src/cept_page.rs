@@ -1,12 +1,14 @@
+use scraper::Html;
 use super::cept::*;
-
 
 struct Image {
     chars: Vec<Vec<u8>>,
+    palette: &'static [String],
+    drcs: Cept,
 }
 
 struct CeptPage {
-    title: Option<String>,
+    title: String,
 	x: usize,
 	y: usize,
 	lines_cept: Vec<Cept>,
@@ -27,7 +29,7 @@ struct CeptPage {
 impl CeptPage {
     pub fn new() -> CeptPage {
         CeptPage {
-            title: None,
+            title: "".to_owned(),
             x: 0,
             y: 0, // XXX -1
             lines_cept: vec!(),
@@ -57,7 +59,7 @@ impl CeptPage {
 			self.resend_attributes();
 			// remember how much of the DRCS space on the first sheet was used
 			if self.current_sheet() == 1 {
-                // self.drcs_start_for_first_sheet = self.characterset.drcs_code;
+                // self.drcs_start_for_first_sheet = self.characterset.drcs_code; // XXX
             }
 			// new character set for every sheet
             self.characterset = CharacterSet {};
@@ -81,7 +83,7 @@ impl CeptPage {
         self.data_cept.underline_off();
     }
 
-	fn resend_attributes(self) {
+	fn resend_attributes(&mut self) {
 // 		sys.stderr.write("self.italics: " + pprint.pformat(["self.italics: ",self.italics , self.bold , self.link]) + "\n")
 		if self.italics {
 			self.data_cept.set_fg_color(6);
@@ -181,47 +183,49 @@ impl CeptPage {
         }
     }
 
-    pub fn create_new_line(&self) {
-		self.lines_cept.push(self.data_cept);
-        self.init_new_line()
+    pub fn create_new_line(&mut self) {
+        let mut data_cept = Cept::new();
+        std::mem::swap(&mut self.data_cept, &mut data_cept);
+        self.lines_cept.push(data_cept);
+        self.init_new_line() // XXX overwrites self.data_cept again
     }
 
-    pub fn set_italics_on(&self) {
+    pub fn set_italics_on(&mut self) {
 		self.italics = true;
 		self.dirty = true;
     }
 
-    pub fn set_italics_off(&self) {
+    pub fn set_italics_off(&mut self) {
 		self.italics = false;
 		self.dirty = true;
     }
 
-    pub fn set_bold_on(&self) {
+    pub fn set_bold_on(&mut self) {
 		self.bold = true;
 		self.dirty = true;
     }
 
-    pub fn set_bold_off(&self) {
+    pub fn set_bold_off(&mut self) {
 		self.bold = false;
 		self.dirty = true;
     }
 
-    pub fn set_link_on(&self) {
+    pub fn set_link_on(&mut self) {
 		self.link = true;
 		self.dirty = true;
     }
 
-    pub fn set_link_off(&self) {
+    pub fn set_link_off(&mut self) {
 		self.link = false;
 		self.dirty = true;
     }
 
-    pub fn set_code_on(&self) {
+    pub fn set_code_on(&mut self) {
 		self.code = true;
 		self.dirty = true;
     }
 
-    pub fn set_code_off(&self) {
+    pub fn set_code_off(&mut self) {
 		self.code = false;
 		self.dirty = true;
     }
@@ -313,6 +317,7 @@ impl CeptPage {
 		data_cept.parallel_mode();
 
 		if is_first_page {
+            let title = &self.title;
 			data_cept.set_screen_bg_color(7);
 			data_cept.set_cursor(2, 1);
 			data_cept.set_line_bg_color(0);
@@ -320,13 +325,13 @@ impl CeptPage {
 			data_cept.set_line_bg_color(0);
 			data_cept.double_height();
 			data_cept.set_fg_color(7);
-			data_cept.add_str(&self.title.unwrap()[..39]);
+			data_cept.add_str(&self.title[..39]);
 			data_cept.add_raw(b"\r\n");
 			data_cept.normal_size();
 			data_cept.add_raw(b"\n");
         } else {
 			// on sheets b+, we need to clear the image area
-			if let Some(image) = image {
+			if let Some(image) = &image {
                 for i in 0..2 {
                     data_cept.set_cursor(3 + i, 41 - image.chars[0].len() as u8);
                     data_cept.repeat(b' ', image.chars[0].len() as u8);
@@ -367,12 +372,12 @@ impl CeptPage {
                 data_cept.repeat(b' ', image.chars[0].len() as u8);
             }
 			// palette
-			data_cept.define_palette(image.palette);
+			data_cept.define_palette(image.palette, None);
 			// DRCS
-			data_cept.add_raw(image.drcs);
+			data_cept += image.drcs;
 			// draw characters
-			let i = 0;
-			for l in image.chars {
+			let mut i = 0;
+			for l in &image.chars {
 				data_cept.set_cursor(3 + i as u8, 41 - image.chars[0].len() as u8);
 				data_cept.load_g0_drcs();
 				data_cept.add_raw(&l);
@@ -388,114 +393,114 @@ impl CeptPage {
 struct CeptFromHtmlGenerator {
     cept_page: CeptPage,
 	link_index: Option<u32>,
-	wiki_link_targets: Vector<String>,
-	page_and_link_index_for_link: Vector<String>,
+	wiki_link_targets: Vec<String>,
+	page_and_link_index_for_link: Vec<String>,
 	first_paragraph: bool,
 	link_count: u32,
-	links_for_page: Vector<String>,
+	links_for_page: Vec<String>,
 	pageid_base: Option<String>,
 	ignore_lf: bool,
 	article_prefix: Option<String>,
 }
 
-impl CeptFromHtmlGenerator {
-	fn insert_toc(&mut self) {
-		self.page_and_link_index_for_link = vec!();
-		for t1 in soup.contents[0].children {
-			if ["h2", "h3", "h4", "h5", "h6"].contains(t1.name) {
-				if self.current_sheet() != self.prev_sheet {
-					self.link_index = 10;
-                }
-				level = int(t1.name[1]);
-				// non-breaking space, otherwise it will be filtered at the beginning of lines
-				indent = (level - 2) * b"\xa0\xa0";
-				entry = indent + t1.get_text().replace("\n", "");
-				padded = entry + ("." * 36);
-				padded = padded[..36];
-				self.print(padded + "[" + str(self.link_index) + "]");
-				self.page_and_link_index_for_link.append((self.current_sheet(), self.link_index));
-                self.link_index += 1;
-            }
-        }
-    }
+// impl CeptFromHtmlGenerator {
+// 	fn insert_toc(&mut self) {
+// 		self.page_and_link_index_for_link = vec!();
+// 		for t1 in soup.contents[0].children {
+// 			if ["h2", "h3", "h4", "h5", "h6"].contains(t1.name) {
+// 				if self.current_sheet() != self.prev_sheet {
+// 					self.link_index = 10;
+//                 }
+// 				level = int(t1.name[1]);
+// 				// non-breaking space, otherwise it will be filtered at the beginning of lines
+// 				indent = (level - 2) * b"\xa0\xa0";
+// 				entry = indent + t1.get_text().replace("\n", "");
+// 				padded = entry + ("." * 36);
+// 				padded = padded[..36];
+// 				self.print(padded + "[" + str(self.link_index) + "]");
+// 				self.page_and_link_index_for_link.append((self.current_sheet(), self.link_index));
+//                 self.link_index += 1;
+//             }
+//         }
+//     }
 
-	fn insert_html_tags(&mut self, tags: Vec<String>) {
-		for t1 in tags {
-			if t1.name == "p" {
-				self.insert_html_tags(t1.children);
-				self.print("\n");
+// 	fn insert_html_tags(&mut self, tags: Vec<String>) {
+// 		for t1 in tags {
+// 			if t1.name == "p" {
+// 				self.insert_html_tags(t1.children);
+// 				self.print("\n");
 
-				if self.first_paragraph {
-					self.first_paragraph = false;
-					self.insert_toc(self.soup);
-//					sys.stderr.write("self.page_and_link_index_for_link: " + pprint.pformat(self.page_and_link_index_for_link) + "\n")
-                    self.print("\n");
-                }
-            } else if ["h2", "h3", "h4", "h5", "h6"].contains(t1.name) {
-				level = int(t1.name[1]);
-				self.print_heading(level, t1.contents[0].get_text().replace("\n", ""));
-				if self.page_and_link_index_for_link { // only if there is a TOC
-					(link_page, link_name) = self.page_and_link_index_for_link[self.link_count];
-					self.link_count += 1;
-					while len(self.links_for_page) < link_page + 1 {
-                        self.links_for_page.append({})
-                    }
-                    self.links_for_page[link_page][str(link_name)] = self.pageid_base + chr(0x61 + self.current_sheet())
-                }
-            } else if t1.name.is_none() {
-				self.print(t1, self.ignore_lf)
-			} else if t1.name == "span" {
-				self.print(t1.get_text(), self.ignore_lf)
-			} else if t1.name == "i" {
-				self.set_italics_on();
-				self.print(t1.get_text(), self.ignore_lf);
-				self.set_italics_off();
-			} else if t1.name == "b" {
-				self.set_bold_on();
-				self.print(t1.get_text(), self.ignore_lf);
-				self.set_bold_off();
-			} else if t1.name == "a" {
-				if t1["href"].startswith(self.article_prefix) { // links to different article
-					if self.current_sheet() != self.prev_sheet {
-						self.link_index = 10;
-						// TODO: this breaks if the link
-                        // goes across two sheets!
-                    }
+// 				if self.first_paragraph {
+// 					self.first_paragraph = false;
+// 					self.insert_toc(self.soup);
+// //					sys.stderr.write("self.page_and_link_index_for_link: " + pprint.pformat(self.page_and_link_index_for_link) + "\n")
+//                     self.print("\n");
+//                 }
+//             } else if ["h2", "h3", "h4", "h5", "h6"].contains(t1.name) {
+// 				level = int(t1.name[1]);
+// 				self.print_heading(level, t1.contents[0].get_text().replace("\n", ""));
+// 				if self.page_and_link_index_for_link { // only if there is a TOC
+// 					(link_page, link_name) = self.page_and_link_index_for_link[self.link_count];
+// 					self.link_count += 1;
+// 					while len(self.links_for_page) < link_page + 1 {
+//                         self.links_for_page.append({})
+//                     }
+//                     self.links_for_page[link_page][str(link_name)] = self.pageid_base + chr(0x61 + self.current_sheet())
+//                 }
+//             } else if t1.name.is_none() {
+// 				self.print(t1, self.ignore_lf)
+// 			} else if t1.name == "span" {
+// 				self.print(t1.get_text(), self.ignore_lf)
+// 			} else if t1.name == "i" {
+// 				self.set_italics_on();
+// 				self.print(t1.get_text(), self.ignore_lf);
+// 				self.set_italics_off();
+// 			} else if t1.name == "b" {
+// 				self.set_bold_on();
+// 				self.print(t1.get_text(), self.ignore_lf);
+// 				self.set_bold_off();
+// 			} else if t1.name == "a" {
+// 				if t1["href"].startswith(self.article_prefix) { // links to different article
+// 					if self.current_sheet() != self.prev_sheet {
+// 						self.link_index = 10;
+// 						// TODO: this breaks if the link
+//                         // goes across two sheets!
+//                     }
 
-					while len(self.wiki_link_targets) < self.current_sheet() + 1 {
-                        self.wiki_link_targets.append({});
-                    }
-					self.wiki_link_targets[self.current_sheet()][self.link_index] = t1["href"][len(self.article_prefix)..];
+// 					while len(self.wiki_link_targets) < self.current_sheet() + 1 {
+//                         self.wiki_link_targets.append({});
+//                     }
+// 					self.wiki_link_targets[self.current_sheet()][self.link_index] = t1["href"][len(self.article_prefix)..];
 
-					link_text = t1.get_text().replace("\n", "") + " [" + str(self.link_index) + "]";
-					self.set_link_on();
-					self.print(link_text);
-					self.link_index += 1;
-                    self.set_link_off();
-                } else { // link to section or external link, just print the text
-                    self.print(t1.get_text(), self.ignore_lf);
-            }
-            } else if t1.name == "ul" {
-            self.insert_html_tags(t1.children)
-            } else if t1.name == "ol" {
-                self.insert_html_tags(t1.children)
-            } else if t1.name == "code" {
-                self.set_code_on();
-                self.insert_html_tags(t1.children);
-                self.set_code_off();
-            } else if t1.name == "li" {
-                // TODO indentation
-                self.print("* "); // TODO: ordered list
-                self.insert_html_tags(t1.children);
-                self.print("\n");
-            } else if t1.name == "pre" {
-                self.ignore_lf = false;
-                self.insert_html_tags(t1.children);
-                self.ignore_lf = true;
-            } else {
-                sys.stderr.write("ignoring tag: " + pprint.pformat(t1.name) + "\n")
-            }
-        }
-    }
+// 					link_text = t1.get_text().replace("\n", "") + " [" + str(self.link_index) + "]";
+// 					self.set_link_on();
+// 					self.print(link_text);
+// 					self.link_index += 1;
+//                     self.set_link_off();
+//                 } else { // link to section or external link, just print the text
+//                     self.print(t1.get_text(), self.ignore_lf);
+//             }
+//             } else if t1.name == "ul" {
+//             self.insert_html_tags(t1.children)
+//             } else if t1.name == "ol" {
+//                 self.insert_html_tags(t1.children)
+//             } else if t1.name == "code" {
+//                 self.set_code_on();
+//                 self.insert_html_tags(t1.children);
+//                 self.set_code_off();
+//             } else if t1.name == "li" {
+//                 // TODO indentation
+//                 self.print("* "); // TODO: ordered list
+//                 self.insert_html_tags(t1.children);
+//                 self.print("\n");
+//             } else if t1.name == "pre" {
+//                 self.ignore_lf = false;
+//                 self.insert_html_tags(t1.children);
+//                 self.ignore_lf = true;
+//             } else {
+//                 sys.stderr.write("ignoring tag: " + pprint.pformat(t1.name) + "\n")
+//             }
+//         }
+//     }
 
-}
+// }
