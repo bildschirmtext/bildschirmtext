@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 
+pub struct CharacterSet {
+}
+
 use std::ops;
 
 #[derive(Clone)]
@@ -57,6 +60,10 @@ impl Cept {
     }
 
 	pub fn add_str(&mut self, s_in: &str) {
+        self.add_str_characterset(s, None);
+    }
+
+    pub fn add_str_characterset(&mut self, s_in: &str, characterset: Option<&CharacterSet>) {
         for c in s_in.chars() {
             match c {
                 '¤' => self.data.push(b'$'),         // $ and ¤ are swapped
@@ -201,8 +208,8 @@ impl Cept {
 
                 _ => {
                     // sys.stderr.write("unknown character: '" + c + "' (" + hex(ord(c)) + ")n '" + s_in + "'\n")
-                    // if charset:
-                        // data_cept = charset.get(c)
+                    // if characterset:
+                        // data_cept = characterset.get(c)
                         // if data_cept:
                             // s2.extend(data_cept)
                         // else:
@@ -589,5 +596,11 @@ impl ops::Add<Cept> for Cept {
         let mut cept = self.clone();
         cept.add_raw(&rhs.data);
         cept
+    }
+}
+
+impl ops::AddAssign for Cept {
+    fn add_assign(&mut self, other: Self) {
+        *self = *self + other;
     }
 }
