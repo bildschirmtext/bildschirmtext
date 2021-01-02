@@ -1,4 +1,4 @@
-use scraper::Html;
+use scraper::{Html, Selector};
 use super::cept::*;
 
 struct Image {
@@ -403,10 +403,10 @@ struct CeptFromHtmlGenerator {
 	article_prefix: Option<String>,
 }
 
-// impl CeptFromHtmlGenerator {
+impl CeptFromHtmlGenerator {
 // 	fn insert_toc(&mut self) {
-// 		self.page_and_link_index_for_link = vec!();
-// 		for t1 in soup.contents[0].children {
+//         self.page_and_link_index_for_link = vec!();
+// 		for t1 in html.contents[0].children {
 // 			if ["h2", "h3", "h4", "h5", "h6"].contains(t1.name) {
 // 				if self.current_sheet() != self.prev_sheet {
 // 					self.link_index = 10;
@@ -432,7 +432,7 @@ struct CeptFromHtmlGenerator {
 
 // 				if self.first_paragraph {
 // 					self.first_paragraph = false;
-// 					self.insert_toc(self.soup);
+// 					self.insert_toc(self.html);
 // //					sys.stderr.write("self.page_and_link_index_for_link: " + pprint.pformat(self.page_and_link_index_for_link) + "\n")
 //                     self.print("\n");
 //                 }
@@ -501,6 +501,5 @@ struct CeptFromHtmlGenerator {
 //                 sys.stderr.write("ignoring tag: " + pprint.pformat(t1.name) + "\n")
 //             }
 //         }
-//     }
-
-// }
+    // }
+}
