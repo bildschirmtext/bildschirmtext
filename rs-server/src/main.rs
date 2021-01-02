@@ -10,7 +10,7 @@ mod stat;
 
 use serde_json::{Result, Value};
 use std::fs::File;
-use scraper::Html;
+// use scraper::Html;
 
 use std::net::TcpListener;
 use std::thread;

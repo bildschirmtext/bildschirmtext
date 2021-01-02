@@ -5,48 +5,6 @@ use super::editor::*;
 use super::stat::*;
 use super::pages::*;
 
-pub struct User {
-    pub user_id: String,
-	pub ext: String,
-	pub personal_data: bool,
-
-	// public - person
-	pub salutation: Option<String>,
-	pub first_name: Option<String>,
-	pub last_name: Option<String>,
-	// public - organization
-	pub org_name: Option<String>,
-	pub org_add_name: Option<String>,
-	// personal_data
-	pub street: Option<String>,
-	pub zip: Option<String>,
-	pub city: Option<String>,
-	pub country: Option<String>,
-
-	// stats: None
-	// messaging: None
-}
-
-impl User {
-    pub fn get(user_id: &str, ext: &str, personal_data: bool) -> Option<User> {
-        Some(User {
-            user_id: "0".to_owned(),
-            ext: "0".to_owned(),
-            personal_data: false,
-
-            salutation: None,
-            first_name: None,
-            last_name: None,
-            org_name: None,
-            org_add_name: None,
-
-            street: None,
-            zip: None,
-            city: None,
-            country: None,
-        })
-    }
-}
 
 pub enum Validate {
     Ok,
