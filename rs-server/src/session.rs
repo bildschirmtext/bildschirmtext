@@ -8,10 +8,10 @@ use super::user::*;
 
 const INPUT_NAME_NAVIGATION: &'static str = "$navigation";
 
-enum InputData {
-    Command(String),
-    Navigation(String),
-    TextFields(HashMap<String, String>),
+enum InputEvent {
+    Command(String),                     // user entered a command ("*nnn#")
+    Navigation(String),                  // user entered a navigation link
+    TextFields(HashMap<String, String>), // user finished filling the page's text fields
 }
 
 #[derive(Clone)]
@@ -67,7 +67,7 @@ pub enum Validate {
 	Restart,
 }
 
-pub enum CommandType {
+pub enum UserRequest {
     Goto(PageId, bool),
     SendAgain,
     Error(usize)
@@ -141,103 +141,33 @@ impl Session {
                 let input_data = self.get_inputs(inputs.as_ref(), links.as_ref(), stream);
 
                 // *** handle input
-                match input_data {
-                    InputData::Command(command_input) => {
-                        match self.decode_command(&command_input) {
-                            CommandType::Goto(t, a) => {
-                                target_pageid = t;
-                                add_to_history = a;
-                                continue 'main;
-                            },
-                            CommandType::SendAgain => {
-                                write_stream(stream, current_page_cept.data());
-                            },
-                            CommandType::Error(e) => {
-                                show_error(e, stream);
-                                continue 'input;
-                            }
-                        }
+                let req = match input_data {
+                    InputEvent::Command(command_input) => {
+                        self.decode_command(&command_input)
                     },
-                    InputData::Navigation(val) => {
-                        match self.decode_link(links.as_ref(), &val) {
-                            CommandType::Goto(t, a) => {
-                                target_pageid = t;
-                                add_to_history = a;
-                                continue 'main;
-                            },
-                            CommandType::Error(e) => {
-                                show_error(e, stream);
-                                continue 'input;
-                            },
-                            _ => {},
-                        }
+                    InputEvent::Navigation(val) => {
+                        self.decode_link(links.as_ref(), &val)
                     }
-                    InputData::TextFields(input_data) => {
-                        // XXX TODO handle text field input
-                        println!("input_data: {:?}", input_data);
+                    InputEvent::TextFields(input_data) => {
+                        self.decode_text_fields(input_data)
+                    }
+                };
+                match req {
+                    UserRequest::Goto(t, a) => {
+                        target_pageid = t;
+                        add_to_history = a;
+                        continue 'main;
+                    },
+                    UserRequest::SendAgain => {
+                        write_stream(stream, current_page_cept.data());
+                    },
+                    UserRequest::Error(e) => {
+                        show_error(e, stream);
+                        continue 'input;
                     }
                 }
-            }
-        }
-    }
 
-    fn decode_link(&self, links: Option<&Vec<Link>>, val: &str) -> CommandType {
-        if let Some(links) = links {
-            for link in links {
-                if (*val == link.code) || (val == "" && link.code == "#") {
-                    return CommandType::Goto(PageId::from_str(&link.target).unwrap(), true);
-                }
             }
-        }
-        // not found
-        if val.len() == 0 {
-            // next sub-page
-            let pageid = PageId { page: self.current_pageid.page.clone(), sub: self.current_pageid.sub + 1 };
-            CommandType::Goto(pageid, true)
-        } else {
-            println!("ERROR: Illegal navigation");
-            CommandType::Error(100)
-        }
-}
-
-    // Decode a global command code ("*nnn#").
-    // This could be
-    // * an explicit page numer
-    // * "*00#" to re-send the current page CEPT data (e.g. after a transmission error)
-    // * "*09#" to reload the current page (may fetch a newer version of the page)
-    // * "*#" to go back
-    fn decode_command(&mut self, command_input: &str) -> CommandType {
-        if command_input == "" {
-            // *# = back
-            println!("command: back");
-            if self.history.len() < 2 {
-                println!("ERROR: No history.");
-                CommandType::Error(10)
-            } else {
-                let _ = self.history.pop();
-                let mut target_pageid = self.history.pop().unwrap();
-                // if we're navigating back across page numbers...
-                if target_pageid.sub != self.current_pageid.sub {
-                    // if previous page was sub-page, keep going back until "a"
-                    while target_pageid.sub != 0 {
-                        target_pageid = self.history.pop().unwrap();
-                    }
-                }
-                CommandType::Goto(target_pageid, false)
-            }
-        } else if command_input == "09" {
-            // hard reload
-            println!("command: hard reload");
-            // force load palette and include
-            self.client_state.palette = None;
-            self.client_state.include = None;
-            CommandType::Goto(self.current_pageid.clone(), false)
-        } else if command_input == "00" {
-            // re-send CEPT data of current page
-            println!("command: resend");
-            CommandType::SendAgain
-        } else {
-            CommandType::Goto(PageId::from_str(command_input).unwrap(), true)
         }
     }
 
@@ -245,11 +175,11 @@ impl Session {
     // * for pages with text fields, draw them and allow editing them
     // * for pages with without text fields, allow entering a link
     // In both cases, it is possible to escape into command mode.
-    fn get_inputs(&self, inputs: Option<&Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputData {
+    fn get_inputs(&self, inputs: Option<&Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputEvent {
         if self.autoplay {
             println!("autoplay!");
             // inject "#"
-            InputData::Navigation("".to_owned())
+            InputEvent::Navigation("".to_owned())
         } else {
             if inputs.is_none() {
                 let mut legal_values = vec!();
@@ -260,7 +190,7 @@ impl Session {
                         }
                     }
                 }
-                let mut inputs = Inputs {
+                let inputs = Inputs {
                     fields: vec!(
                         InputField {
                             name: INPUT_NAME_NAVIGATION.to_string(),
@@ -288,16 +218,15 @@ impl Session {
                     no_navigation: false,
                     price: None,
                 };
-                Self::handle_text_fields(&self.current_pageid, &inputs, stream)
+                self.handle_text_fields(&self.current_pageid, &inputs, stream)
             } else {
                 let inputs = inputs.unwrap();
-                Self::handle_text_fields(&self.current_pageid, &inputs, stream)
+                self.handle_text_fields(&self.current_pageid, &inputs, stream)
             }
         }
     }
 
-
-    fn handle_text_fields(pageid: &PageId, inputs: &Inputs, stream: &mut (impl Write + Read)) -> InputData {
+    fn handle_text_fields(&self, pageid: &PageId, inputs: &Inputs, stream: &mut (impl Write + Read)) -> InputEvent {
         // create editors and draw backgrounds
         let mut editors = vec!();
         for input_field in &inputs.fields {
@@ -322,7 +251,7 @@ impl Session {
 
             if let Some(val) = &val {
                 if val.starts_with(0x13 as char) { // XXX Cept.ini()
-                    return InputData::Command(val[1..].to_string());
+                    return InputEvent::Command(val[1..].to_string());
                 }
             }
 
@@ -331,7 +260,7 @@ impl Session {
 
             let mut validate_result = Validate::Ok;
             if input_field.validate {
-                validate_result = Self::validate(pageid, &input_data);
+                validate_result = self.validate(pageid, &input_data);
             }
 
             match validate_result {
@@ -368,16 +297,16 @@ impl Session {
         // send "input_data" to "inputs.target"
         if let Some(target) = &inputs.target {
         	if target.starts_with("page:") {
-                return InputData::Command(target[5..].to_owned());
+                return InputEvent::Command(target[5..].to_owned());
             } else {
                 // XXX we should loop
-                let handle_result = Self::handle(pageid, &input_data);
-                return InputData::Command(handle_result);
+                let handle_result = self.handle(pageid, &input_data);
+                return InputEvent::Command(handle_result);
             }
         } else if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
-            return InputData::Navigation(val.to_owned())
+            return InputEvent::Navigation(val.to_owned())
         } else {
-            return InputData::TextFields(input_data);
+            return InputEvent::TextFields(input_data);
         }
 
     }
@@ -413,6 +342,71 @@ impl Session {
         }
     }
 
+    // Decode a global command code ("*nnn#").
+    // This could be
+    // * an explicit page numer
+    // * "*00#" to re-send the current page CEPT data (e.g. after a transmission error)
+    // * "*09#" to reload the current page (may fetch a newer version of the page)
+    // * "*#" to go back
+    fn decode_command(&mut self, command_input: &str) -> UserRequest {
+        if command_input == "" {
+            // *# = back
+            println!("command: back");
+            if self.history.len() < 2 {
+                println!("ERROR: No history.");
+                UserRequest::Error(10)
+            } else {
+                let _ = self.history.pop();
+                let mut target_pageid = self.history.pop().unwrap();
+                // if we're navigating back across page numbers...
+                if target_pageid.sub != self.current_pageid.sub {
+                    // if previous page was sub-page, keep going back until "a"
+                    while target_pageid.sub != 0 {
+                        target_pageid = self.history.pop().unwrap();
+                    }
+                }
+                UserRequest::Goto(target_pageid, false)
+            }
+        } else if command_input == "09" {
+            // hard reload
+            println!("command: hard reload");
+            // invalidate palette and include
+            self.client_state.palette = None;
+            self.client_state.include = None;
+            UserRequest::Goto(self.current_pageid.clone(), false)
+        } else if command_input == "00" {
+            // re-send CEPT data of current page
+            println!("command: resend");
+            UserRequest::SendAgain
+        } else {
+            UserRequest::Goto(PageId::from_str(command_input).unwrap(), true)
+        }
+    }
+
+    fn decode_link(&self, links: Option<&Vec<Link>>, val: &str) -> UserRequest {
+        if let Some(links) = links {
+            for link in links {
+                if (*val == link.code) || (val == "" && link.code == "#") {
+                    return UserRequest::Goto(PageId::from_str(&link.target).unwrap(), true);
+                }
+            }
+        }
+        // not found
+        if val == "" {
+            // next sub-page
+            let pageid = PageId { page: self.current_pageid.page.clone(), sub: self.current_pageid.sub + 1 };
+            UserRequest::Goto(pageid, true)
+        } else {
+            println!("ERROR: Illegal navigation");
+            UserRequest::Error(100)
+        }
+    }
+
+    fn decode_text_fields(&self, input_data: HashMap<String, String>) -> UserRequest {
+        println!("input_data: {:?}", input_data);
+        UserRequest::SendAgain // XXX TODO handle text field input
+    }
+
     pub fn get_page(&self, pageid: &PageId) -> Option<Page> {
         if pageid.page.starts_with("00000") || pageid.page == "9" {
             super::login::create(pageid, self.user.as_ref())
@@ -425,7 +419,7 @@ impl Session {
         }
     }
 
-    pub fn validate(pageid: &PageId, input_data: &HashMap<String, String>) -> Validate {
+    pub fn validate(&self, pageid: &PageId, input_data: &HashMap<String, String>) -> Validate {
         if pageid.page.starts_with("00000") || pageid.page == "9" {
             super::login::validate(pageid, input_data)
         } else {
@@ -433,7 +427,7 @@ impl Session {
         }
     }
 
-    pub fn handle(pageid: &PageId, input_data: &HashMap<String, String>) -> String {
+    pub fn handle(&self, pageid: &PageId, input_data: &HashMap<String, String>) -> String {
         panic!();
     }
 }
