@@ -338,9 +338,9 @@ impl Session {
         // }
 
         println!("Sending pal/char");
-        stream.write_all(cept1.data()).unwrap();
+        write_stream(stream, cept1.data());
         println!("Sending text");
-        stream.write_all(cept2.data()).unwrap();
+        write_stream(stream, cept2.data());
 
         false
     }
@@ -358,8 +358,6 @@ impl Session {
         }
 
         let basedir = find_basedir(pageid).unwrap().0;
-
-        let mut cept = Cept::new();
 
         // define palette
         if let Some(palette) = &page.meta.palette {

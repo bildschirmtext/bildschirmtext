@@ -206,7 +206,7 @@ impl Editor {
                 }
             }
         }
-        write(stream, cept.data());
+        write_stream(stream, cept.data());
     }
 
 	pub fn print_hint(&self, stream: &mut impl Write) {
@@ -218,7 +218,7 @@ impl Editor {
 			cept.add_str(&hint);
 			cept.hide_text();
 			cept.service_break_back();
-            write(stream, cept.data());
+            write_stream(stream, cept.data());
         }
     }
 
@@ -250,7 +250,7 @@ impl Editor {
                 cept.set_cursor(self.input_field.line + self.y, self.input_field.column);
             }
 			cept.extend(&self.set_color());
-            write(stream, cept.data());
+            write_stream(stream, cept.data());
         }
     }
 
@@ -259,7 +259,7 @@ impl Editor {
 			self.y += 1;
             let mut cept = Cept::new();
             cept.add_str("\r");
-            write(stream, cept.data());
+            write_stream(stream, cept.data());
         }
     }
 
@@ -280,21 +280,21 @@ impl Editor {
                 if self.x > 0 {
                     self.x -= 1;
                     let cept = Cept::from_raw(&[c as u8]);
-                    write(stream, cept.data());
+                    write_stream(stream, cept.data());
                 }
             },
             '\x0b' => { // up
                 if self.y > 0 {
                     self.y -= 1;
                     let cept = Cept::from_raw(&[c as u8]);
-                    write(stream, cept.data());
+                    write_stream(stream, cept.data());
                 }
             },
             '\x09' => { // right
                 if self.x < self.input_field.width {
                     self.x += 1;
                     let cept = Cept::from_raw(&[c as u8]);
-                    write(stream, cept.data());
+                    write_stream(stream, cept.data());
                 }
             },
             _ => {},
@@ -329,7 +329,7 @@ impl Editor {
                     cept.set_bg_color(bgcolor);
                 }
 				cept.show_cursor();
-                write(stream, cept.data());
+                write_stream(stream, cept.data());
             }
 
 			if skip_entry {
@@ -442,7 +442,7 @@ impl Editor {
                     }
                 } else if c == cept_ter() {
 					if self.input_field.echo_ter {
-                        write(stream, &[b'#']);
+                        write_stream(stream, &[b'#']);
                     }
                     break
                 } else if c == cept_dct() {
@@ -483,12 +483,12 @@ impl Editor {
 				if character_legal || self.input_field.end_on_illegal_character {
 					if self.insert_character(c as char) {
 						if self.input_field.input_type == InputType::Password {
-                            write(stream, &[b'*']);
+                            write_stream(stream, &[b'*']);
                         } else {
                             let mut cept = Cept::new();
                             let c = c as char;
                             cept.add_str(&c.to_string());
-                            write(stream, cept.data());
+                            write_stream(stream, cept.data());
                         }
                     }
                 }
@@ -530,7 +530,7 @@ fn cept_ini_str() -> &'static str {
     "\x13"
 }
 
-fn write(stream: &mut impl Write, data: &[u8]) {
+pub fn write_stream(stream: &mut impl Write, data: &[u8]) {
     stream.write_all(data).unwrap();
     stream.flush();
 }
