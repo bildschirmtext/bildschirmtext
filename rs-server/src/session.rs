@@ -70,12 +70,19 @@ pub enum Validate {
 	Restart,
 }
 
+pub enum CommandType {
+    Goto(PageId, bool),
+    SendAgain,
+    Error(usize)
+}
+
 pub struct Session {
     user: Option<User>,
     last_filename_palette: Option<String>,
     last_filename_include: Option<String>,
     current_pageid: PageId,
     history: Vec<PageId>,
+    autoplay: bool,
 }
 
 impl Session {
@@ -86,16 +93,17 @@ impl Session {
             last_filename_include: None,
             current_pageid: PageId::empty(),
             history: vec!(),
-         }
+            autoplay: false,
+        }
     }
 
-    fn target_pageid_from_command(&mut self, command_input: &str) -> Result<(PageId, bool), usize> {
+    fn interpret_command(&mut self, command_input: &str) -> CommandType {
         if command_input == "" {
-            // *# back
+            // *# = back
             println!("command: back");
             if self.history.len() < 2 {
                 println!("ERROR: No history.");
-                return Err(10);
+                CommandType::Error(10)
             } else {
                 let _ = self.history.pop();
                 let mut target_pageid = self.history.pop().unwrap();
@@ -106,7 +114,7 @@ impl Session {
                         target_pageid = self.history.pop().unwrap();
                     }
                 }
-                return Ok((target_pageid, false));
+                CommandType::Goto(target_pageid, false)
             }
         } else if command_input == "09" {
             // hard reload
@@ -114,151 +122,155 @@ impl Session {
             // force load palette and include
             self.last_filename_palette = None;
             self.last_filename_include = None;
-            return Ok((self.history.last().unwrap().clone(), false));
+            CommandType::Goto(self.current_pageid.clone(), false)
         } else if command_input == "00" {
             // re-send CEPT data of current page
             println!("command: resend");
-            return Ok((self.current_pageid.clone(), false));
+            CommandType::SendAgain
         } else {
-            Ok((PageId::from_str(command_input).unwrap(), true))
+            CommandType::Goto(PageId::from_str(command_input).unwrap(), true)
+        }
+    }
+
+    fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> HashMap<String, String> {
+        if self.autoplay {
+            println!("autoplay!");
+            hashmap!["$navigation".to_owned() => "".to_owned()]
+        } else {
+            if inputs.is_none() {
+                let mut legal_values = vec!();
+                if let Some(links) = links.clone() {
+                    for link in links {
+                        if link.code != "#" {
+                            legal_values.push(link.code.clone());
+                        }
+                    }
+                }
+                let mut inputs = Inputs {
+                    fields: vec!(
+                        InputField {
+                            name: "$navigation".to_string(),
+                            line: 24,
+                            column: 1,
+                            height: 1,
+                            width: 20,
+                            fgcolor: None,
+                            bgcolor: None,
+                            hint: None,
+                            input_type: InputType::Normal,
+                            cursor_home: false,
+                            clear_line: false,
+                            legal_values: Some(legal_values),
+                            end_on_illegal_character: true,
+                            end_on_legal_string: true,
+                            echo_ter: true,
+                            command_mode: false,
+                            no_navigation: false,
+                            validate: false,
+                            default: None,
+                        }),
+                    confirm: false,
+                    no_55: true,
+                    target: None,
+                    no_navigation: false,
+                };
+                Self::handle_inputs(&self.current_pageid, &mut inputs, stream)
+            } else {
+                let mut inputs = inputs.unwrap();
+                Self::handle_inputs(&self.current_pageid, &mut inputs, stream)
+            }
         }
     }
 
     pub fn run(&mut self, stream: &mut (impl Write + Read))
     {
-        let mut command_input = "00000".to_owned();
+        let mut target_pageid = PageId::from_str("00000").unwrap();
+        let mut add_to_history = false;
+
         let compress = false;
 
-        let mut current_pageid = PageId::empty();
-        let mut autoplay = false;
-        let mut error = 0;
 
         self.last_filename_palette = None;
         self.last_filename_include = None;
 
         let mut links = None;
 
-        loop {
-            let mut inputs = None;
+        let mut inputs = None;
 
+        'main: loop {
             // if User.user() is not None:
             // 	User.user().stats.update()
 
-            if error == 0 {
-                match self.target_pageid_from_command(&command_input) {
-                    Ok((target_pageid, add_to_history)) => {
-                        println!("showing page: {}", command_input);
-                        if let Some(page) = self.get_page(&target_pageid) {
-                            self.show_page(stream, &page, &target_pageid);
-                            links = page.meta.links;
-                            inputs = page.meta.inputs;
-                            autoplay = page.meta.autoplay == Some(true);
-                            error = 0;
-                            current_pageid = target_pageid;
-                            if add_to_history {
-                                self.history.push(current_pageid.clone());
-                            };
-                        } else {
-                            println!("ERROR: Page not found: {}", command_input);
-                            error = if target_pageid.sub > 0 {
-                                101
-                            } else {
-                                100
-                            }
-                        }
-                    },
-                    Err(e) => error = e,
-                }
-            }
-
-            if error != 0 {
-                let mut cept = create_system_message(error, None);
-                cept.sequence_end_of_page();
-            	write_stream(stream, cept.data());
-            }
-
-            command_input = "".to_string();
-
-            let input_data = if autoplay {
-                println!("autoplay!");
-                hashmap!["$navigation".to_owned() => "".to_owned()]
+            // *** show page
+            println!("showing page: {}", target_pageid.to_string());
+            if let Some(page) = self.get_page(&target_pageid) {
+                self.show_page(stream, &page, &target_pageid);
+                links = page.meta.links;
+                inputs = page.meta.inputs;
+                self.autoplay = page.meta.autoplay == Some(true);
+                self.current_pageid = target_pageid.clone();
+                if add_to_history {
+                    self.history.push(self.current_pageid.clone());
+                };
             } else {
-                if inputs.is_none() {
-                    let mut legal_values = vec!();
-                    if let Some(links) = links.clone() {
+                println!("ERROR: Page not found: {}", target_pageid.to_string());
+                let error = if target_pageid.sub > 0 {
+                    101
+                } else {
+                    100
+                };
+                Self::show_error(error, stream);
+            }
+
+
+            'input: loop {
+                // *** get user input
+                let input_data = self.get_inputs(inputs.as_mut(), links.as_ref(), stream);
+                println!("input_data: {:?}", input_data);
+
+                // *** handle input
+                if let Some(command_input) = input_data.get("$command") {
+                    match self.interpret_command(&command_input) {
+                        CommandType::Goto(t, a) => {
+                            target_pageid = t;
+                            add_to_history = a;
+                        },
+                        CommandType::SendAgain => {}, // XXX
+                        CommandType::Error(e) => {
+                            Self::show_error(100, stream);
+                            continue 'input;
+                        }
+                    }
+                } else if let Some(val) = input_data.get("$navigation") {
+                    if let Some(links) = &links {
                         for link in links {
-                            if link.code != "#" {
-                                legal_values.push(link.code.clone());
+                            if (*val == link.code) || (val == "" && link.code == "#") {
+                                target_pageid = PageId::from_str(&link.target).unwrap();
+                                continue 'main;
                             }
                         }
                     }
-                    inputs = Some(Inputs {
-                        fields: vec!(
-                            InputField {
-                                name: "$navigation".to_string(),
-                                line: 24,
-                                column: 1,
-                                height: 1,
-                                width: 20,
-                                fgcolor: None,
-                                bgcolor: None,
-                                hint: None,
-                                input_type: InputType::Normal,
-                                cursor_home: false,
-                                clear_line: false,
-                                legal_values: Some(legal_values),
-                                end_on_illegal_character: true,
-                                end_on_legal_string: true,
-                                echo_ter: true,
-                                command_mode: false,
-                                no_navigation: false,
-                                validate: false,
-                                default: None,
-                            }),
-                        confirm: false,
-                        no_55: true,
-                        target: None,
-                        no_navigation: false,
-                    });
-                }
-
-                Self::handle_inputs(&current_pageid, &mut inputs.unwrap(), stream)
-            };
-            println!("input_data: {:?}", input_data);
-
-            error = 0;
-            if let Some(d) = input_data.get("$command") {
-                command_input = d.clone();
-            } else {
-                let val = input_data.get("$navigation").unwrap();
-                let val_or_hash = if val.len() != 0 { val.clone() } else { "#".to_owned() };
-                let mut found = false;
-                if let Some(links) = &links {
-                    for link in links {
-                        if val_or_hash == link.code {
-                            // link
-                            command_input = link.target.clone();
-                            // decode = decode_call(command_input, None)
-                            // if decode {
-                            //     command_input = decode
-                            // }
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if !found {
+                    // not found
                     if val.len() == 0 {
                         // next sub-page
-                        current_pageid.sub += 1;
+                        self.current_pageid.sub += 1;
+                        continue 'main;
                     } else {
-                        error = 100;
-                        command_input = "".to_owned();
+                        println!("ERROR: Illegal navigation");
+                        Self::show_error(100, stream);
+                        continue 'input;
                     }
                 }
             }
 
+
         }
+    }
+
+    fn show_error(error: usize, stream: &mut (impl Write + Read)) {
+        let mut cept = create_system_message(error, None);
+        cept.sequence_end_of_page();
+        write_stream(stream, cept.data());
     }
 
     fn handle_inputs(pageid: &PageId, inputs: &mut Inputs, stream: &mut (impl Write + Read)) -> HashMap<String, String> {
