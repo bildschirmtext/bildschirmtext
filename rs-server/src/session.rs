@@ -2,6 +2,7 @@ use chrono::Utc;
 use std::io::{Read, Write};
 use std::fs::File;
 use std::collections::HashMap;
+use std::str::FromStr;
 use super::cept::*;
 use super::editor::*;
 use super::stat::*;
@@ -16,6 +17,52 @@ macro_rules! hashmap {
     }}
 }
 
+#[derive(Clone)]
+pub struct PageId {
+    pub page: String,
+    pub sub: usize,
+}
+
+impl PageId {
+    fn empty() -> Self {
+        PageId {
+            page: "".to_owned(),
+            sub: 0
+        }
+    }
+
+    fn kill_leading(&self, n: usize) -> Self {
+        PageId {
+            page: self.page[n..].to_owned(),
+            sub: self.sub
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut s = self.page.clone();
+        s.push((b'a' + self.sub as u8) as char);
+        s
+    }
+}
+
+impl FromStr for PageId {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let last_char = s.chars().last().unwrap().to_ascii_lowercase();
+        if last_char.is_alphabetic() {
+            Ok(PageId {
+                page: s[0..s.len() - 1].to_owned(),
+                sub: (last_char as u8 - b'a') as usize
+            })
+        } else {
+            Ok(PageId {
+                page: s.to_owned(),
+                sub: 0
+            })
+        }
+    }
+}
 
 pub enum Validate {
     Ok,
@@ -27,6 +74,8 @@ pub struct Session {
     user: Option<User>,
     last_filename_palette: Option<String>,
     last_filename_include: Option<String>,
+    current_pageid: PageId,
+    history: Vec<PageId>,
 }
 
 impl Session {
@@ -35,20 +84,54 @@ impl Session {
             user: None,
             last_filename_palette: None,
             last_filename_include: None,
+            current_pageid: PageId::empty(),
+            history: vec!(),
          }
+    }
+
+    fn target_pageid_from_command(&mut self, command_input: &str) -> Result<(PageId, bool), usize> {
+        if command_input == "" {
+            // *# back
+            println!("command: back");
+            if self.history.len() < 2 {
+                println!("ERROR: No history.");
+                return Err(10);
+            } else {
+                let _ = self.history.pop();
+                let mut target_pageid = self.history.pop().unwrap();
+                // if we're navigating back across page numbers...
+                if target_pageid.sub != self.current_pageid.sub {
+                    // if previous page was sub-page, keep going back until "a"
+                    while target_pageid.sub != 0 {
+                        target_pageid = self.history.pop().unwrap();
+                    }
+                }
+                return Ok((target_pageid, false));
+            }
+        } else if command_input == "09" {
+            // hard reload
+            println!("command: hard reload");
+            // force load palette and include
+            self.last_filename_palette = None;
+            self.last_filename_include = None;
+            return Ok((self.history.last().unwrap().clone(), false));
+        } else if command_input == "00" {
+            // re-send CEPT data of current page
+            println!("command: resend");
+            return Ok((self.current_pageid.clone(), false));
+        } else {
+            Ok((PageId::from_str(command_input).unwrap(), true))
+        }
     }
 
     pub fn run(&mut self, stream: &mut (impl Write + Read))
     {
-        let mut desired_pageid = "00000".to_string();
+        let mut command_input = "00000".to_owned();
         let compress = false;
 
-        let mut current_pageid = "".to_string();
+        let mut current_pageid = PageId::empty();
         let mut autoplay = false;
-        let mut history: Vec<String> = vec!();
         let mut error = 0;
-
-        let mut showing_message = false;
 
         self.last_filename_palette = None;
         self.last_filename_include = None;
@@ -61,86 +144,41 @@ impl Session {
             // if User.user() is not None:
             // 	User.user().stats.update()
 
-            if desired_pageid.len() > 0 && desired_pageid.chars().last().unwrap().is_ascii_digit() {
-                desired_pageid += "a";
-            }
-
             let mut add_to_history = true;
             if error == 0 {
-                add_to_history = true;
-
-                // *# back
-                if desired_pageid == "" {
-                    if history.len() < 2 {
-                        println!("ERROR: No history.");
-                        error = 10
-                    } else {
-                        let _ = history.pop();
-                        desired_pageid = history.pop().unwrap();
-                        // if we're navigating back across page numbers...
-                        if desired_pageid.chars().last().unwrap() != current_pageid.chars().last().unwrap() {
-                            // if previous page was sub-page, keep going back until "a"
-                            while desired_pageid.chars().last().unwrap() != 'a' {
-                                desired_pageid = history.pop().unwrap();
+                match self.target_pageid_from_command(&command_input) {
+                    Ok((target_pageid, add_to_history)) => {
+                        println!("showing page: {}", command_input);
+                        if let Some(page) = self.get_page(&target_pageid) {
+                            self.show_page(stream, &page, &target_pageid);
+                            links = page.meta.links;
+                            inputs = page.meta.inputs;
+                            autoplay = page.meta.autoplay == Some(true);
+                            error = 0;
+                            current_pageid = target_pageid;
+                            if add_to_history {
+                                self.history.push(current_pageid.clone());
+                            };
+                        } else {
+                            println!("ERROR: Page not found: {}", command_input);
+                            error = if target_pageid.sub > 0 {
+                                101
+                            } else {
+                                100
                             }
                         }
-                    }
-                }
-                if desired_pageid == "09" { // hard reload
-                    println!("hard reload");
-                    desired_pageid = history.last().unwrap().to_string();
-                    add_to_history = false;
-                    // force load palette and include
-                    self.last_filename_palette = None;
-                    self.last_filename_include = None;
-                }
-                if desired_pageid == "00" { // re-send CEPT data of current page
-                    println!("resend");
-                    error = 0;
-                    add_to_history = false;
-                } else if desired_pageid != "" {
-                    println!("showing page: {}", desired_pageid);
-                    let page = self.get_page(&desired_pageid);
-                    self.show_page(stream, &page, &desired_pageid);
-                    links = page.meta.links;
-                    inputs = page.meta.inputs;
-                    autoplay = page.meta.autoplay == Some(true);
-                    // except:
-                    //     error=10
-
-
-                    // # user interrupted palette/charset, so the decoder state is undefined
-                    self.last_filename_palette = None;
-                    self.last_filename_include = None;
-
-
-                    error = 0
-
-                    // if success else 100
-                } else {
-                    error = 100
+                    },
+                    Err(e) => error = e,
                 }
             }
 
-            if error == 0 {
-                current_pageid = desired_pageid;
-                if add_to_history {
-                    history.push(current_pageid.clone());
-                };
-            } else {
-                if desired_pageid != "" {
-                    println!("ERROR: Page not found: {}", desired_pageid);
-                    if desired_pageid.chars().last().unwrap() >= 'b' && desired_pageid.chars().last().unwrap() <= 'z' {
-                        error = 101;
-                    }
-                }
+            if error != 0 {
                 let mut cept = create_system_message(error, None);
                 cept.sequence_end_of_page();
             	write_stream(stream, cept.data());
-            	showing_message = true;
             }
 
-            desired_pageid = "".to_string();
+            command_input = "".to_string();
 
             let input_data = if autoplay {
                 println!("autoplay!");
@@ -191,7 +229,7 @@ impl Session {
 
             error = 0;
             if let Some(d) = input_data.get("$command") {
-                desired_pageid = d.clone();
+                command_input = d.clone();
             } else {
                 let val = input_data.get("$navigation").unwrap();
                 let val_or_hash = if val.len() != 0 { val.clone() } else { "#".to_owned() };
@@ -200,10 +238,10 @@ impl Session {
                     for link in links {
                         if val_or_hash == link.code {
                             // link
-                            desired_pageid = link.target.clone();
-                            // decode = decode_call(desired_pageid, None)
+                            command_input = link.target.clone();
+                            // decode = decode_call(command_input, None)
                             // if decode {
-                            //     desired_pageid = decode
+                            //     command_input = decode
                             // }
                             found = true;
                             break;
@@ -213,20 +251,10 @@ impl Session {
                 if !found {
                     if val.len() == 0 {
                         // next sub-page
-                        let last_char = current_pageid.chars().last().unwrap();
-                        if last_char.is_ascii_digit() {
-                            desired_pageid = current_pageid.clone() + "b"
-                        } else if last_char >= 'a' && last_char <= 'y' {
-                            let mut s = current_pageid.to_owned();
-                            s.pop();
-                            s.push((last_char as u8 + 1) as char);
-                        } else {
-                            error = 101;
-                            desired_pageid = "".to_owned();
-                        }
+                        current_pageid.sub += 1;
                     } else {
                         error = 100;
-                        desired_pageid = "".to_owned();
+                        command_input = "".to_owned();
                     }
                 }
             }
@@ -234,7 +262,7 @@ impl Session {
         }
     }
 
-    fn handle_inputs(pageid: &str, inputs: &mut Inputs, stream: &mut (impl Write + Read)) -> HashMap<String, String> {
+    fn handle_inputs(pageid: &PageId, inputs: &mut Inputs, stream: &mut (impl Write + Read)) -> HashMap<String, String> {
         // create editors and draw backgrounds
         let mut editors = vec!();
         for input_field in &mut inputs.fields {
@@ -318,31 +346,31 @@ impl Session {
 
     }
 
-    pub fn get_page(&self, pageid: &str) -> Page {
-        if pageid.starts_with("00000") || pageid == "9a" {
-            super::login::create(pageid, self.user.as_ref()).unwrap()
-        } else if pageid == "77a" {
-            super::user::create(pageid).unwrap()
-        } else if pageid.starts_with('7') {
-            super::historic::create(&pageid[1..])
+    pub fn get_page(&self, pageid: &PageId) -> Option<Page> {
+        if pageid.page.starts_with("00000") || pageid.page == "9" {
+            super::login::create(pageid, self.user.as_ref())
+        } else if pageid.page == "77" {
+            super::user::create(pageid)
+        } else if pageid.page.starts_with('7') {
+            Some(super::historic::create(&pageid.kill_leading(1)))
         } else {
-            super::stat::create(pageid).unwrap()
+            super::stat::create(pageid)
         }
     }
 
-    pub fn validate(pageid: &str, input_data: &HashMap<String, String>) -> Validate {
-        if pageid.starts_with("00000") || pageid == "9a" {
+    pub fn validate(pageid: &PageId, input_data: &HashMap<String, String>) -> Validate {
+        if pageid.page.starts_with("00000") || pageid.page == "9" {
             super::login::validate(pageid, input_data)
         } else {
             Validate::Ok
         }
     }
 
-    pub fn handle(pageid: &str, input_data: &HashMap<String, String>) -> String {
+    pub fn handle(pageid: &PageId, input_data: &HashMap<String, String>) -> String {
         panic!();
     }
 
-    pub fn show_page(&mut self, stream: &mut (impl Write + Read), page: &Page, pageid: &str) -> bool {
+    pub fn show_page(&mut self, stream: &mut (impl Write + Read), page: &Page, pageid: &PageId) -> bool {
         let cept1 = self.cept_preamble_from_meta(&page, pageid);
         let cept2 = self.cept_main_from_page(&page, pageid);
 
@@ -360,7 +388,7 @@ impl Session {
     }
 
     //
-    fn cept_preamble_from_meta(&mut self, page: &Page, pageid: &str) -> Cept {
+    fn cept_preamble_from_meta(&mut self, page: &Page, pageid: &PageId) -> Cept {
         let mut cept = Cept::new();
 
         cept.hide_cursor();
@@ -436,7 +464,7 @@ impl Session {
         cept
     }
 
-    fn cept_main_from_page(&mut self, page: &Page, pageid: &str) -> Cept {
+    fn cept_main_from_page(&mut self, page: &Page, pageid: &PageId) -> Cept {
         let mut cept = Cept::new();
 
         if page.meta.cls2 == Some(true) {
@@ -465,7 +493,7 @@ impl Session {
 }
 
 
-pub fn headerfooter(cept: &mut Cept, pageid: &str, publisher_name: Option<&str>, publisher_color: u8) {
+pub fn headerfooter(cept: &mut Cept, pageid: &PageId, publisher_name: Option<&str>, publisher_color: u8) {
     let mut hide_price = false;
     let mut publisher_name = publisher_name;
 
@@ -524,7 +552,7 @@ pub fn headerfooter(cept: &mut Cept, pageid: &str, publisher_name: Option<&str>,
 	cept.set_cursor(24, 19);
 
 	if !hide_header_footer {
-        cept.add_str(&format!("{pageid:>width$}", pageid=pageid, width=22));
+        cept.add_str(&format!("{pageid:>width$}", pageid=pageid.to_string(), width=22));
     }
 
 	cept.cursor_home();

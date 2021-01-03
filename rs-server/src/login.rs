@@ -5,19 +5,19 @@ use super::pages::*;
 use super::session::*;
 use super::user::*;
 
-pub fn create(pageid: &str, user: Option<&User>) -> Option<Page> {
-    if pageid == "00000a" {
+pub fn create(pageid: &PageId, user: Option<&User>) -> Option<Page> {
+    if pageid.page == "00000" {
         Some(create_login())
-    } else if pageid == "000001a" {
+    } else if pageid.page == "000001" {
         Some(create_start(user)) // XXX user
-    } else if pageid == "9a" {
+    } else if pageid.page == "9" {
         Some(create_logout())
     } else {
          None
     }
 }
 
-pub fn validate(pageid: &str, input_data: &HashMap<String, String>) -> Validate {
+pub fn validate(pageid: &PageId, input_data: &HashMap<String, String>) -> Validate {
     if User::login(
         input_data.get("user_id").unwrap(),
         input_data.get("ext").unwrap(),

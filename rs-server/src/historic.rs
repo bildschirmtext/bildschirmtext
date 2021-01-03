@@ -1,11 +1,12 @@
 use super::cept::*;
 use super::pages::*;
+use super::session::*;
 
-pub fn create(pageid: &str) -> Page {
-    if pageid == "8a" {
+pub fn create(pageid: &PageId) -> Page {
+    if pageid.page == "8" {
         create_historic_main_page()
-    } else if pageid == "10a" || pageid == "11a" || pageid == "12a" {
-        create_historic_overview(pageid[0..2].parse().unwrap(), 0).unwrap()
+    } else if pageid.page == "10" || pageid.page == "11" || pageid.page == "12" {
+        create_historic_overview(pageid.page[0..2].parse().unwrap(), 0).unwrap()
     } else {
         panic!();
     }

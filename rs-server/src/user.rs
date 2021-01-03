@@ -2,9 +2,9 @@ use std::{fs::File, io::Write};
 use serde::{Deserialize, Serialize};
 use chrono::Utc;
 use super::cept::*;
-use super::editor::*;
 use super::pages::*;
 use super::stat::*;
+use super::session::*;
 
 const PATH_USERS: &str = "../users/";
 const PATH_SECRETS: &str = "../secrets/";
@@ -559,8 +559,8 @@ fn create_add_user() -> Page {
 //         return "77"
 // }
 
-pub fn create(pageid: &str) -> Option<Page> {
-    if pageid == "77a" {
+pub fn create(pageid: &PageId) -> Option<Page> {
+    if pageid.page == "77" {
         Some(create_add_user())
     } else {
         None

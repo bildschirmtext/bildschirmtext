@@ -504,7 +504,7 @@
 //     (meta, cept)
 // }
 
-// fn create_page(user: &User, pageid: &str) -> Option<Page> {
+// fn create_page(user: &User, pageid: &PageId) -> Option<Page> {
 //     if pageid == "8a" {
 //         return messaging_create_main_menu()
 //     } else if pageid == "88a" {

@@ -2,16 +2,17 @@ use std::fs::File;
 use std::io::Read;
 use std::fs::metadata;
 use super::pages::*;
+use super::session::*;
 
 const PATH_DATA: &str = "../data/";
 
 
-pub fn create(pageid: &str) -> Option<Page> {
+pub fn create(pageid: &PageId) -> Option<Page> {
     let mut cept = None;
 
     if let Some((basedir, filename)) = find_basedir(pageid) {
         let mut basename = basedir.clone();
-        basename += filename;
+        basename += &filename;
 
         let mut filename_meta = basename.clone();
         filename_meta += ".meta";
@@ -65,8 +66,9 @@ pub fn is_file(path: &str) -> bool {
     }
 }
 
-pub fn find_basedir(pageid: &str) -> Option<(String, &str)> {
-    let pageid = pageid.as_bytes();
+pub fn find_basedir(pageid: &PageId) -> Option<(String, String)> {
+    let pageid_str = pageid.to_string();
+    let pageid = pageid_str.as_bytes();
     for dir in [ "", "hist/10/", "hist/11/" ].iter() {
         for i in (0..pageid.len()).rev() {
             let mut testdir = String::new();
@@ -74,7 +76,7 @@ pub fn find_basedir(pageid: &str) -> Option<(String, &str)> {
             testdir += dir;
             testdir += std::str::from_utf8(&pageid[..i+1]).unwrap();
             if is_dir(&testdir) {
-                let filename = std::str::from_utf8(&pageid[i+1..]).unwrap();
+                let filename = std::str::from_utf8(&pageid[i+1..]).unwrap().to_owned();
                 println!("filename: {}", filename);
                 let mut basedir = testdir.clone();
                 basedir.push('/');
