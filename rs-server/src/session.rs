@@ -1,24 +1,12 @@
-use chrono::Utc;
 use std::io::{Read, Write};
-use std::fs::File;
 use std::collections::HashMap;
 use std::str::FromStr;
 use super::cept::*;
 use super::editor::*;
-use super::stat::*;
 use super::pages::*;
 use super::user::*;
 
-macro_rules! hashmap {
-    ($( $key: expr => $val: expr ),*) => {{
-         let mut map = ::std::collections::HashMap::new();
-         $( map.insert($key, $val); )*
-         map
-    }}
-}
-
 const INPUT_NAME_NAVIGATION: &'static str = "$navigation";
-const INPUT_NAME_COMMAND: &'static str = "$command";
 
 enum InputData {
     Command(String),
@@ -112,13 +100,113 @@ impl Session {
         }
     }
 
-    // Interpret a global command code ("*nnn#").
+    // Main loop: show page, get user input, loop.
+    // This is only called once and loops forever
+    pub fn run(&mut self, stream: &mut (impl Write + Read))
+    {
+        let mut target_pageid = PageId::from_str("00000").unwrap();
+        let mut add_to_history = false;
+        let mut links = None;
+        let mut inputs = None;
+        let mut current_page_cept = Cept::new();
+
+        'main: loop {
+            // XXX if User.user() is not None:
+            // 	User.user().stats.update()
+
+            // *** show page
+            println!("showing page: {}", target_pageid.to_string());
+            if let Some(page) = self.get_page(&target_pageid) {
+                current_page_cept = page.construct_page_cept(&mut self.client_state, &target_pageid);
+                write_stream(stream, current_page_cept.data());
+                links = page.meta.links;
+                inputs = page.meta.inputs;
+                self.autoplay = page.meta.autoplay == Some(true);
+                self.current_pageid = target_pageid.clone();
+                if add_to_history {
+                    self.history.push(self.current_pageid.clone());
+                };
+            } else {
+                println!("ERROR: Page not found: {}", target_pageid.to_string());
+                let error = if target_pageid.sub > 0 {
+                    101
+                } else {
+                    100
+                };
+                show_error(error, stream);
+            }
+
+            'input: loop {
+                // *** get user input
+                let input_data = self.get_inputs(inputs.as_ref(), links.as_ref(), stream);
+
+                // *** handle input
+                match input_data {
+                    InputData::Command(command_input) => {
+                        match self.decode_command(&command_input) {
+                            CommandType::Goto(t, a) => {
+                                target_pageid = t;
+                                add_to_history = a;
+                                continue 'main;
+                            },
+                            CommandType::SendAgain => {
+                                write_stream(stream, current_page_cept.data());
+                            },
+                            CommandType::Error(e) => {
+                                show_error(e, stream);
+                                continue 'input;
+                            }
+                        }
+                    },
+                    InputData::Navigation(val) => {
+                        match self.decode_link(links.as_ref(), &val) {
+                            CommandType::Goto(t, a) => {
+                                target_pageid = t;
+                                add_to_history = a;
+                                continue 'main;
+                            },
+                            CommandType::Error(e) => {
+                                show_error(e, stream);
+                                continue 'input;
+                            },
+                            _ => {},
+                        }
+                    }
+                    InputData::TextFields(input_data) => {
+                        // XXX TODO handle text field input
+                        println!("input_data: {:?}", input_data);
+                    }
+                }
+            }
+        }
+    }
+
+    fn decode_link(&self, links: Option<&Vec<Link>>, val: &str) -> CommandType {
+        if let Some(links) = links {
+            for link in links {
+                if (*val == link.code) || (val == "" && link.code == "#") {
+                    return CommandType::Goto(PageId::from_str(&link.target).unwrap(), true);
+                }
+            }
+        }
+        // not found
+        if val.len() == 0 {
+            // next sub-page
+            let pageid = PageId { page: self.current_pageid.page.clone(), sub: self.current_pageid.sub + 1 };
+            CommandType::Goto(pageid, true)
+        } else {
+            println!("ERROR: Illegal navigation");
+            CommandType::Error(100)
+        }
+}
+
+    // Decode a global command code ("*nnn#").
     // This could be
     // * an explicit page numer
     // * "*00#" to re-send the current page CEPT data (e.g. after a transmission error)
     // * "*09#" to reload the current page (may fetch a newer version of the page)
     // * "*#" to go back
-    fn interpret_command(&mut self, command_input: &str) -> CommandType {
+    fn decode_command(&mut self, command_input: &str) -> CommandType {
         if command_input == "" {
             // *# = back
             println!("command: back");
@@ -208,100 +296,6 @@ impl Session {
         }
     }
 
-    // This is only called once and loops forever
-    pub fn run(&mut self, stream: &mut (impl Write + Read))
-    {
-        let mut target_pageid = PageId::from_str("00000").unwrap();
-        let mut add_to_history = false;
-        let mut links = None;
-        let mut inputs = None;
-        let mut current_page_cept = Cept::new();
-
-        'main: loop {
-            // if User.user() is not None:
-            // 	User.user().stats.update()
-
-            // *** show page
-            println!("showing page: {}", target_pageid.to_string());
-            if let Some(page) = self.get_page(&target_pageid) {
-                current_page_cept = page.construct_page_cept(&mut self.client_state, &target_pageid);
-                write_stream(stream, current_page_cept.data());
-                links = page.meta.links;
-                inputs = page.meta.inputs;
-                self.autoplay = page.meta.autoplay == Some(true);
-                self.current_pageid = target_pageid.clone();
-                if add_to_history {
-                    self.history.push(self.current_pageid.clone());
-                };
-            } else {
-                println!("ERROR: Page not found: {}", target_pageid.to_string());
-                let error = if target_pageid.sub > 0 {
-                    101
-                } else {
-                    100
-                };
-                Self::show_error(error, stream);
-            }
-
-
-            'input: loop {
-                // *** get user input
-                let input_data = self.get_inputs(inputs.as_ref(), links.as_ref(), stream);
-                // println!("input_data: {:?}", input_data);
-
-                // *** handle input
-                match input_data {
-                    InputData::Command(command_input) => {
-                        match self.interpret_command(&command_input) {
-                            CommandType::Goto(t, a) => {
-                                target_pageid = t;
-                                add_to_history = a;
-                                continue 'main;
-                            },
-                            CommandType::SendAgain => {
-                                write_stream(stream, current_page_cept.data());
-                            },
-                            CommandType::Error(e) => {
-                                Self::show_error(e, stream);
-                                continue 'input;
-                            }
-                        }
-                    },
-                    InputData::Navigation(val) => {
-                        if let Some(links) = &links {
-                            for link in links {
-                                if (*val == link.code) || (val == "" && link.code == "#") {
-                                    target_pageid = PageId::from_str(&link.target).unwrap();
-                                    continue 'main;
-                                }
-                            }
-                        }
-                        // not found
-                        if val.len() == 0 {
-                            // next sub-page
-                            self.current_pageid.sub += 1;
-                            continue 'main;
-                        } else {
-                            println!("ERROR: Illegal navigation");
-                            Self::show_error(100, stream);
-                            continue 'input;
-                        }
-                    }
-                    _ => {
-                        // XXX TODO
-                    }
-                }
-            }
-
-
-        }
-    }
-
-    fn show_error(error: usize, stream: &mut (impl Write + Read)) {
-        let mut cept = create_system_message(error, None);
-        cept.sequence_end_of_page();
-        write_stream(stream, cept.data());
-    }
 
     fn handle_text_fields(pageid: &PageId, inputs: &Inputs, stream: &mut (impl Write + Read)) -> InputData {
         // create editors and draw backgrounds
@@ -419,7 +413,6 @@ impl Session {
         }
     }
 
-
     pub fn get_page(&self, pageid: &PageId) -> Option<Page> {
         if pageid.page.starts_with("00000") || pageid.page == "9" {
             super::login::create(pageid, self.user.as_ref())
@@ -445,3 +438,8 @@ impl Session {
     }
 }
 
+fn show_error(error: usize, stream: &mut (impl Write + Read)) {
+    let mut cept = create_system_message(error, None);
+    cept.sequence_end_of_page();
+    write_stream(stream, cept.data());
+}
