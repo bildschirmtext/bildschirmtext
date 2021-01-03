@@ -148,12 +148,13 @@ impl Session {
             } else {
                 if inputs.is_none() {
                     let mut legal_values = vec!();
-                    for link in &links.clone().unwrap() {
-                        legal_values.push(link.code.clone());
+                    if let Some(links) = links.clone() {
+                        for link in links {
+                            if link.code != "#" {
+                                legal_values.push(link.code.clone());
+                            }
+                        }
                     }
-                    // legal_values = list(links.keys())
-                    // if "#" in legal_values:
-                    //     legal_values.remove("#")
                     inputs = Some(Inputs {
                         fields: vec!(
                             InputField {
@@ -195,16 +196,18 @@ impl Session {
                 let val = input_data.get("$navigation").unwrap();
                 let val_or_hash = if val.len() != 0 { val.clone() } else { "#".to_owned() };
                 let mut found = false;
-                for link in links.unwrap() {
-                    if val_or_hash == link.code {
-                        // link
-                        desired_pageid = link.target;
-                        // decode = decode_call(desired_pageid, None)
-                        // if decode {
-                        //     desired_pageid = decode
-                        // }
-                        found = true;
-                        break;
+                if let Some(links) = links {
+                    for link in links {
+                        if val_or_hash == link.code {
+                            // link
+                            desired_pageid = link.target;
+                            // decode = decode_call(desired_pageid, None)
+                            // if decode {
+                            //     desired_pageid = decode
+                            // }
+                            found = true;
+                            break;
+                        }
                     }
                 }
                 if !found {
