@@ -30,91 +30,56 @@ pub fn validate(pageid: &str, input_data: &[(String, String)]) -> Validate {
 }
 
 fn create_login() -> Page {
-    let meta = Meta {
-        clear_screen: Some(false),
-        links: None,
-        publisher_color: Some(7),
-        inputs: Some(Inputs {
-            fields: vec!(
-                InputField {
-                    name: "user_id".to_owned(),
-                    hint: Some("Teilnehmernummer oder # eingeben".to_owned()),
-                    line: 18,
-                    column: 26,
-                    height: 1,
-                    width: 10,
-                    bgcolor: Some(12),
-                    fgcolor: Some(3),
-
-                    typ: InputType::Normal,
-                    cursor_home: false,
-                    clear_line: false,
-                    legal_values: None,
-                    end_on_illegal_character: false,
-                    end_on_legal_string: false,
-                    echo_ter: false,
-                    command_mode: false,
-                    no_navigation: false,
-                    default: None,
-                    validate: None,
+    let meta_str = r#"
+    {
+        "clear_screen": false,
+        "inputs": {
+            "confirm": false,
+            "fields": [
+                {
+                    "bgcolor": 12,
+                    "column": 26,
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Teilnehmernummer oder # eingeben",
+                    "line": 18,
+                    "name": "user_id",
+                    "width": 10
                 },
-                InputField {
-                    name: "ext".to_owned(),
-                    hint: Some("Mitbenutzer oder # eingeben".to_owned()),
-                    line: 18,
-                    column: 37,
-                    height: 1,
-                    width: 1,
-                    bgcolor: Some(12),
-                    fgcolor: Some(3),
-                    typ: InputType::Number,
-                    cursor_home: true,
-                    default: Some("1".to_owned()),
-
-                    clear_line: false,
-                    legal_values: None,
-                    end_on_illegal_character: false,
-                    end_on_legal_string: false,
-                    echo_ter: false,
-                    command_mode: false,
-                    no_navigation: false,
-                    validate: None,
+                {
+                    "bgcolor": 12,
+                    "column": 37,
+                    "cursor_home": true,
+                    "default": "1",
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Mitbenutzer oder # eingeben",
+                    "line": 18,
+                    "name": "ext",
+                    "type": "number",
+                    "width": 1
                 },
-                InputField {
-                    name: "password".to_owned(),
-                    hint: Some("Nächstes Feld mit #; Leer für Gast".to_owned()),
-                    line: 20,
-                    column: 26,
-                    height: 1,
-                    width: 14,
-                    bgcolor: Some(12),
-                    fgcolor: Some(3),
-                    typ: InputType::Password,
-                    validate: Some(true),
-
-                    cursor_home: false,
-                    clear_line: false,
-                    legal_values: None,
-                    end_on_illegal_character: false,
-                    end_on_legal_string: false,
-                    echo_ter: false,
-                    command_mode: false,
-                    no_navigation: false,
-                    default: None,
+                {
+                    "bgcolor": 12,
+                    "column": 26,
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "N\u00e4chstes Feld mit #; Leer f\u00fcr Gast",
+                    "line": 20,
+                    "name": "password",
+                    "type": "password",
+                    "validate": true,
+                    "width": 14
                 }
-            ),
-            confirm: false,
-            no_55: false,
-            target: Some("page:000001a".to_owned()),
-            no_navigation: true,
-        }),
-        publisher_name: None,
-        cls2: None,
-        parallel_mode: None,
-        palette: None,
-        include: None,
-        autoplay: None,
-    };
+            ],
+            "no_navigation": true,
+            "target": "page:000001a"
+        },
+        "links": [],
+        "publisher_color": 7
+    }
+    "#;
+    let meta: Meta = serde_json::from_str(meta_str).unwrap();
 
     let mut page = Page::new(meta);
     page.cept.parallel_mode();

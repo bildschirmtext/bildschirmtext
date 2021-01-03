@@ -48,6 +48,12 @@ pub enum InputType {
     Password,
 }
 
+impl Default for InputType {
+    fn default() -> Self {
+        InputType::Normal
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
 #[derive(Clone)]
@@ -60,17 +66,26 @@ pub struct InputField {
     pub fgcolor: Option<u8>,
     pub bgcolor: Option<u8>,
     pub hint: Option<String>,
-    pub typ: InputType,
-    pub cursor_home: bool,
-    pub clear_line: bool,
     pub legal_values: Option<Vec<String>>,
-    pub end_on_illegal_character: bool,
-    pub end_on_legal_string: bool,
-    pub echo_ter: bool,
-    pub command_mode: bool,
-    pub no_navigation: bool,
     pub default: Option<String>,
-    pub validate: Option<bool>,
+    #[serde(default)]
+    pub input_type: InputType,
+    #[serde(default)]
+    pub cursor_home: bool,
+    #[serde(default)]
+    pub clear_line: bool,
+    #[serde(default)]
+    pub end_on_illegal_character: bool,
+    #[serde(default)]
+    pub end_on_legal_string: bool,
+    #[serde(default)]
+    pub echo_ter: bool,
+    #[serde(default)]
+    pub command_mode: bool,
+    #[serde(default)]
+    pub no_navigation: bool,
+    #[serde(default)]
+    pub validate: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -78,9 +93,12 @@ pub struct InputField {
 #[derive(Default)]
 pub struct Inputs {
     pub fields: Vec<InputField>,
-    pub confirm: bool,
-    pub no_55: bool,
     pub target: Option<String>,
+    #[serde(default)]
+    pub confirm: bool,
+    #[serde(default)]
+    pub no_55: bool,
+    #[serde(default)]
     pub no_navigation: bool,
 }
 
@@ -150,7 +168,7 @@ impl Editor {
 		for i in 0..self.input_field.height as usize {
 			let l = self.data[i].trim_end();
 
-            let l = match self.input_field.typ {
+            let l = match self.input_field.input_type {
                 InputType::Password => "*".repeat(l.len()),
 			    _ => {
                     if l.starts_with("\x13") { // XXX cept_ini()
@@ -365,17 +383,18 @@ impl Editor {
                             fgcolor: None,
                             bgcolor: None,
                             hint: None,
-                            typ: InputType::Normal,
-                            cursor_home: false,
+                            input_type: InputType::Normal,
                             clear_line: true,
                             legal_values: None,
-                            end_on_illegal_character: false,
-                            end_on_legal_string: false,
                             echo_ter: true,
                             command_mode: true,
-                            no_navigation: false,
+
                             default: None,
-                            validate: None,
+                            cursor_home: false,
+                            end_on_illegal_character: false,
+                            end_on_legal_string: false,
+                            no_navigation: false,
+                            validate: false,
                         };
                         let mut editor = Editor::new(&input_field);
                         editor.set_string(&cept_ini_str());
@@ -438,9 +457,9 @@ impl Editor {
 				// sends the sequence CSR_LEFT, SPACE, CSR_LEFT. It is very tricky
 				// to detect this properly, so we will just allow spaces in
 				// "number" and "alpha" input fields.
-				if self.input_field.typ == InputType::Number && !c.is_ascii_digit() && c != b' ' {
+				if self.input_field.input_type == InputType::Number && !c.is_ascii_digit() && c != b' ' {
 					character_legal = false;
-                } else if self.input_field.typ == InputType::Alpha && !c.is_ascii_alphabetic() && c != b' ' {
+                } else if self.input_field.input_type == InputType::Alpha && !c.is_ascii_alphabetic() && c != b' ' {
 					character_legal = false;
 				} else {
                     let x = self.try_insert_character(c as char);
@@ -463,7 +482,7 @@ impl Editor {
                 }
 				if character_legal || self.input_field.end_on_illegal_character {
 					if self.insert_character(c as char) {
-						if self.input_field.typ == InputType::Password {
+						if self.input_field.input_type == InputType::Password {
                             write(stream, &[b'*']);
                         } else {
                             let mut cept = Cept::new();

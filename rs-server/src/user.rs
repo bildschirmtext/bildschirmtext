@@ -264,7 +264,7 @@ fn create_add_user() -> Page {
                     "line": 6,
                     "name": "user_id",
                     "type": "number",
-                    "validate": "call:User_UI.callback_validate_user_id",
+                    "validate": true,
                     "width": 10
                 },
                 {
@@ -285,7 +285,7 @@ fn create_add_user() -> Page {
                     "hint": "Nachnamen oder # eingeben",
                     "line": 8,
                     "name": "last_name",
-                    "validate": "call:User_UI.callback_validate_last_name",
+                    "validate": true,
                     "width": 20
                 },
                 {
@@ -440,7 +440,7 @@ fn create_add_user() -> Page {
                     "line": 19,
                     "name": "password",
                     "type": "password",
-                    "validate": "call:User_UI.callback_validate_password",
+                    "validate": true,
                     "width": 14
                 }
             ],

@@ -153,7 +153,7 @@ impl Session {
                                 fgcolor: None,
                                 bgcolor: None,
                                 hint: None,
-                                typ: InputType::Normal,
+                                input_type: InputType::Normal,
                                 cursor_home: false,
                                 clear_line: false,
                                 legal_values: Some(legal_values),
@@ -162,8 +162,8 @@ impl Session {
                                 echo_ter: true,
                                 command_mode: false,
                                 no_navigation: false,
+                                validate: false,
                                 default: None,
-                                validate: None,
                             }),
                         confirm: false,
                         no_55: true,
@@ -253,7 +253,7 @@ impl Session {
 
 
             let mut validate_result = Validate::Ok;
-            if input_field.validate == Some(true) {
+            if input_field.validate {
                 validate_result = Self::validate(pageid, &input_data);
             }
 
