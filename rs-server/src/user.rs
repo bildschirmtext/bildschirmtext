@@ -118,7 +118,8 @@ impl User {
         let ext = ext.unwrap_or(&"1");
 		let (user_id, ext) = Self::sanitize(user_id, ext);
 		let filename = User.user_filename(user_id, ext);
-		return is_file(filename);
+        return is_file(filename);
+    }
 
 	fn get(user_id: &str, ext: &str, personal_data: bool) -> User {
 		(user_id, ext) = Self::sanitize(user_id, ext);
@@ -178,6 +179,7 @@ impl User {
         let secrets: Secrets = serde_json::from_reader(f).ok()?;
         password == secrets.password || force
     }
+}
 
 fn line() -> Cept {
     let cept = Cept::new();
@@ -194,7 +196,7 @@ fn create_title(title: &str) {
     cept.set_cursor(2, 1);
     cept.set_palette(1);
     cept.set_screen_bg_color_simple(4);
-    cept.extend(&[
+    cept.add_raw(&[
         0x1b, 0x28, 0x40,           // load G0 into G0
         0x0f,                   // G0 into left charset
     ]);
@@ -222,7 +224,7 @@ fn create_title2(title: &str) {
     cept.set_cursor(2, 1);
     cept.set_palette(1);
     cept.set_screen_bg_color_simple(4);
-    cept.extend(&[
+    cept.add_raw(&[
         0x1b, 0x28, 0x40,           // load G0 into G0
         0x0f,                   // G0 into left charset
     ]);
@@ -245,19 +247,19 @@ fn create_title2(title: &str) {
 }
 
 fn create_add_user() {
-    meta = {
+    meta = Meta {
         publisher_name: "!BTX",
         include: "a",
         clear_screen: True,
-        links: {
+        links: Some(vec!(
             Links::new("0", "0"),
             Links::new("1", "88"),
             Links::new("2", "89"),
             Links::new("5", "810"),
-        },
-        inputs: {
+        )),
+        inputs: Inputs {
             fields: [
-                {
+                InputField {
                     name: "user_id",
                     hint: "Gewünschte Nummer oder # eingeben",
                     line: 6,
@@ -266,10 +268,10 @@ fn create_add_user() {
                     width: 10,
                     bgcolor: 12,
                     fgcolor: 3,
-                    type: "number",
+                    typ: "number",
                     validate: "call:User_UI.callback_validate_user_id"
                 },
-                {
+                InputField {
                     name: "salutation",
                     hint: "Anrede oder # eingeben",
                     line: 7,
@@ -279,7 +281,7 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3
                 },
-                {
+                InputField {
                     name: "last_name",
                     hint: "Nachnamen oder # eingeben",
                     line: 8,
@@ -290,7 +292,7 @@ fn create_add_user() {
                     validate: "call:User_UI.callback_validate_last_name",
                     fgcolor: 3
                 },
-                {
+                InputField {
                     name: "first_name",
                     hint: "Vornamen oder # eingeben",
                     line: 9,
@@ -300,7 +302,7 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3
                 },
-                {
+                InputField {
                     name: "street",
                     hint: "Straße und Hausnummer oder # eingeben",
                     line: 10,
@@ -310,7 +312,7 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3
                 },
-                {
+                InputField {
                     name: "zip",
                     hint: "Postleitzahl oder # eingeben",
                     line: 11,
@@ -319,9 +321,9 @@ fn create_add_user() {
                     width: 5,
                     bgcolor: 12,
                     fgcolor: 3,
-                    type: "number"
+                    typ: "number"
                 },
-                {
+                InputField {
                     name: "city",
                     hint: "Ort oder # eingeben",
                     line: 11,
@@ -331,7 +333,7 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3
                 },
-                {
+                InputField {
                     name: "country",
                     hint: "Land oder # eingeben",
                     line: 11,
@@ -341,11 +343,11 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3,
                     default: "de",
-                    type: "alpha",
+                    typ: "alpha",
                     cursor_home: True,
                     overwrite: True
                 },
-                {
+                InputField {
                     name: "block_payments",
                     hint: "j/n oder # eingeben",
                     line: 13,
@@ -358,7 +360,7 @@ fn create_add_user() {
                     cursor_home: True,
                     legal_values: [ "j", "n" ]
                 },
-                {
+                InputField {
                     name: "block_fees",
                     hint: "j/n oder # eingeben",
                     line: 14,
@@ -371,7 +373,7 @@ fn create_add_user() {
                     cursor_home: True,
                     legal_values: [ "j", "n" ]
                 },
-                {
+                InputField {
                     name: "pocket_money_major",
                     hint: "0-9 oder # eingeben",
                     line: 15,
@@ -381,11 +383,11 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3,
                     default: "9",
-                    type: "number",
+                    typ: "number",
                     cursor_home: True,
                     overwrite: True
                 },
-                {
+                InputField {
                     name: "pocket_money_minor",
                     hint: "00-99 oder # eingeben",
                     line: 15,
@@ -395,11 +397,11 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3,
                     default: "99",
-                    type: "number",
+                    typ: "number",
                     cursor_home: True,
                     overwrite: True
                 },
-                {
+                InputField {
                     name: "max_price_major",
                     hint: "0-9 oder # eingeben",
                     line: 16,
@@ -409,11 +411,11 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3,
                     default: "9",
-                    type: "number",
+                    typ: "number",
                     cursor_home: True,
                     overwrite: True
                 },
-                {
+                InputField {
                     name: "max_price_minor",
                     hint: "00-99 oder # eingeben",
                     line: 16,
@@ -423,11 +425,11 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3,
                     default: "99",
-                    type: "number",
+                    typ: "number",
                     cursor_home: True,
                     overwrite: True
                 },
-                {
+                InputField {
                     name: "password",
                     hint: "Neues Kennwort",
                     line: 19,
@@ -436,7 +438,7 @@ fn create_add_user() {
                     width: 14,
                     bgcolor: 12,
                     fgcolor: 3,
-                    type: "password",
+                    typ: "password",
                     validate: "call:User_UI.callback_validate_password",
                 },
             ],
@@ -444,7 +446,7 @@ fn create_add_user() {
             target: "call:User_UI.callback_add_user",
         },
         publisher_color: 7
-    }
+    };
 
     let cept = Cept::new();
     cept.add_raw(create_title("Neuen Benutzer einrichten"));
@@ -467,7 +469,7 @@ fn create_add_user() {
     cept.set_cursor(11, 31);
     cept.from_str("Land:");
     cept.add_raw(b"\r\n");
-    cept.extend(line();
+    cept.add_raw(line());
     cept.from_str("Vergütungssperre aktiv:");
     cept.add_raw(b"\r\n");
     cept.from_str("Gebührensperre   aktiv:");
@@ -478,77 +480,78 @@ fn create_add_user() {
     cept.from_str("Max. Vergütung/Seite  :");
     cept.set_cursor(16, 35);
     cept.from_str(",   DM");
-    cept.extend(line();
+    cept.add_raw(line());
     cept.add_raw(b"\r\n");
     cept.from_str("Kennwort: ");
     cept.add_raw(b"\r\n\r\n");
-    cept.extend(User_UI.line();
+    cept.add_raw(line());
     return (meta, cept)
 }
 
-fn callback_validate_user_id(input_data, dummy) {
-    if User.exists(input_data["user_id"]):
-        msg = Util.create_custom_system_message("Teilnehmernummer bereits vergeben! -> #")
-        sys.stdout.buffer.write(msg)
-        sys.stdout.flush()
-        Util.wait_for_ter()
-        return Util.VALIDATE_INPUT_BAD
-    else:
-        return Util.VALIDATE_INPUT_OK
-}
+// fn callback_validate_user_id(input_data, dummy) {
+//     if User.exists(input_data["user_id"]):
+//         msg = Util.create_custom_system_message("Teilnehmernummer bereits vergeben! -> #")
+//         sys.stdout.buffer.write(msg)
+//         sys.stdout.flush()
+//         Util.wait_for_ter()
+//         return Util.VALIDATE_INPUT_BAD
+//     else:
+//         return Util.VALIDATE_INPUT_OK
+// }
 
-fn callback_validate_last_name(input_data, dummy) {
-    if not input_data["last_name"]:
-        msg = Util.create_custom_system_message("Name darf nicht leer sein! -> #")
-        sys.stdout.buffer.write(msg)
-        sys.stdout.flush()
-        Util.wait_for_ter()
-        return Util.VALIDATE_INPUT_BAD
-    else:
-        return Util.VALIDATE_INPUT_OK
-}
+// fn callback_validate_last_name(input_data, dummy) {
+//     if not input_data["last_name"]:
+//         msg = Util.create_custom_system_message("Name darf nicht leer sein! -> #")
+//         sys.stdout.buffer.write(msg)
+//         sys.stdout.flush()
+//         Util.wait_for_ter()
+//         return Util.VALIDATE_INPUT_BAD
+//     else:
+//         return Util.VALIDATE_INPUT_OK
+// }
 
-fn callback_validate_password(input_data, dummy) {
-    if len(input_data["password"]) < 4:
-        msg = Util.create_custom_system_message("Kennwort muß mind. 4-stellig sein! -> #")
-        sys.stdout.buffer.write(msg)
-        sys.stdout.flush()
-        Util.wait_for_ter()
-        return Util.VALIDATE_INPUT_BAD
-    else:
-        return Util.VALIDATE_INPUT_OK
-}
+// fn callback_validate_password(input_data, dummy) {
+//     if len(input_data["password"]) < 4:
+//         msg = Util.create_custom_system_message("Kennwort muß mind. 4-stellig sein! -> #")
+//         sys.stdout.buffer.write(msg)
+//         sys.stdout.flush()
+//         Util.wait_for_ter()
+//         return Util.VALIDATE_INPUT_BAD
+//     else:
+//         return Util.VALIDATE_INPUT_OK
+// }
 
-fn callback_add_user(input_data, dummy) {
-    sys.stderr.write("input_data: " + pprint.pformat(input_data) + "\n")
-    if User.create(
-        input_data["user_id"],
-        "1", # ext
-        input_data["password"],
-        input_data["salutation"],
-        input_data["last_name"],
-        input_data["first_name"],
-        input_data["street"],
-        input_data["zip"],
-        input_data["city"],
-        input_data["country"]
-    ):
-        msg = Util.create_custom_system_message("Benutzer angelegt. Bitte neu anmelden. -> #")
-        sys.stdout.buffer.write(msg)
-        sys.stdout.flush()
-        Util.wait_for_ter()
-        return "00000"
-    else:
-        msg = Util.create_custom_system_message("Benutzer konnte nicht angelegt werden. -> #")
-        sys.stdout.buffer.write(msg)
-        sys.stdout.flush()
-        Util.wait_for_ter()
-        return "77"
-}
+// fn callback_add_user(input_data: Vec<(String, String)>) {
+//     println!("input_data: {}", input_data);
+//     if User.create(
+//         input_data["user_id"],
+//         "1", // ext
+//         input_data["password"],
+//         input_data["salutation"],
+//         input_data["last_name"],
+//         input_data["first_name"],
+//         input_data["street"],
+//         input_data["zip"],
+//         input_data["city"],
+//         input_data["country"]
+//     ):
+//         msg = Util.create_custom_system_message("Benutzer angelegt. Bitte neu anmelden. -> #")
+//         sys.stdout.buffer.write(msg)
+//         sys.stdout.flush()
+//         Util.wait_for_ter()
+//         return "00000"
+//     else:
+//         msg = Util.create_custom_system_message("Benutzer konnte nicht angelegt werden. -> #")
+//         sys.stdout.buffer.write(msg)
+//         sys.stdout.flush()
+//         Util.wait_for_ter()
+//         return "77"
+// }
 
-fn create_page(user, pagenumber) {
-    if pagenumber == "77a":
-        return User_UI.create_add_user()
-    else:
-        return None
+fn create(user: &User, pageid: &str) -> Option<Page> {
+    if pageid == "77a" {
+        Some(create_add_user())
+    } else {
+        None
+    }
 }

@@ -2,6 +2,7 @@ use chrono::Utc;
 use super::editor::*;
 use super::pages::*;
 use super::session::*;
+use super::user::*;
 
 pub fn create(pageid: &str, user: Option<&User>) -> Option<Page> {
     if pageid == "00000a" {
