@@ -4,6 +4,7 @@ use super::cept::*;
 use super::editor::*;
 use super::stat::*;
 use super::pages::*;
+use super::user::*;
 
 
 pub enum Validate {

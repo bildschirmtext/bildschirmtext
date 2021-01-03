@@ -1,4 +1,8 @@
+use std::{fs::File, io::Write};
 use serde::{Deserialize, Serialize};
+use chrono::Utc;
+use super::cept::*;
+use super::stat::*;
 
 const PATH_USERS: &str = "../users/";
 const PATH_SECRETS: &str = "../secrets/";
@@ -32,32 +36,11 @@ pub struct Secrets {
     password: String,
 }
 
-impl User {
-    pub fn get(user_id: &str, ext: &str, personal_data: bool) -> Option<User> {
-        Some(User {
-            user_id: "0".to_owned(),
-            ext: "0".to_owned(),
-            personal_data: false,
-
-            salutation: None,
-            first_name: None,
-            last_name: None,
-            org_name: None,
-            org_add_name: None,
-
-            street: None,
-            zip: None,
-            city: None,
-            country: None,
-        })
-    }
-}
-
 //XXX global_user = None
 
 #[derive(Serialize, Deserialize)]
 struct StatsData {
-    last_login: Some(timestamp),
+    last_use: Option<i64>,
 }
 
 struct Stats {
@@ -65,9 +48,9 @@ struct Stats {
     stats_data: StatsData,
 }
 
-fn filename(userid: &str, ext: &str, file_extension: &str) -> String {
+fn filename(user_id: &str, ext: &str, path: &str, file_extension: &str) -> String {
     let mut s = String::new();
-    s += PATH_MESSAGES;
+    s += path;
     s += user_id;
     s.push('-');
     s += ext;
@@ -77,8 +60,8 @@ fn filename(userid: &str, ext: &str, file_extension: &str) -> String {
 }
 
 impl Stats {
-	pub fn new(user: &User) {
-		let filename = filename(user.user_id, user.ext, &".stats");
+	pub fn new(user: &User) -> Self {
+		let filename = filename(&user.user_id, &user.ext, PATH_STATS, &".stats");
         let f = File::open(&filename).unwrap();
         let stats_data: StatsData = serde_json::from_reader(f).unwrap();
         Stats {
@@ -87,43 +70,46 @@ impl Stats {
         }
     }
 
-	pub fn update(self) {
+	pub fn update(&mut self) {
 		// update the last use field with the current time
-		let stats = Stats { last_use: Utc::now().timestamp() };
-        let json_data = serde_json::to_string(stats).unwrap();
+		self.stats_data.last_use = Some(Utc::now().timestamp());
+        let json_data = serde_json::to_string(&self.stats_data).unwrap();
         let mut file = File::create(self.filename).unwrap();
         file.write_all(&json_data.as_bytes());
     }
 }
 
 impl User {
-	// fn sanitize(user_id: &str, ext: &str) {
-	// 	if user_id == "" {
-    //         user_id = "0"
-    //     }
-	// 	if ext is None or ext == "":
-	// 		ext = "1"
-    //     return (user_id, ext)
-    // }
-
-    fn user_filename(user_id: &str, ext: &str) {
-        filename(user_id, ext, "user");
+	fn sanitize(user_id: &str, ext: &str) -> (String, String) {
+        let mut user_id = user_id.to_owned();
+        let mut ext = ext.to_owned();
+        if user_id == "" {
+            user_id = "0".to_owned();
+        }
+		if ext == "" {
+            ext = "1".to_owned();
+        }
+        (user_id, ext)
     }
 
-	fn secrets_filename(user_id: &str, ext: &str) {
-        filename(user_id, ext, "secrets");
+    fn user_filename(user_id: &str, ext: &str) -> String {
+        filename(user_id, ext, PATH_USERS, "user")
     }
 
-    fn exists(user_id: &str, ext: Option<&str>) {
-        let ext = ext.unwrap_or(&"1");
-		let (user_id, ext) = Self::sanitize(user_id, ext);
-		let filename = User.user_filename(user_id, ext);
-        return is_file(filename);
+	fn secrets_filename(user_id: &str, ext: &str) -> String {
+        filename(user_id, ext, PATH_SECRETS, "secrets")
     }
 
-	fn get(user_id: &str, ext: &str, personal_data: bool) -> User {
-		(user_id, ext) = Self::sanitize(user_id, ext);
-		filename = User.user_filename(user_id, ext);
+    fn exists(user_id: &str, ext: Option<&str>) -> bool {
+        let ext = ext.unwrap_or(&"");
+		let (user_id, ext) = Self::sanitize(&user_id, &ext);
+		let filename = Self::user_filename(&user_id, &ext);
+        is_file(&filename)
+    }
+
+	fn get(user_id: &str, ext: &str, personal_data: bool) -> Option<User> {
+		let (user_id, ext) = Self::sanitize(&user_id, &ext);
+		let filename = Self::user_filename(&user_id, &ext);
         let f = File::open(&filename).ok()?;
         let user: User = serde_json::from_reader(f).ok()?;
 		// user.messaging = Messaging(user)
@@ -145,39 +131,52 @@ impl User {
 		let user_filename = Self::user_filename(user_id, ext);
 		let secrets_filename = Self::secrets_filename(user_id, ext);
 		// if the user exists, don't overwrite it!
-		if exists(user_id, ext) {
+		if User::exists(user_id, Some(ext)) {
 			println!("user already exists!");
             return false;
         }
 		let user = User {
-			salutation,
-			first_name,
-			last_name,
-			street,
-			zip,
-			city,
-			country
+            user_id: user_id.to_owned(),
+            ext: ext.to_owned(),
+			salutation: Some(salutation.to_owned()),
+			first_name: Some(first_name.to_owned()),
+			last_name: Some(last_name.to_owned()),
+			street: Some(street.to_owned()),
+			zip: Some(zip.to_owned()),
+			city: Some(city.to_owned()),
+            country: Some(country.to_owned()),
+
+            personal_data: false,
+            org_name: None,
+            org_add_name: None,
 		};
-        let json_data = serde_json::to_string(user).unwrap();
+        let json_data = serde_json::to_string(&user).unwrap();
         let mut file = File::create(user_filename).unwrap();
         file.write_all(&json_data.as_bytes());
 
 		let secrets = Secrets {
-			password
+			password: password.to_owned(),
 		};
-        let json_data = serde_json::to_string(user).unwrap();
+        let json_data = serde_json::to_string(&secrets).unwrap();
         let mut file = File::create(secrets_filename).unwrap();
         file.write_all(&json_data.as_bytes());
 
-        true;
+        true
     }
 
-	fn login(user_id: &str, ext: &str, password: &str, force: bool) {
-		let (user_id, ext) = cls.sanitize(user_id, ext);
-		let filename = Self::secrets_filename(user_id, ext);
-        let f = File::open(&filename).ok()?;
-        let secrets: Secrets = serde_json::from_reader(f).ok()?;
-        password == secrets.password || force
+	fn login(user_id: &str, ext: &str, password: &str, force: bool) -> bool {
+		let (user_id, ext) = Self::sanitize(&user_id, &ext);
+		let filename = Self::secrets_filename(&user_id, &ext);
+        if let Ok(f) = File::open(&filename) {
+            let secrets: Result<Secrets, Error> = serde_json::from_reader(f);
+            if let Ok(secrets) = secrets {
+                password == secrets.password || force
+            } else {
+                false
+            }
+        } else {
+            false
+        }
     }
 }
 
@@ -185,13 +184,13 @@ fn line() -> Cept {
     let cept = Cept::new();
     cept.set_left_g3();
     cept.set_fg_color(15);
-    cept.repeat('Q', 40);
+    cept.repeat(b'Q', 40);
     cept.set_fg_color(7);
     cept.set_left_g0();
     cept
 }
 
-fn create_title(title: &str) {
+fn create_title(title: &str) -> Cept {
     let cept = Cept::new();
     cept.set_cursor(2, 1);
     cept.set_palette(1);
@@ -210,7 +209,7 @@ fn create_title(title: &str) {
     cept.set_palette(1);
     cept.double_height();
     cept.add_raw(b"\r");
-    cept.from_str(title);
+    cept.add_str(title);
     cept.add_raw(b"\n\r");
     cept.set_palette(0);
     cept.normal_size();
@@ -219,7 +218,7 @@ fn create_title(title: &str) {
     cept
 }
 
-fn create_title2(title: &str) {
+fn create_title2(title: &str) -> Cept {
     let cept = Cept::new();
     cept.set_cursor(2, 1);
     cept.set_palette(1);
@@ -237,7 +236,7 @@ fn create_title2(title: &str) {
     cept.set_palette(1);
     cept.double_height();
     cept.add_raw(b"\r");
-    cept.from_str(title);
+    cept.add_str(title);
     cept.add_raw(b"\n\r");
     cept.set_palette(0);
     cept.normal_size();
@@ -247,10 +246,10 @@ fn create_title2(title: &str) {
 }
 
 fn create_add_user() {
-    meta = Meta {
+    let meta = Meta {
         publisher_name: "!BTX",
         include: "a",
-        clear_screen: True,
+        clear_screen: true,
         links: Some(vec!(
             Links::new("0", "0"),
             Links::new("1", "88"),
@@ -344,8 +343,8 @@ fn create_add_user() {
                     fgcolor: 3,
                     default: "de",
                     typ: "alpha",
-                    cursor_home: True,
-                    overwrite: True
+                    cursor_home: true,
+                    overwrite: true
                 },
                 InputField {
                     name: "block_payments",
@@ -357,7 +356,7 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3,
                     default: "n",
-                    cursor_home: True,
+                    cursor_home: true,
                     legal_values: [ "j", "n" ]
                 },
                 InputField {
@@ -370,7 +369,7 @@ fn create_add_user() {
                     bgcolor: 12,
                     fgcolor: 3,
                     default: "n",
-                    cursor_home: True,
+                    cursor_home: true,
                     legal_values: [ "j", "n" ]
                 },
                 InputField {
@@ -384,8 +383,8 @@ fn create_add_user() {
                     fgcolor: 3,
                     default: "9",
                     typ: "number",
-                    cursor_home: True,
-                    overwrite: True
+                    cursor_home: true,
+                    overwrite: true
                 },
                 InputField {
                     name: "pocket_money_minor",
@@ -398,8 +397,8 @@ fn create_add_user() {
                     fgcolor: 3,
                     default: "99",
                     typ: "number",
-                    cursor_home: True,
-                    overwrite: True
+                    cursor_home: true,
+                    overwrite: true
                 },
                 InputField {
                     name: "max_price_major",
@@ -412,8 +411,8 @@ fn create_add_user() {
                     fgcolor: 3,
                     default: "9",
                     typ: "number",
-                    cursor_home: True,
-                    overwrite: True
+                    cursor_home: true,
+                    overwrite: true
                 },
                 InputField {
                     name: "max_price_minor",
@@ -426,8 +425,8 @@ fn create_add_user() {
                     fgcolor: 3,
                     default: "99",
                     typ: "number",
-                    cursor_home: True,
-                    overwrite: True
+                    cursor_home: true,
+                    overwrite: true
                 },
                 InputField {
                     name: "password",
@@ -451,45 +450,45 @@ fn create_add_user() {
     let cept = Cept::new();
     cept.add_raw(create_title("Neuen Benutzer einrichten"));
     cept.add_raw(b"\r\n");
-    cept.from_str("Teilnehmernummer:");
+    cept.add_str("Teilnehmernummer:");
     cept.set_cursor(6, 29);
-    cept.from_str("-1");
+    cept.add_str("-1");
     cept.add_raw(b"\r\n");
-    cept.from_str("Anrede:");
+    cept.add_str("Anrede:");
     cept.add_raw(b"\r\n");
-    cept.from_str("Name:");
+    cept.add_str("Name:");
     cept.add_raw(b"\r\n");
-    cept.from_str("Vorname:");
+    cept.add_str("Vorname:");
     cept.add_raw(b"\r\n");
-    cept.from_str("Straße:");
+    cept.add_str("Straße:");
     cept.add_raw(b"\r\n");
-    cept.from_str("PLZ:");
+    cept.add_str("PLZ:");
     cept.repeat(" ", 7);
-    cept.from_str("Ort:");
+    cept.add_str("Ort:");
     cept.set_cursor(11, 31);
-    cept.from_str("Land:");
+    cept.add_str("Land:");
     cept.add_raw(b"\r\n");
     cept.add_raw(line());
-    cept.from_str("Vergütungssperre aktiv:");
+    cept.add_str("Vergütungssperre aktiv:");
     cept.add_raw(b"\r\n");
-    cept.from_str("Gebührensperre   aktiv:");
+    cept.add_str("Gebührensperre   aktiv:");
     cept.add_raw(b"\r\n");
-    cept.from_str("Taschengeldkonto      :");
+    cept.add_str("Taschengeldkonto      :");
     cept.set_cursor(15, 35);
-    cept.from_str(",   DM");
-    cept.from_str("Max. Vergütung/Seite  :");
+    cept.add_str(",   DM");
+    cept.add_str("Max. Vergütung/Seite  :");
     cept.set_cursor(16, 35);
-    cept.from_str(",   DM");
+    cept.add_str(",   DM");
     cept.add_raw(line());
     cept.add_raw(b"\r\n");
-    cept.from_str("Kennwort: ");
+    cept.add_str("Kennwort: ");
     cept.add_raw(b"\r\n\r\n");
     cept.add_raw(line());
     return (meta, cept)
 }
 
 // fn callback_validate_user_id(input_data, dummy) {
-//     if User.exists(input_data["user_id"]):
+//     if User::exists(input_data["user_id"]):
 //         msg = Util.create_custom_system_message("Teilnehmernummer bereits vergeben! -> #")
 //         sys.stdout.buffer.write(msg)
 //         sys.stdout.flush()
@@ -523,7 +522,7 @@ fn create_add_user() {
 
 // fn callback_add_user(input_data: Vec<(String, String)>) {
 //     println!("input_data: {}", input_data);
-//     if User.create(
+//     if User::create(
 //         input_data["user_id"],
 //         "1", // ext
 //         input_data["password"],

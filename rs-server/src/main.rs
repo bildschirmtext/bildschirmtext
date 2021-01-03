@@ -7,9 +7,10 @@ mod message;
 mod pages;
 mod session;
 mod stat;
+mod user;
 
-use serde_json::{Result, Value};
-use std::fs::File;
+// use serde_json::{Result, Value};
+// use std::fs::File;
 // use scraper::Html;
 
 use std::net::TcpListener;
