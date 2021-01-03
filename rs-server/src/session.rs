@@ -53,6 +53,8 @@ impl Session {
         self.last_filename_palette = None;
         self.last_filename_include = None;
 
+        let mut links = None;
+
         loop {
             let mut inputs = None;
 
@@ -62,8 +64,6 @@ impl Session {
             if desired_pageid.len() > 0 && desired_pageid.chars().last().unwrap().is_ascii_digit() {
                 desired_pageid += "a";
             }
-
-            let mut links = None;
 
             let mut add_to_history = true;
             if error == 0 {
@@ -196,11 +196,11 @@ impl Session {
                 let val = input_data.get("$navigation").unwrap();
                 let val_or_hash = if val.len() != 0 { val.clone() } else { "#".to_owned() };
                 let mut found = false;
-                if let Some(links) = links {
+                if let Some(links) = &links {
                     for link in links {
                         if val_or_hash == link.code {
                             // link
-                            desired_pageid = link.target;
+                            desired_pageid = link.target.clone();
                             // decode = decode_call(desired_pageid, None)
                             // if decode {
                             //     desired_pageid = decode
