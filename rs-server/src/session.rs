@@ -17,6 +17,9 @@ macro_rules! hashmap {
     }}
 }
 
+const INPUT_NAME_NAVIGATION: &'static str = "$navigation";
+const INPUT_NAME_COMMAND: &'static str = "$command";
+
 #[derive(Clone)]
 pub struct PageId {
     pub page: String,
@@ -97,6 +100,12 @@ impl Session {
         }
     }
 
+    // Interpret a global command code ("*nnn#").
+    // This could be
+    // * an explicit page numer
+    // * "*00#" to re-send the current page CEPT data (e.g. after a transmission error)
+    // * "*09#" to reload the current page (may fetch a newer version of the page)
+    // * "*#" to go back
     fn interpret_command(&mut self, command_input: &str) -> CommandType {
         if command_input == "" {
             // *# = back
@@ -135,7 +144,8 @@ impl Session {
     fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> HashMap<String, String> {
         if self.autoplay {
             println!("autoplay!");
-            hashmap!["$navigation".to_owned() => "".to_owned()]
+            // inject "#"
+            hashmap![INPUT_NAME_NAVIGATION.to_owned() => "".to_owned()]
         } else {
             if inputs.is_none() {
                 let mut legal_values = vec!();
@@ -149,7 +159,7 @@ impl Session {
                 let mut inputs = Inputs {
                     fields: vec!(
                         InputField {
-                            name: "$navigation".to_string(),
+                            name: INPUT_NAME_NAVIGATION.to_string(),
                             line: 24,
                             column: 1,
                             height: 1,
@@ -232,7 +242,7 @@ impl Session {
                 println!("input_data: {:?}", input_data);
 
                 // *** handle input
-                if let Some(command_input) = input_data.get("$command") {
+                if let Some(command_input) = input_data.get(INPUT_NAME_COMMAND) {
                     match self.interpret_command(&command_input) {
                         CommandType::Goto(t, a) => {
                             target_pageid = t;
@@ -247,7 +257,7 @@ impl Session {
                             continue 'input;
                         }
                     }
-                } else if let Some(val) = input_data.get("$navigation") {
+                } else if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
                     if let Some(links) = &links {
                         for link in links {
                             if (*val == link.code) || (val == "" && link.code == "#") {
@@ -304,7 +314,7 @@ impl Session {
 
             if let Some(val) = &val {
                 if val.starts_with(0x13 as char) { // XXX Cept.ini()
-                    return hashmap!["$command".to_string() => val[1..].to_string()];
+                    return hashmap![INPUT_NAME_COMMAND.to_string() => val[1..].to_string()];
                 }
             }
 
@@ -351,11 +361,11 @@ impl Session {
         // send "input_data" to "inputs.target"
         if let Some(target) = &inputs.target {
         	if target.starts_with("page:") {
-                hashmap!["$command".to_owned() => target[5..].to_owned()]
+                hashmap![INPUT_NAME_COMMAND.to_owned() => target[5..].to_owned()]
             } else {
                 // XXX we should loop
                 let handle_result = Self::handle(pageid, &input_data);
-                hashmap!["$command".to_owned() => handle_result]
+                hashmap![INPUT_NAME_COMMAND.to_owned() => handle_result]
             }
         } else {
             input_data
