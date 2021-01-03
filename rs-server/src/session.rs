@@ -141,6 +141,13 @@ impl Session {
         }
     }
 
+    // Handle page interactivity:
+    // * for pages with text fields, draw them and allow editing them
+    // * for pages with links, allow entering one
+    // In both cases, it is possible to escape into command mode.
+    // * Text fields: Returns a dictionary of inputs, one entry per field
+    // * Links: Returns INPUT_NAME_NAVIGATION key.
+    // * Command input: Returns INPUT_NAME_COMMAND key.
     fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> HashMap<String, String> {
         if self.autoplay {
             println!("autoplay!");
