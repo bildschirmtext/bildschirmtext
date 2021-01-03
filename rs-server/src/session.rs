@@ -20,6 +20,12 @@ macro_rules! hashmap {
 const INPUT_NAME_NAVIGATION: &'static str = "$navigation";
 const INPUT_NAME_COMMAND: &'static str = "$command";
 
+enum InputData {
+    Command(String),
+    Navigation(String),
+    TextFields(HashMap<String, String>),
+}
+
 #[derive(Clone)]
 pub struct PageId {
     pub page: String,
@@ -145,16 +151,13 @@ impl Session {
     // * for pages with text fields, draw them and allow editing them
     // * for pages with links, allow entering one
     // In both cases, it is possible to escape into command mode.
-    // * Text fields: Returns a dictionary of inputs, one entry per field
-    // * Links: Returns INPUT_NAME_NAVIGATION key.
-    // * Command input: Returns INPUT_NAME_COMMAND key.
-    fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> HashMap<String, String> {
+    fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputData {
         if self.autoplay {
             println!("autoplay!");
             // inject "#"
-            hashmap![INPUT_NAME_NAVIGATION.to_owned() => "".to_owned()]
+            InputData::Navigation("".to_owned())
         } else {
-            if inputs.is_none() {
+            let input_data = if inputs.is_none() {
                 let mut legal_values = vec!();
                 if let Some(links) = links.clone() {
                     for link in links {
@@ -195,6 +198,13 @@ impl Session {
             } else {
                 let mut inputs = inputs.unwrap();
                 Self::handle_inputs(&self.current_pageid, &mut inputs, stream)
+            };
+            if let Some(val) = input_data.get(INPUT_NAME_COMMAND) {
+                InputData::Command(val.to_owned())
+            } else if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
+                InputData::Navigation(val.to_owned())
+            } else {
+                InputData::TextFields(input_data)
             }
         }
     }
@@ -246,42 +256,48 @@ impl Session {
             'input: loop {
                 // *** get user input
                 let input_data = self.get_inputs(inputs.as_mut(), links.as_ref(), stream);
-                println!("input_data: {:?}", input_data);
+                // println!("input_data: {:?}", input_data);
 
                 // *** handle input
-                if let Some(command_input) = input_data.get(INPUT_NAME_COMMAND) {
-                    match self.interpret_command(&command_input) {
-                        CommandType::Goto(t, a) => {
-                            target_pageid = t;
-                            add_to_history = a;
+                match input_data {
+                    InputData::Command(command_input) => {
+                        match self.interpret_command(&command_input) {
+                            CommandType::Goto(t, a) => {
+                                target_pageid = t;
+                                add_to_history = a;
+                                continue 'main;
+                            },
+                            CommandType::SendAgain => {
+                                write_stream(stream, current_page_cept.data());
+                            },
+                            CommandType::Error(e) => {
+                                Self::show_error(e, stream);
+                                continue 'input;
+                            }
+                        }
+                    },
+                    InputData::Navigation(val) => {
+                        if let Some(links) = &links {
+                            for link in links {
+                                if (*val == link.code) || (val == "" && link.code == "#") {
+                                    target_pageid = PageId::from_str(&link.target).unwrap();
+                                    continue 'main;
+                                }
+                            }
+                        }
+                        // not found
+                        if val.len() == 0 {
+                            // next sub-page
+                            self.current_pageid.sub += 1;
                             continue 'main;
-                        },
-                        CommandType::SendAgain => {
-                            write_stream(stream, current_page_cept.data());
-                        },
-                        CommandType::Error(e) => {
-                            Self::show_error(e, stream);
+                        } else {
+                            println!("ERROR: Illegal navigation");
+                            Self::show_error(100, stream);
                             continue 'input;
                         }
                     }
-                } else if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
-                    if let Some(links) = &links {
-                        for link in links {
-                            if (*val == link.code) || (val == "" && link.code == "#") {
-                                target_pageid = PageId::from_str(&link.target).unwrap();
-                                continue 'main;
-                            }
-                        }
-                    }
-                    // not found
-                    if val.len() == 0 {
-                        // next sub-page
-                        self.current_pageid.sub += 1;
-                        continue 'main;
-                    } else {
-                        println!("ERROR: Illegal navigation");
-                        Self::show_error(100, stream);
-                        continue 'input;
+                    _ => {
+                        // XXX TODO
                     }
                 }
             }
