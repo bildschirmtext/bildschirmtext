@@ -263,7 +263,7 @@ fn create_add_user() -> Page {
                     "hint": "Gew\u00fcnschte Nummer oder # eingeben",
                     "line": 6,
                     "name": "user_id",
-                    "type": "number",
+                    "type": "Numeric",
                     "validate": true,
                     "width": 10
                 },
@@ -316,7 +316,7 @@ fn create_add_user() -> Page {
                     "hint": "Postleitzahl oder # eingeben",
                     "line": 11,
                     "name": "zip",
-                    "type": "number",
+                    "type": "Numeric",
                     "width": 5
                 },
                 {
@@ -386,7 +386,7 @@ fn create_add_user() -> Page {
                     "line": 15,
                     "name": "pocket_money_major",
                     "overwrite": true,
-                    "type": "number",
+                    "type": "Numeric",
                     "width": 1
                 },
                 {
@@ -400,7 +400,7 @@ fn create_add_user() -> Page {
                     "line": 15,
                     "name": "pocket_money_minor",
                     "overwrite": true,
-                    "type": "number",
+                    "type": "Numeric",
                     "width": 2
                 },
                 {
@@ -414,7 +414,7 @@ fn create_add_user() -> Page {
                     "line": 16,
                     "name": "max_price_major",
                     "overwrite": true,
-                    "type": "number",
+                    "type": "Numeric",
                     "width": 1
                 },
                 {
@@ -428,7 +428,7 @@ fn create_add_user() -> Page {
                     "line": 16,
                     "name": "max_price_minor",
                     "overwrite": true,
-                    "type": "number",
+                    "type": "Numeric",
                     "width": 2
                 },
                 {
@@ -446,12 +446,12 @@ fn create_add_user() -> Page {
             ],
             "target": "call:User_UI.callback_add_user"
         },
-        "links": {
-            "0": "0",
-            "1": "88",
-            "2": "89",
-            "5": "810"
-        },
+        "links": [
+            { "code": "0", "target": "0" },
+            { "code": "1", "target": "88" },
+            { "code": "2", "target": "89" },
+            { "code": "5", "target": "810" }
+        ],
         "publisher_color": 7,
         "publisher_name": "!BTX"
     }
@@ -559,7 +559,7 @@ fn create_add_user() -> Page {
 //         return "77"
 // }
 
-fn create(user: &User, pageid: &str) -> Option<Page> {
+pub fn create(pageid: &str) -> Option<Page> {
     if pageid == "77a" {
         Some(create_add_user())
     } else {

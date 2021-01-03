@@ -307,6 +307,8 @@ impl Session {
     pub fn get_page(&self, pageid: &str) -> Page {
         if pageid.starts_with("00000") || pageid == "9a" {
             super::login::create(pageid, self.user.as_ref()).unwrap()
+        } else if pageid == "77a" {
+            super::user::create(pageid).unwrap()
         } else if pageid.starts_with('7') {
             super::historic::create(&pageid[1..])
         } else {

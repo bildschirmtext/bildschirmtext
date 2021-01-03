@@ -43,7 +43,7 @@ use super::cept::*;
 #[derive(Debug)]
 pub enum InputType {
     Normal,
-    Number,
+    Numeric,
     Alpha,
     Password,
 }
@@ -456,8 +456,8 @@ impl Editor {
 				// CEPT doesn't have a concept of backspace, so the backspace key
 				// sends the sequence CSR_LEFT, SPACE, CSR_LEFT. It is very tricky
 				// to detect this properly, so we will just allow spaces in
-				// "number" and "alpha" input fields.
-				if self.input_field.input_type == InputType::Number && !c.is_ascii_digit() && c != b' ' {
+				// "numeric" and "alpha" input fields.
+				if self.input_field.input_type == InputType::Numeric && !c.is_ascii_digit() && c != b' ' {
 					character_legal = false;
                 } else if self.input_field.input_type == InputType::Alpha && !c.is_ascii_alphabetic() && c != b' ' {
 					character_legal = false;
