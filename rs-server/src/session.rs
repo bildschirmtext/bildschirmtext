@@ -138,7 +138,7 @@ impl Session {
 
             'input: loop {
                 // *** get user input
-                let input_data = self.get_inputs(inputs.as_ref(), links.as_ref(), stream);
+                let input_data = self.get_inputs(&self.current_pageid, inputs.as_ref(), links.as_ref(), stream);
 
                 // *** handle input
                 let req = match input_data {
@@ -175,13 +175,14 @@ impl Session {
     // * for pages with text fields, draw them and allow editing them
     // * for pages with without text fields, allow entering a link
     // In both cases, it is possible to escape into command mode.
-    fn get_inputs(&self, inputs: Option<&Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputEvent {
+    fn get_inputs(&self, pageid: &PageId, inputs: Option<&Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputEvent {
         if self.autoplay {
             println!("autoplay!");
             // inject "#"
             InputEvent::Navigation("".to_owned())
         } else {
-            if inputs.is_none() {
+            let i;
+            let inputs = if inputs.is_none() {
                 let mut legal_values = vec!();
                 if let Some(links) = links.clone() {
                     for link in links {
@@ -190,7 +191,7 @@ impl Session {
                         }
                     }
                 }
-                let inputs = Inputs {
+                i = Inputs {
                     fields: vec!(
                         InputField {
                             name: INPUT_NAME_NAVIGATION.to_string(),
@@ -218,98 +219,98 @@ impl Session {
                     no_navigation: false,
                     price: None,
                 };
-                self.handle_text_fields(&self.current_pageid, &inputs, stream)
+                &i
             } else {
-                let inputs = inputs.unwrap();
-                self.handle_text_fields(&self.current_pageid, &inputs, stream)
-            }
-        }
-    }
+                inputs.unwrap()
+            };
 
-    fn handle_text_fields(&self, pageid: &PageId, inputs: &Inputs, stream: &mut (impl Write + Read)) -> InputEvent {
-        // create editors and draw backgrounds
-        let mut editors = vec!();
-        for input_field in &inputs.fields {
-            let mut editor = Editor::new(input_field);
-            editor.no_navigation = inputs.no_navigation;
-            editor.draw(stream);
-            editors.push(editor);
-        }
-
-        // get all inputs
-        let mut input_data = HashMap::new();
-        let mut i = 0;
-        let mut skip = false;
-        while i < inputs.fields.len() {
-            let input_field = &inputs.fields[i];
-
-            let (val, dct) = editors[i].edit(skip, stream);
-
-            if dct {
-                skip = true;
+            // create editors and draw backgrounds
+            let mut editors = vec!();
+            for input_field in &inputs.fields {
+                let mut editor = Editor::new(input_field);
+                editor.no_navigation = inputs.no_navigation;
+                editor.draw(stream);
+                editors.push(editor);
             }
 
-            if let Some(val) = &val {
-                if val.starts_with(0x13 as char) { // XXX Cept.ini()
-                    return InputEvent::Command(val[1..].to_string());
+            // get all inputs
+            let mut input_data = HashMap::new();
+            let mut i = 0;
+            let mut skip = false;
+            while i < inputs.fields.len() {
+                let input_field = &inputs.fields[i];
+
+                let (val, dct) = editors[i].edit(skip, stream);
+
+                if dct {
+                    skip = true;
+                }
+
+                if let Some(val) = &val {
+                    if val.starts_with(0x13 as char) { // XXX Cept.ini()
+                        return InputEvent::Command(val[1..].to_string());
+                    }
+                }
+
+                input_data.insert(input_field.name.to_string(), val.unwrap().to_string());
+
+
+                let mut validate_result = Validate::Ok;
+                if input_field.validate {
+                    validate_result = self.validate(pageid, &input_data);
+                }
+
+                match validate_result {
+                    Validate::Ok => {
+                        i += 1;
+                    },
+                    Validate::Error => {
+                        skip = false;
+                        continue;
+                    },
+                    Validate::Restart => {
+                        i = 0;
+                        skip = false;
+                        continue;
+                    }
                 }
             }
 
-            input_data.insert(input_field.name.to_string(), val.unwrap().to_string());
-
-
-            let mut validate_result = Validate::Ok;
-            if input_field.validate {
-                validate_result = self.validate(pageid, &input_data);
-            }
-
-            match validate_result {
-                Validate::Ok => {
-                    i += 1;
-                },
-                Validate::Error => {
-                    skip = false;
-                    continue;
-                },
-                Validate::Restart => {
-                    i = 0;
-                    skip = false;
-                    continue;
+            // confirmation
+            if inputs.confirm {
+                if Self::confirm(&inputs, stream) {
+                    // if inputs.action == "send_message" {
+                    // 	User.user().messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
+                    // 	system_message_sent_message()
+                    // } else {
+                    //     // TODO we stay on the page, in the navigator?
+                    // }
                 }
+            } else if !inputs.no_55 {
+                let cept = create_system_message(55, None);
+                write_stream(stream, cept.data());
             }
-        }
 
-        // confirmation
-        if inputs.confirm {
-        	if Self::confirm(inputs, stream) {
-        		// if inputs.action == "send_message" {
-        		// 	User.user().messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
-        		// 	system_message_sent_message()
-                // } else {
-                //     // TODO we stay on the page, in the navigator?
-                // }
-            }
-        } else if !inputs.no_55 {
-        	let cept = create_system_message(55, None);
-        	write_stream(stream, cept.data());
-        }
-
-        // send "input_data" to "inputs.target"
-        if let Some(target) = &inputs.target {
-        	if target.starts_with("page:") {
-                return InputEvent::Command(target[5..].to_owned());
+            // send "input_data" to "inputs.target"
+            if let Some(target) = &inputs.target {
+                if target.starts_with("page:") {
+                    return InputEvent::Command(target[5..].to_owned());
+                } else {
+                    // XXX we should loop
+                    let handle_result = self.handle(pageid, &input_data);
+                    return InputEvent::Command(handle_result);
+                }
+            } else if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
+                return InputEvent::Navigation(val.to_owned())
             } else {
-                // XXX we should loop
-                let handle_result = self.handle(pageid, &input_data);
-                return InputEvent::Command(handle_result);
+                return InputEvent::TextFields(input_data);
             }
-        } else if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
-            return InputEvent::Navigation(val.to_owned())
-        } else {
-            return InputEvent::TextFields(input_data);
-        }
 
+        }
     }
+
+    // fn handle_text_fields(&self, pageid: &PageId, inputs: &Inputs, stream: &mut (impl Write + Read)) -> InputEvent {
+    // }
 
     fn confirm(inputs: &Inputs, stream: &mut (impl Write + Read)) -> bool { // "send?" message
         let price = inputs.price;
