@@ -197,6 +197,8 @@ impl Session {
 
         let mut inputs = None;
 
+        let mut current_page_cept = Cept::new();
+
         'main: loop {
             // if User.user() is not None:
             // 	User.user().stats.update()
@@ -204,7 +206,8 @@ impl Session {
             // *** show page
             println!("showing page: {}", target_pageid.to_string());
             if let Some(page) = self.get_page(&target_pageid) {
-                self.show_page(stream, &page, &target_pageid);
+                current_page_cept = self.construct_page_cept(&page, &target_pageid);
+                write_stream(stream, current_page_cept.data());
                 links = page.meta.links;
                 inputs = page.meta.inputs;
                 self.autoplay = page.meta.autoplay == Some(true);
@@ -234,10 +237,13 @@ impl Session {
                         CommandType::Goto(t, a) => {
                             target_pageid = t;
                             add_to_history = a;
+                            continue 'main;
                         },
-                        CommandType::SendAgain => {}, // XXX
+                        CommandType::SendAgain => {
+                            write_stream(stream, current_page_cept.data());
+                        },
                         CommandType::Error(e) => {
-                            Self::show_error(100, stream);
+                            Self::show_error(e, stream);
                             continue 'input;
                         }
                     }
@@ -381,21 +387,15 @@ impl Session {
         panic!();
     }
 
-    pub fn show_page(&mut self, stream: &mut (impl Write + Read), page: &Page, pageid: &PageId) -> bool {
-        let cept1 = self.cept_preamble_from_meta(&page, pageid);
-        let cept2 = self.cept_main_from_page(&page, pageid);
+    pub fn construct_page_cept(&mut self, page: &Page, pageid: &PageId) -> Cept {
+        let mut cept = self.cept_preamble_from_meta(&page, pageid);
+        cept += self.cept_main_from_page(&page, pageid);
 
         // if compress {
         //     page_cept_data_1 = Cept.compress(page_cept_data_1)
-        //     page_cept_data_2 = Cept.compress(page_cept_data_2)
         // }
 
-        println!("Sending pal/char");
-        write_stream(stream, cept1.data());
-        println!("Sending text");
-        write_stream(stream, cept2.data());
-
-        false
+        cept
     }
 
     //
