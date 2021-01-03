@@ -2,6 +2,8 @@ use std::{fs::File, io::Write};
 use serde::{Deserialize, Serialize};
 use chrono::Utc;
 use super::cept::*;
+use super::editor::*;
+use super::pages::*;
 use super::stat::*;
 
 const PATH_USERS: &str = "../users/";
@@ -74,7 +76,7 @@ impl Stats {
 		// update the last use field with the current time
 		self.stats_data.last_use = Some(Utc::now().timestamp());
         let json_data = serde_json::to_string(&self.stats_data).unwrap();
-        let mut file = File::create(self.filename).unwrap();
+        let mut file = File::create(&self.filename).unwrap();
         file.write_all(&json_data.as_bytes());
     }
 }
@@ -168,7 +170,7 @@ impl User {
 		let (user_id, ext) = Self::sanitize(&user_id, &ext);
 		let filename = Self::secrets_filename(&user_id, &ext);
         if let Ok(f) = File::open(&filename) {
-            let secrets: Result<Secrets, Error> = serde_json::from_reader(f);
+            let secrets: Result<Secrets, _> = serde_json::from_reader(f);
             if let Ok(secrets) = secrets {
                 password == secrets.password || force
             } else {
@@ -181,7 +183,7 @@ impl User {
 }
 
 fn line() -> Cept {
-    let cept = Cept::new();
+    let mut cept = Cept::new();
     cept.set_left_g3();
     cept.set_fg_color(15);
     cept.repeat(b'Q', 40);
@@ -191,7 +193,7 @@ fn line() -> Cept {
 }
 
 fn create_title(title: &str) -> Cept {
-    let cept = Cept::new();
+    let mut cept = Cept::new();
     cept.set_cursor(2, 1);
     cept.set_palette(1);
     cept.set_screen_bg_color_simple(4);
@@ -219,7 +221,7 @@ fn create_title(title: &str) -> Cept {
 }
 
 fn create_title2(title: &str) -> Cept {
-    let cept = Cept::new();
+    let mut cept = Cept::new();
     cept.set_cursor(2, 1);
     cept.set_palette(1);
     cept.set_screen_bg_color_simple(4);
@@ -245,210 +247,219 @@ fn create_title2(title: &str) -> Cept {
     cept
 }
 
-fn create_add_user() {
-    let meta = Meta {
-        publisher_name: "!BTX",
-        include: "a",
-        clear_screen: true,
-        links: Some(vec!(
-            Links::new("0", "0"),
-            Links::new("1", "88"),
-            Links::new("2", "89"),
-            Links::new("5", "810"),
-        )),
-        inputs: Inputs {
-            fields: [
-                InputField {
-                    name: "user_id",
-                    hint: "Gewünschte Nummer oder # eingeben",
-                    line: 6,
-                    column: 19,
-                    height: 1,
-                    width: 10,
-                    bgcolor: 12,
-                    fgcolor: 3,
-                    typ: "number",
-                    validate: "call:User_UI.callback_validate_user_id"
+fn create_add_user() -> Page {
+    let meta_str = r#"
+    {
+        "clear_screen": true,
+        "include": "a",
+        "inputs": {
+            "confirm": false,
+            "fields": [
+                {
+                    "bgcolor": 12,
+                    "column": 19,
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Gew\u00fcnschte Nummer oder # eingeben",
+                    "line": 6,
+                    "name": "user_id",
+                    "type": "number",
+                    "validate": "call:User_UI.callback_validate_user_id",
+                    "width": 10
                 },
-                InputField {
-                    name: "salutation",
-                    hint: "Anrede oder # eingeben",
-                    line: 7,
-                    column: 9,
-                    height: 1,
-                    width: 20,
-                    bgcolor: 12,
-                    fgcolor: 3
+                {
+                    "bgcolor": 12,
+                    "column": 9,
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Anrede oder # eingeben",
+                    "line": 7,
+                    "name": "salutation",
+                    "width": 20
                 },
-                InputField {
-                    name: "last_name",
-                    hint: "Nachnamen oder # eingeben",
-                    line: 8,
-                    column: 7,
-                    height: 1,
-                    width: 20,
-                    bgcolor: 12,
-                    validate: "call:User_UI.callback_validate_last_name",
-                    fgcolor: 3
+                {
+                    "bgcolor": 12,
+                    "column": 7,
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Nachnamen oder # eingeben",
+                    "line": 8,
+                    "name": "last_name",
+                    "validate": "call:User_UI.callback_validate_last_name",
+                    "width": 20
                 },
-                InputField {
-                    name: "first_name",
-                    hint: "Vornamen oder # eingeben",
-                    line: 9,
-                    column: 10,
-                    height: 1,
-                    width: 20,
-                    bgcolor: 12,
-                    fgcolor: 3
+                {
+                    "bgcolor": 12,
+                    "column": 10,
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Vornamen oder # eingeben",
+                    "line": 9,
+                    "name": "first_name",
+                    "width": 20
                 },
-                InputField {
-                    name: "street",
-                    hint: "Straße und Hausnummer oder # eingeben",
-                    line: 10,
-                    column: 9,
-                    height: 1,
-                    width: 20,
-                    bgcolor: 12,
-                    fgcolor: 3
+                {
+                    "bgcolor": 12,
+                    "column": 9,
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Stra\u00dfe und Hausnummer oder # eingeben",
+                    "line": 10,
+                    "name": "street",
+                    "width": 20
                 },
-                InputField {
-                    name: "zip",
-                    hint: "Postleitzahl oder # eingeben",
-                    line: 11,
-                    column: 6,
-                    height: 1,
-                    width: 5,
-                    bgcolor: 12,
-                    fgcolor: 3,
-                    typ: "number"
+                {
+                    "bgcolor": 12,
+                    "column": 6,
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Postleitzahl oder # eingeben",
+                    "line": 11,
+                    "name": "zip",
+                    "type": "number",
+                    "width": 5
                 },
-                InputField {
-                    name: "city",
-                    hint: "Ort oder # eingeben",
-                    line: 11,
-                    column: 17,
-                    height: 1,
-                    width: 13,
-                    bgcolor: 12,
-                    fgcolor: 3
+                {
+                    "bgcolor": 12,
+                    "column": 17,
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Ort oder # eingeben",
+                    "line": 11,
+                    "name": "city",
+                    "width": 13
                 },
-                InputField {
-                    name: "country",
-                    hint: "Land oder # eingeben",
-                    line: 11,
-                    column: 37,
-                    height: 1,
-                    width: 2,
-                    bgcolor: 12,
-                    fgcolor: 3,
-                    default: "de",
-                    typ: "alpha",
-                    cursor_home: true,
-                    overwrite: true
+                {
+                    "bgcolor": 12,
+                    "column": 37,
+                    "cursor_home": true,
+                    "default": "de",
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Land oder # eingeben",
+                    "line": 11,
+                    "name": "country",
+                    "overwrite": true,
+                    "type": "alpha",
+                    "width": 2
                 },
-                InputField {
-                    name: "block_payments",
-                    hint: "j/n oder # eingeben",
-                    line: 13,
-                    column: 25,
-                    height: 1,
-                    width: 1,
-                    bgcolor: 12,
-                    fgcolor: 3,
-                    default: "n",
-                    cursor_home: true,
-                    legal_values: [ "j", "n" ]
+                {
+                    "bgcolor": 12,
+                    "column": 25,
+                    "cursor_home": true,
+                    "default": "n",
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "j/n oder # eingeben",
+                    "legal_values": [
+                        "j",
+                        "n"
+                    ],
+                    "line": 13,
+                    "name": "block_payments",
+                    "width": 1
                 },
-                InputField {
-                    name: "block_fees",
-                    hint: "j/n oder # eingeben",
-                    line: 14,
-                    column: 25,
-                    height: 1,
-                    width: 1,
-                    bgcolor: 12,
-                    fgcolor: 3,
-                    default: "n",
-                    cursor_home: true,
-                    legal_values: [ "j", "n" ]
+                {
+                    "bgcolor": 12,
+                    "column": 25,
+                    "cursor_home": true,
+                    "default": "n",
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "j/n oder # eingeben",
+                    "legal_values": [
+                        "j",
+                        "n"
+                    ],
+                    "line": 14,
+                    "name": "block_fees",
+                    "width": 1
                 },
-                InputField {
-                    name: "pocket_money_major",
-                    hint: "0-9 oder # eingeben",
-                    line: 15,
-                    column: 34,
-                    height: 1,
-                    width: 1,
-                    bgcolor: 12,
-                    fgcolor: 3,
-                    default: "9",
-                    typ: "number",
-                    cursor_home: true,
-                    overwrite: true
+                {
+                    "bgcolor": 12,
+                    "column": 34,
+                    "cursor_home": true,
+                    "default": "9",
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "0-9 oder # eingeben",
+                    "line": 15,
+                    "name": "pocket_money_major",
+                    "overwrite": true,
+                    "type": "number",
+                    "width": 1
                 },
-                InputField {
-                    name: "pocket_money_minor",
-                    hint: "00-99 oder # eingeben",
-                    line: 15,
-                    column: 36,
-                    height: 1,
-                    width: 2,
-                    bgcolor: 12,
-                    fgcolor: 3,
-                    default: "99",
-                    typ: "number",
-                    cursor_home: true,
-                    overwrite: true
+                {
+                    "bgcolor": 12,
+                    "column": 36,
+                    "cursor_home": true,
+                    "default": "99",
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "00-99 oder # eingeben",
+                    "line": 15,
+                    "name": "pocket_money_minor",
+                    "overwrite": true,
+                    "type": "number",
+                    "width": 2
                 },
-                InputField {
-                    name: "max_price_major",
-                    hint: "0-9 oder # eingeben",
-                    line: 16,
-                    column: 34,
-                    height: 1,
-                    width: 1,
-                    bgcolor: 12,
-                    fgcolor: 3,
-                    default: "9",
-                    typ: "number",
-                    cursor_home: true,
-                    overwrite: true
+                {
+                    "bgcolor": 12,
+                    "column": 34,
+                    "cursor_home": true,
+                    "default": "9",
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "0-9 oder # eingeben",
+                    "line": 16,
+                    "name": "max_price_major",
+                    "overwrite": true,
+                    "type": "number",
+                    "width": 1
                 },
-                InputField {
-                    name: "max_price_minor",
-                    hint: "00-99 oder # eingeben",
-                    line: 16,
-                    column: 36,
-                    height: 1,
-                    width: 2,
-                    bgcolor: 12,
-                    fgcolor: 3,
-                    default: "99",
-                    typ: "number",
-                    cursor_home: true,
-                    overwrite: true
+                {
+                    "bgcolor": 12,
+                    "column": 36,
+                    "cursor_home": true,
+                    "default": "99",
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "00-99 oder # eingeben",
+                    "line": 16,
+                    "name": "max_price_minor",
+                    "overwrite": true,
+                    "type": "number",
+                    "width": 2
                 },
-                InputField {
-                    name: "password",
-                    hint: "Neues Kennwort",
-                    line: 19,
-                    column: 11,
-                    height: 1,
-                    width: 14,
-                    bgcolor: 12,
-                    fgcolor: 3,
-                    typ: "password",
-                    validate: "call:User_UI.callback_validate_password",
-                },
+                {
+                    "bgcolor": 12,
+                    "column": 11,
+                    "fgcolor": 3,
+                    "height": 1,
+                    "hint": "Neues Kennwort",
+                    "line": 19,
+                    "name": "password",
+                    "type": "password",
+                    "validate": "call:User_UI.callback_validate_password",
+                    "width": 14
+                }
             ],
-            confirm: false,
-            target: "call:User_UI.callback_add_user",
+            "target": "call:User_UI.callback_add_user"
         },
-        publisher_color: 7
-    };
+        "links": {
+            "0": "0",
+            "1": "88",
+            "2": "89",
+            "5": "810"
+        },
+        "publisher_color": 7,
+        "publisher_name": "!BTX"
+    }
+    "#;
+    let meta: Meta = serde_json::from_str(meta_str).unwrap();
 
-    let cept = Cept::new();
-    cept.add_raw(create_title("Neuen Benutzer einrichten"));
+    let mut cept = Cept::new();
+    cept += create_title("Neuen Benutzer einrichten");
     cept.add_raw(b"\r\n");
     cept.add_str("Teilnehmernummer:");
     cept.set_cursor(6, 29);
@@ -463,12 +474,12 @@ fn create_add_user() {
     cept.add_str("Straße:");
     cept.add_raw(b"\r\n");
     cept.add_str("PLZ:");
-    cept.repeat(" ", 7);
+    cept.repeat(b' ', 7);
     cept.add_str("Ort:");
     cept.set_cursor(11, 31);
     cept.add_str("Land:");
     cept.add_raw(b"\r\n");
-    cept.add_raw(line());
+    cept += line();
     cept.add_str("Vergütungssperre aktiv:");
     cept.add_raw(b"\r\n");
     cept.add_str("Gebührensperre   aktiv:");
@@ -479,12 +490,13 @@ fn create_add_user() {
     cept.add_str("Max. Vergütung/Seite  :");
     cept.set_cursor(16, 35);
     cept.add_str(",   DM");
-    cept.add_raw(line());
+    cept += line();
     cept.add_raw(b"\r\n");
     cept.add_str("Kennwort: ");
     cept.add_raw(b"\r\n\r\n");
-    cept.add_raw(line());
-    return (meta, cept)
+    cept += line();
+
+    Page { cept, meta }
 }
 
 // fn callback_validate_user_id(input_data, dummy) {
