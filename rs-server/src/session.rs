@@ -85,10 +85,14 @@ pub enum CommandType {
     Error(usize)
 }
 
+struct ClientState {
+    palette: Option<String>,
+    include: Option<String>,
+}
+
 pub struct Session {
     user: Option<User>,
-    last_filename_palette: Option<String>,
-    last_filename_include: Option<String>,
+    client_state: ClientState,
     current_pageid: PageId,
     history: Vec<PageId>,
     autoplay: bool,
@@ -98,8 +102,10 @@ impl Session {
     pub fn new() -> Self {
         Self {
             user: None,
-            last_filename_palette: None,
-            last_filename_include: None,
+            client_state:ClientState {
+                palette: None,
+                include: None,
+            },
             current_pageid: PageId::empty(),
             history: vec!(),
             autoplay: false,
@@ -135,8 +141,8 @@ impl Session {
             // hard reload
             println!("command: hard reload");
             // force load palette and include
-            self.last_filename_palette = None;
-            self.last_filename_include = None;
+            self.client_state.palette = None;
+            self.client_state.include = None;
             CommandType::Goto(self.current_pageid.clone(), false)
         } else if command_input == "00" {
             // re-send CEPT data of current page
@@ -202,18 +208,13 @@ impl Session {
         }
     }
 
+    // This is only called once and loops forever
     pub fn run(&mut self, stream: &mut (impl Write + Read))
     {
         let mut target_pageid = PageId::from_str("00000").unwrap();
         let mut add_to_history = false;
-
-        self.last_filename_palette = None;
-        self.last_filename_include = None;
-
         let mut links = None;
-
         let mut inputs = None;
-
         let mut current_page_cept = Cept::new();
 
         'main: loop {
@@ -223,7 +224,7 @@ impl Session {
             // *** show page
             println!("showing page: {}", target_pageid.to_string());
             if let Some(page) = self.get_page(&target_pageid) {
-                current_page_cept = self.construct_page_cept(&page, &target_pageid);
+                current_page_cept = Self::construct_page_cept(&mut self.client_state, &page, &target_pageid);
                 write_stream(stream, current_page_cept.data());
                 links = page.meta.links;
                 inputs = page.meta.inputs;
@@ -443,9 +444,10 @@ impl Session {
         panic!();
     }
 
-    pub fn construct_page_cept(&mut self, page: &Page, pageid: &PageId) -> Cept {
-        let mut cept = self.cept_preamble_from_meta(&page, pageid);
-        cept += self.cept_main_from_page(&page, pageid);
+    fn construct_page_cept(client_state: &mut ClientState, page: &Page, pageid: &PageId) -> Cept {
+        let mut cept;
+        cept = Self::cept_preamble_from_meta(client_state, &page, pageid);
+        cept += Self::cept_main_from_page(client_state, &page, pageid);
 
         // if compress {
         //     page_cept_data_1 = Cept.compress(page_cept_data_1)
@@ -455,7 +457,7 @@ impl Session {
     }
 
     //
-    fn cept_preamble_from_meta(&mut self, page: &Page, pageid: &PageId) -> Cept {
+    fn cept_preamble_from_meta(client_state: &mut ClientState, page: &Page, pageid: &PageId) -> Cept {
         let mut cept = Cept::new();
 
         cept.hide_cursor();
@@ -463,7 +465,7 @@ impl Session {
         if page.meta.clear_screen == Some(true) {
             cept.serial_limited_mode();
             cept.clear_screen();
-            self.last_filename_include = None;
+            client_state.include = None;
         }
 
         let basedir = find_basedir(pageid).unwrap().0;
@@ -475,8 +477,8 @@ impl Session {
             filename_palette += ".pal";
             println!("filename_palette = {}", filename_palette);
             // println!("last_filename_palette = {}", last_filename_palette);
-            if Some(filename_palette.clone()) != self.last_filename_palette {
-                self.last_filename_palette = Some(filename_palette.clone());
+            if Some(filename_palette.clone()) != client_state.palette {
+                client_state.palette = Some(filename_palette.clone());
                 let f = File::open(&filename_palette).unwrap();
                 let palette: Palette = serde_json::from_reader(f).unwrap();
                 cept.define_palette(&palette.palette, palette.start_color);
@@ -484,7 +486,7 @@ impl Session {
                 println!("skipping palette");
             }
         } else {
-            self.last_filename_palette = None;
+            client_state.palette = None;
         }
 
         if let Some(include) = &page.meta.include {
@@ -500,8 +502,8 @@ impl Session {
             // }
             println!("Filename_include = {}", filename_include);
 
-            if Some(filename_include.clone()) != self.last_filename_include || page.meta.clear_screen == Some(true) {
-                self.last_filename_include = Some(filename_include.clone());
+            if Some(filename_include.clone()) != client_state.include || page.meta.clear_screen == Some(true) {
+                client_state.include = Some(filename_include.clone());
                 // if os.path.isfile(filename_include) {
                     let mut cept_include : Vec<u8> = vec!();
                     let mut f = File::open(&filename_include).unwrap();
@@ -520,7 +522,7 @@ impl Session {
                 cept.add_raw(&cept_include);
             // }
             } else {
-                self.last_filename_include = None;
+                client_state.include = None;
             }
 
         // b = baud if baud else 1200
@@ -531,13 +533,13 @@ impl Session {
         cept
     }
 
-    fn cept_main_from_page(&mut self, page: &Page, pageid: &PageId) -> Cept {
+    fn cept_main_from_page(client_state: &mut ClientState, page: &Page, pageid: &PageId) -> Cept {
         let mut cept = Cept::new();
 
         if page.meta.cls2 == Some(true) {
             cept.serial_limited_mode();
             cept.clear_screen();
-            self.last_filename_include = None;
+            client_state.include = None;
         }
 
         headerfooter(&mut cept, pageid, page.meta.publisher_name.as_deref(), page.meta.publisher_color.unwrap());
