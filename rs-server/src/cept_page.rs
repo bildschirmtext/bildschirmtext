@@ -22,7 +22,7 @@ struct CeptPage {
 	title_image_height: usize,
 	lines_per_sheet: usize,
 	prev_sheet: usize,
-	characterset: CharacterSet,
+	characterset: usize,
 	// drcs_start_for_first_sheet = None
 }
 
@@ -43,7 +43,7 @@ impl CeptPage {
             title_image_height: 0,
             lines_per_sheet: 17,
             prev_sheet: 0,
-            characterset: CharacterSet {},
+            characterset: 0,
         }
     }
 
@@ -62,7 +62,7 @@ impl CeptPage {
                 // self.drcs_start_for_first_sheet = self.characterset.drcs_code; // XXX
             }
 			// new character set for every sheet
-            self.characterset = CharacterSet {};
+            self.characterset = 0;
         }
     }
 
@@ -109,7 +109,7 @@ impl CeptPage {
         if self.dirty {
             self.resend_attributes();
         }
-        self.data_cept.add_str_characterset(s, Some(&self.characterset));
+        self.data_cept.add_str_characterset(s, Some(self.characterset));
     }
 
     fn print_internal(&mut self, s: &str) {

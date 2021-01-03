@@ -63,7 +63,7 @@ impl Cept {
         self.add_str_characterset(s_in, None);
     }
 
-    pub fn add_str_characterset(&mut self, s_in: &str, characterset: Option<&CharacterSet>) {
+    pub fn add_str_characterset(&mut self, s_in: &str, characterset: Option<usize>) {
         for c in s_in.chars() {
             match c {
                 '¤' => self.data.push(b'$'),         // $ and ¤ are swapped

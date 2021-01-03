@@ -1,3 +1,4 @@
+use chrono::Utc;
 use std::io::{Read, Write};
 use std::fs::File;
 use std::collections::HashMap;
@@ -47,7 +48,7 @@ impl Session {
         let mut history: Vec<String> = vec!();
         let mut error = 0;
 
-        let showing_message = false;
+        let mut showing_message = false;
 
         self.last_filename_palette = None;
         self.last_filename_include = None;
@@ -127,14 +128,16 @@ impl Session {
                     history.push(current_pageid.clone());
                 };
             } else {
-            //     if desired_pageid:
-            // 		sys.stderr.write("ERROR: Page not found: " + desired_pageid + "\n")
-            // 	if (desired_pageid[-1] >= "b" and desired_pageid[-1] <= "z"):
-            // 		code = 101
-            // 	cept_data = Util.create_system_message(error) + Cept.sequence_end_of_page()
-            // 	sys.stdout.buffer.write(cept_data)
-            // 	sys.stdout.flush()
-            // 	showing_message = True
+                if desired_pageid != "" {
+                    println!("ERROR: Page not found: {}", desired_pageid);
+                    if desired_pageid.chars().last().unwrap() >= 'b' && desired_pageid.chars().last().unwrap() <= 'z' {
+                        error = 101;
+                    }
+                }
+                let mut cept = create_system_message(error, None);
+                cept.sequence_end_of_page();
+            	write_stream(stream, cept.data());
+            	showing_message = true;
             }
 
             desired_pageid = "".to_string();
@@ -552,3 +555,37 @@ fn format_currency(price: f32) -> String {
     format!("DM  {},{:02}", (price / 100.0).floor(), (price % 100.0).floor())
 }
 
+fn create_system_message(code: usize, price: Option<f32>) -> Cept {
+    let mut text = String::new();
+    let mut prefix = "SH";
+    if code == 0 {
+        text = "                               ".to_owned();
+    } else if code == 10 {
+        text = "Rückblättern nicht möglich     ".to_owned();
+    } else if code == 44 {
+        text = "Absenden? Ja:19 Nein:2         ".to_owned();
+    } else if code == 47 {
+        text = format!("Absenden für {}? Ja:19 Nein:2", format_currency(price.unwrap()));
+    } else if code == 55 {
+        text = "Eingabe wird bearbeitet        ".to_owned();
+    } else if code == 73 {
+        let current_datetime = Utc::now().format("%d.%m.%Y %H:%M").to_string();
+        text = format!("Abgesandt {}, -> #  ", current_datetime);
+        prefix = "1B";
+    } else if code == 100 || code == 101 {
+        text = "Seite nicht vorhanden          ".to_owned();
+    } else if code == 291 {
+        text = "Seite wird aufgebaut           ".to_owned();
+    }
+
+    let mut msg = Cept::new();
+    msg.service_break(24);
+    msg.clear_line();
+    msg.add_str_characterset(&text, Some(1));
+    msg.hide_text();
+    msg.add_raw(b"\x08");
+    msg.add_str(prefix);
+    msg.add_str(&format!("{:03}", code));
+    msg.service_break_back();
+    msg
+}
