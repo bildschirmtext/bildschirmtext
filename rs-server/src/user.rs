@@ -166,7 +166,7 @@ impl User {
         true
     }
 
-	fn login(user_id: &str, ext: &str, password: &str, force: bool) -> bool {
+	pub fn login(user_id: &str, ext: &str, password: &str, force: bool) -> bool {
 		let (user_id, ext) = Self::sanitize(&user_id, &ext);
 		let filename = Self::secrets_filename(&user_id, &ext);
         if let Ok(f) = File::open(&filename) {

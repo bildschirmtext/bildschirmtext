@@ -1,10 +1,19 @@
 use std::io::{Read, Write};
 use std::fs::File;
+use std::collections::HashMap;
 use super::cept::*;
 use super::editor::*;
 use super::stat::*;
 use super::pages::*;
 use super::user::*;
+
+macro_rules! hashmap {
+    ($( $key: expr => $val: expr ),*) => {{
+         let mut map = ::std::collections::HashMap::new();
+         $( map.insert($key, $val); )*
+         map
+    }}
+}
 
 
 pub enum Validate {
@@ -132,7 +141,7 @@ impl Session {
 
             let input_data = if autoplay {
                 println!("autoplay!");
-                vec!(( "$navigation".to_owned(), "".to_owned() ))
+                hashmap!["$navigation".to_owned() => "".to_owned()]
             } else {
                 if inputs.is_none() {
                     let mut legal_values = vec!();
@@ -172,16 +181,15 @@ impl Session {
                     });
                 }
 
-                Self::handle_inputs(&desired_pageid, &mut inputs.unwrap(), stream)
+                Self::handle_inputs(&current_pageid, &mut inputs.unwrap(), stream)
             };
             println!("input_data: {:?}", input_data);
 
             error = 0;
-            if input_data[0].0 == "$command" {
-                desired_pageid = input_data[0].1.clone();
+            if let Some(d) = input_data.get("$command") {
+                desired_pageid = d.clone();
             } else {
-                assert_eq!(input_data[0].0, "$navigation");
-                let val = input_data[0].1.clone();
+                let val = input_data.get("$navigation").unwrap();
                 let val_or_hash = if val.len() != 0 { val.clone() } else { "#".to_owned() };
                 let mut found = false;
                 for link in links.unwrap() {
@@ -220,7 +228,7 @@ impl Session {
         }
     }
 
-    fn handle_inputs(pageid: &str, inputs: &mut Inputs, stream: &mut (impl Write + Read)) -> Vec<(String, String)> {
+    fn handle_inputs(pageid: &str, inputs: &mut Inputs, stream: &mut (impl Write + Read)) -> HashMap<String, String> {
         // create editors and draw backgrounds
         let mut editors = vec!();
         for input_field in &mut inputs.fields {
@@ -231,7 +239,7 @@ impl Session {
         }
 
         // get all inputs
-        let mut input_data = vec!();
+        let mut input_data = HashMap::new();
         let mut i = 0;
         let mut skip = false;
         while i < inputs.fields.len() {
@@ -245,11 +253,11 @@ impl Session {
 
             if let Some(val) = &val {
                 if val.starts_with(0x13 as char) { // XXX Cept.ini()
-                    return vec!(("$command".to_string(), val[1..].to_string()));
+                    return hashmap!["$command".to_string() => val[1..].to_string()];
                 }
             }
 
-            input_data.push((input_field.name.to_string(), val.unwrap().to_string()));
+            input_data.insert(input_field.name.to_string(), val.unwrap().to_string());
 
 
             let mut validate_result = Validate::Ok;
@@ -292,11 +300,11 @@ impl Session {
         // send "input_data" to "inputs.target"
         if let Some(target) = &inputs.target {
         	if target.starts_with("page:") {
-                vec!(("$command".to_owned(), target[5..].to_owned()))
+                hashmap!["$command".to_owned() => target[5..].to_owned()]
             } else {
                 // XXX we should loop
                 let handle_result = Self::handle(pageid, &input_data);
-                vec!(("$command".to_owned(), handle_result))
+                hashmap!["$command".to_owned() => handle_result]
             }
         } else {
             input_data
@@ -316,7 +324,7 @@ impl Session {
         }
     }
 
-    pub fn validate(pageid: &str, input_data: &[(String, String)]) -> Validate {
+    pub fn validate(pageid: &str, input_data: &HashMap<String, String>) -> Validate {
         if pageid.starts_with("00000") || pageid == "9a" {
             super::login::validate(pageid, input_data)
         } else {
@@ -324,7 +332,7 @@ impl Session {
         }
     }
 
-    pub fn handle(pageid: &str, input_data: &[(String, String)]) -> String {
+    pub fn handle(pageid: &str, input_data: &HashMap<String, String>) -> String {
         panic!();
     }
 

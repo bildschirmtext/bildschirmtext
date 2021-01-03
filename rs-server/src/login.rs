@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use chrono::Utc;
 use super::editor::*;
 use super::pages::*;
@@ -16,17 +17,23 @@ pub fn create(pageid: &str, user: Option<&User>) -> Option<Page> {
     }
 }
 
-pub fn validate(pageid: &str, input_data: &[(String, String)]) -> Validate {
-    // if !User.login(input_data["user_id"], input_data["ext"], input_data["password"]):
-    //     sys.stderr.write("login incorrect\n")
-    //     msg = Util.create_custom_system_message("Ungültiger Teilnehmer/Kennwort -> #")
-    //     sys.stdout.buffer.write(msg)
-    //     sys.stdout.flush()
-    //     Util.wait_for_ter()
-    //     return Util.VALIDATE_INPUT_RESTART
-    // else:
-    //     sys.stderr.write("login ok\n")
-    Validate::Ok
+pub fn validate(pageid: &str, input_data: &HashMap<String, String>) -> Validate {
+    if User::login(
+        input_data.get("user_id").unwrap(),
+        input_data.get("ext").unwrap(),
+        input_data.get("password").unwrap(),
+        false
+    ) {
+        println!("login ok");
+        Validate::Ok
+    } else {
+        println!("login incorrect");
+        // msg = Util.create_custom_system_message("Ungültiger Teilnehmer/Kennwort -> #")
+        // sys.stdout.buffer.write(msg)
+        // sys.stdout.flush()
+        // Util.wait_for_ter()
+        Validate::Restart
+    }
 }
 
 fn create_login() -> Page {
