@@ -192,10 +192,11 @@ impl Session {
                     no_55: true,
                     target: None,
                     no_navigation: false,
+                    price: None,
                 };
                 Self::handle_text_fields(&self.current_pageid, &inputs, stream)
             } else {
-                let mut inputs = inputs.unwrap();
+                let inputs = inputs.unwrap();
                 Self::handle_text_fields(&self.current_pageid, &inputs, stream)
             }
         }
@@ -205,9 +206,6 @@ impl Session {
     {
         let mut target_pageid = PageId::from_str("00000").unwrap();
         let mut add_to_history = false;
-
-        let compress = false;
-
 
         self.last_filename_palette = None;
         self.last_filename_include = None;
@@ -358,20 +356,19 @@ impl Session {
         }
 
         // confirmation
-        // if inputs.confirm {
-        // 	if confirm(inputs) {
-        // 		if inputs.action == "send_message" {
-        // 			User.user().messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
-        // 			system_message_sent_message()
-        //         } else {
-        //             pass // TODO we stay on the page, in the navigator?
-        //         }
-        //     }
-        // } else if !inputs.no_55 {
-        // 	cept_data = Util.create_system_message(55)
-        // 	sys.stdout.buffer.write(cept_data)
-        //     sys.stdout.flush()
-        // }
+        if inputs.confirm {
+        	if Self::confirm(inputs, stream) {
+        		// if inputs.action == "send_message" {
+        		// 	User.user().messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
+        		// 	system_message_sent_message()
+                // } else {
+                //     // TODO we stay on the page, in the navigator?
+                // }
+            }
+        } else if !inputs.no_55 {
+        	let cept = create_system_message(55, None);
+        	write_stream(stream, cept.data());
+        }
 
         // send "input_data" to "inputs.target"
         if let Some(target) = &inputs.target {
@@ -389,6 +386,38 @@ impl Session {
         }
 
     }
+
+    fn confirm(inputs: &Inputs, stream: &mut (impl Write + Read)) -> bool { // "send?" message
+        let price = inputs.price;
+        let mut cept = if price.is_some() && price != Some(0) {
+            create_system_message(47, price)
+        } else {
+            create_system_message(44, None)
+        };
+        cept.set_cursor(24, 1);
+        cept.sequence_end_of_page();
+        write_stream(stream, cept.data());
+
+        // TODO: use an editor for this, too!
+        let mut seen_a_one = false;
+        loop {
+            let c = readchar(stream);
+            if c == b'2' {
+                write_stream(stream, &[c]);
+                return false;
+            } else if c == b'1' && !seen_a_one {
+                write_stream(stream, &[c]);
+                seen_a_one = true;
+            } else if c == b'9' && seen_a_one {
+                write_stream(stream, &[c]);
+                return true;
+            } else if c == 8 && seen_a_one {
+                write_stream(stream, &[c]);
+                seen_a_one = false;
+            }
+        }
+    }
+
 
     pub fn get_page(&self, pageid: &PageId) -> Option<Page> {
         if pageid.page.starts_with("00000") || pageid.page == "9" {
@@ -610,7 +639,7 @@ pub fn headerfooter(cept: &mut Cept, pageid: &PageId, publisher_name: Option<&st
         cept.add_str(publisher_name.unwrap());
 		cept.set_cursor(1, 31);
 		cept.add_raw(b"  ");
-        cept.add_str(&format_currency(0.0));
+        cept.add_str(&format_currency(0));
     }
 
 	cept.cursor_home();
@@ -620,11 +649,11 @@ pub fn headerfooter(cept: &mut Cept, pageid: &PageId, publisher_name: Option<&st
 }
 
 
-fn format_currency(price: f32) -> String {
-    format!("DM  {},{:02}", (price / 100.0).floor(), (price % 100.0).floor())
+fn format_currency(price: u32) -> String {
+    format!("DM  {},{:02}", price / 100, price % 100)
 }
 
-fn create_system_message(code: usize, price: Option<f32>) -> Cept {
+fn create_system_message(code: usize, price: Option<u32>) -> Cept {
     let mut text = String::new();
     let mut prefix = "SH";
     if code == 0 {

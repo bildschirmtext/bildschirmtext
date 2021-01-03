@@ -92,6 +92,7 @@ pub struct InputField {
 pub struct Inputs {
     pub fields: Vec<InputField>,
     pub target: Option<String>,
+    pub price: Option<u32>,
     #[serde(default)]
     pub confirm: bool,
     #[serde(default)]
@@ -506,7 +507,7 @@ impl Editor {
     }
 }
 
-fn readchar(stream: &mut impl Read) -> u8 {
+pub fn readchar(stream: &mut impl Read) -> u8 {
     let mut buf = [0];
     stream.read(&mut buf);
     buf[0]
