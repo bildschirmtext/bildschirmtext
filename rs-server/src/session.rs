@@ -28,7 +28,7 @@ impl PageId {
         }
     }
 
-    fn kill_leading(&self, n: usize) -> Self {
+    pub fn reduced_by(&self, n: usize) -> Self {
         PageId {
             page: self.page[n..].to_owned(),
             sub: self.sub
@@ -116,7 +116,7 @@ impl Session {
 
             // *** show page
             println!("showing page: {}", target_pageid.to_string());
-            if let Some(page) = self.get_page(&target_pageid) {
+            if let Some(page) = super::dispatch::get_page(&target_pageid, self.user.as_ref()) {
                 current_page_cept = page.construct_page_cept(&mut self.client_state, &target_pageid);
                 write_stream(stream, current_page_cept.data());
                 links = page.meta.links;
@@ -178,11 +178,12 @@ impl Session {
     fn get_inputs(&self, pageid: &PageId, inputs: Option<&Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputEvent {
         if self.autoplay {
             println!("autoplay!");
-            // inject "#"
-            InputEvent::Navigation("".to_owned())
+            InputEvent::Navigation("".to_owned()) // inject "#"
         } else {
             let i;
             let inputs = if inputs.is_none() {
+                // for pages without text fields, create a single text
+                // field at the bottom of the screen to input a link
                 let mut legal_values = vec!();
                 if let Some(links) = links.clone() {
                     for link in links {
@@ -257,7 +258,7 @@ impl Session {
 
                 let mut validate_result = Validate::Ok;
                 if input_field.validate {
-                    validate_result = self.validate(pageid, &input_data);
+                    validate_result = super::dispatch::validate(pageid, &input_data);
                 }
 
                 match validate_result {
@@ -276,7 +277,7 @@ impl Session {
                 }
             }
 
-            // confirmation
+            // ask for confirmation
             if inputs.confirm {
                 if Self::confirm(&inputs, stream) {
                     // if inputs.action == "send_message" {
@@ -297,7 +298,7 @@ impl Session {
                     return InputEvent::Command(target[5..].to_owned());
                 } else {
                     // XXX we should loop
-                    let handle_result = self.handle(pageid, &input_data);
+                    let handle_result = super::dispatch::handle(pageid, &input_data);
                     return InputEvent::Command(handle_result);
                 }
             } else if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
@@ -308,9 +309,6 @@ impl Session {
 
         }
     }
-
-    // fn handle_text_fields(&self, pageid: &PageId, inputs: &Inputs, stream: &mut (impl Write + Read)) -> InputEvent {
-    // }
 
     fn confirm(inputs: &Inputs, stream: &mut (impl Write + Read)) -> bool { // "send?" message
         let price = inputs.price;
@@ -408,29 +406,6 @@ impl Session {
         UserRequest::SendAgain // XXX TODO handle text field input
     }
 
-    pub fn get_page(&self, pageid: &PageId) -> Option<Page> {
-        if pageid.page.starts_with("00000") || pageid.page == "9" {
-            super::login::create(pageid, self.user.as_ref())
-        } else if pageid.page == "77" {
-            super::user::create(pageid)
-        } else if pageid.page.starts_with('7') {
-            Some(super::historic::create(&pageid.kill_leading(1)))
-        } else {
-            super::stat::create(pageid)
-        }
-    }
-
-    pub fn validate(&self, pageid: &PageId, input_data: &HashMap<String, String>) -> Validate {
-        if pageid.page.starts_with("00000") || pageid.page == "9" {
-            super::login::validate(pageid, input_data)
-        } else {
-            Validate::Ok
-        }
-    }
-
-    pub fn handle(&self, pageid: &PageId, input_data: &HashMap<String, String>) -> String {
-        panic!();
-    }
 }
 
 fn show_error(error: usize, stream: &mut (impl Write + Read)) {

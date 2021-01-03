@@ -1,5 +1,6 @@
 mod cept;
 mod cept_page;
+mod dispatch;
 mod editor;
 mod historic;
 mod login;
