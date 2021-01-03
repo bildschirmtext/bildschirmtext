@@ -151,7 +151,7 @@ impl Session {
     // * for pages with text fields, draw them and allow editing them
     // * for pages with without text fields, allow entering a link
     // In both cases, it is possible to escape into command mode.
-    fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputData {
+    fn get_inputs(&self, inputs: Option<&Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputData {
         if self.autoplay {
             println!("autoplay!");
             // inject "#"
@@ -185,7 +185,6 @@ impl Session {
                             end_on_legal_string: true,
                             echo_ter: true,
                             command_mode: false,
-                            no_navigation: false,
                             validate: false,
                             default: None,
                         }),
@@ -194,10 +193,10 @@ impl Session {
                     target: None,
                     no_navigation: false,
                 };
-                Self::handle_text_fields(&self.current_pageid, &mut inputs, stream)
+                Self::handle_text_fields(&self.current_pageid, &inputs, stream)
             } else {
                 let mut inputs = inputs.unwrap();
-                Self::handle_text_fields(&self.current_pageid, &mut inputs, stream)
+                Self::handle_text_fields(&self.current_pageid, &inputs, stream)
             }
         }
     }
@@ -248,7 +247,7 @@ impl Session {
 
             'input: loop {
                 // *** get user input
-                let input_data = self.get_inputs(inputs.as_mut(), links.as_ref(), stream);
+                let input_data = self.get_inputs(inputs.as_ref(), links.as_ref(), stream);
                 // println!("input_data: {:?}", input_data);
 
                 // *** handle input
@@ -305,12 +304,12 @@ impl Session {
         write_stream(stream, cept.data());
     }
 
-    fn handle_text_fields(pageid: &PageId, inputs: &mut Inputs, stream: &mut (impl Write + Read)) -> InputData {
+    fn handle_text_fields(pageid: &PageId, inputs: &Inputs, stream: &mut (impl Write + Read)) -> InputData {
         // create editors and draw backgrounds
         let mut editors = vec!();
-        for input_field in &mut inputs.fields {
-            input_field.no_navigation = inputs.no_navigation;
-            let editor = Editor::new(input_field);
+        for input_field in &inputs.fields {
+            let mut editor = Editor::new(input_field);
+            editor.no_navigation = inputs.no_navigation;
             editor.draw(stream);
             editors.push(editor);
         }

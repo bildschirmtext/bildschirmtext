@@ -83,8 +83,6 @@ pub struct InputField {
     #[serde(default)]
     pub command_mode: bool,
     #[serde(default)]
-    pub no_navigation: bool,
-    #[serde(default)]
     pub validate: bool,
 }
 
@@ -107,13 +105,14 @@ pub struct Editor {
     data: Vec<String>,
     x: u8,
     y: u8,
+    pub no_navigation: bool,
     last_c: char,
 }
 
 impl Editor {
     pub fn new(input_field: &InputField) -> Self {
         let data = vec!(input_field.default.clone().unwrap_or_default());
-        Editor { input_field: input_field.clone(), data, x: 0, y: 0, last_c: '\0' }
+        Editor { input_field: input_field.clone(), data, x: 0, y: 0, no_navigation: false, last_c: '\0' }
     }
 
 	pub fn string(&self) -> String {
@@ -393,7 +392,6 @@ impl Editor {
                             cursor_home: false,
                             end_on_illegal_character: false,
                             end_on_legal_string: false,
-                            no_navigation: false,
                             validate: false,
                         };
                         let mut editor = Editor::new(&input_field);
@@ -428,7 +426,7 @@ impl Editor {
                                 x1 += "00";
                                 let mut x2 = cept_ini_str().to_owned();
                                 x2 += "09";
-                                    if !self.input_field.no_navigation || val == x1 || val == x2 {
+                                    if !self.no_navigation || val == x1 || val == x2 {
                                     return (Some(val), false);
                                 }
                                 println!("ignoring navigation");
