@@ -144,7 +144,6 @@ impl Session {
             // if User.user() is not None:
             // 	User.user().stats.update()
 
-            let mut add_to_history = true;
             if error == 0 {
                 match self.target_pageid_from_command(&command_input) {
                     Ok((target_pageid, add_to_history)) => {
