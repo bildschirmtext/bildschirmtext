@@ -149,7 +149,7 @@ impl Session {
 
     // Handle page interactivity:
     // * for pages with text fields, draw them and allow editing them
-    // * for pages with links, allow entering one
+    // * for pages with without text fields, allow entering a link
     // In both cases, it is possible to escape into command mode.
     fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputData {
         if self.autoplay {
@@ -157,7 +157,7 @@ impl Session {
             // inject "#"
             InputData::Navigation("".to_owned())
         } else {
-            let input_data = if inputs.is_none() {
+            if inputs.is_none() {
                 let mut legal_values = vec!();
                 if let Some(links) = links.clone() {
                     for link in links {
@@ -194,17 +194,10 @@ impl Session {
                     target: None,
                     no_navigation: false,
                 };
-                Self::handle_inputs(&self.current_pageid, &mut inputs, stream)
+                Self::handle_text_fields(&self.current_pageid, &mut inputs, stream)
             } else {
                 let mut inputs = inputs.unwrap();
-                Self::handle_inputs(&self.current_pageid, &mut inputs, stream)
-            };
-            if let Some(val) = input_data.get(INPUT_NAME_COMMAND) {
-                InputData::Command(val.to_owned())
-            } else if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
-                InputData::Navigation(val.to_owned())
-            } else {
-                InputData::TextFields(input_data)
+                Self::handle_text_fields(&self.current_pageid, &mut inputs, stream)
             }
         }
     }
@@ -312,7 +305,7 @@ impl Session {
         write_stream(stream, cept.data());
     }
 
-    fn handle_inputs(pageid: &PageId, inputs: &mut Inputs, stream: &mut (impl Write + Read)) -> HashMap<String, String> {
+    fn handle_text_fields(pageid: &PageId, inputs: &mut Inputs, stream: &mut (impl Write + Read)) -> InputData {
         // create editors and draw backgrounds
         let mut editors = vec!();
         for input_field in &mut inputs.fields {
@@ -337,7 +330,7 @@ impl Session {
 
             if let Some(val) = &val {
                 if val.starts_with(0x13 as char) { // XXX Cept.ini()
-                    return hashmap![INPUT_NAME_COMMAND.to_string() => val[1..].to_string()];
+                    return InputData::Command(val[1..].to_string());
                 }
             }
 
@@ -384,14 +377,16 @@ impl Session {
         // send "input_data" to "inputs.target"
         if let Some(target) = &inputs.target {
         	if target.starts_with("page:") {
-                hashmap![INPUT_NAME_COMMAND.to_owned() => target[5..].to_owned()]
+                return InputData::Command(target[5..].to_owned());
             } else {
                 // XXX we should loop
                 let handle_result = Self::handle(pageid, &input_data);
-                hashmap![INPUT_NAME_COMMAND.to_owned() => handle_result]
+                return InputData::Command(handle_result);
             }
+        } else if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
+            return InputData::Navigation(val.to_owned())
         } else {
-            input_data
+            return InputData::TextFields(input_data);
         }
 
     }
