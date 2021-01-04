@@ -19,19 +19,13 @@ pub fn create(pageid: &PageId, user: Option<&User>) -> Option<Page> {
 }
 
 pub fn action_login(_: &PageId, input_data: &HashMap<String, String>) -> UserRequest {
-    println!("user: '{}'", input_data.get("user_id").unwrap());
-    if User::login(
-        input_data.get("user_id").unwrap(),
-        input_data.get("ext").unwrap(),
-        input_data.get("password").unwrap(),
-        false
-    ) {
-        println!("login ok");
-        UserRequest::Goto(PageId::from_str("000001").unwrap(), true)
-    } else {
-        println!("login incorrect");
-        UserRequest::Error(Error::Custom("Ungültiger Teilnehmer/Kennwort -> #".to_owned()))
-    }
+    UserRequest::Login(
+        UserId::new(
+            input_data.get("user_id").unwrap(),
+            input_data.get("ext").unwrap(),
+        ),
+        input_data.get("password").unwrap().clone(),
+    )
 }
 
 fn create_login() -> Page {
@@ -196,17 +190,24 @@ fn create_start(user: Option<&User>) -> Page {
     let mut user_name;
     if let Some(user) = user {
         user_name = String::new();
-        if let Some(salutation) = &user.salutation {
-            user_name += &salutation;
-            user_name.push('\n');
-        }
-        if let Some(first_name) = &user.first_name {
-            user_name += &first_name;
-            user_name.push('\n');
-        }
-        if let Some(last_name) = &user.last_name {
-            user_name += &last_name;
-            user_name.push('\n');
+        match &user.public {
+            UserDataPublic::Person(person) => {
+                if let Some(salutation) = &person.salutation {
+                    user_name += &salutation;
+                    user_name.push('\n');
+                }
+                if let Some(first_name) = &person.first_name {
+                    user_name += &first_name;
+                    user_name.push('\n');
+                }
+                if let Some(last_name) = &person.last_name {
+                    user_name += &last_name;
+                    user_name.push('\n');
+                }
+            },
+            UserDataPublic::Organization(organization) => {
+
+            }
         }
     } else {
         user_name = "".to_owned();

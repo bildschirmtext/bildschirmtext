@@ -11,23 +11,64 @@ const PATH_SECRETS: &str = "../secrets/";
 const PATH_STATS: &str = "../stats/";
 
 #[derive(Serialize, Deserialize)]
-pub struct User {
-    pub user_id: String,
-	pub ext: String,
-	pub personal_data: bool,
+pub struct UserId {
+    pub id: String,
+    pub ext: String,
+}
 
-	// public - person
-	pub salutation: Option<String>,
-	pub first_name: Option<String>,
-	pub last_name: Option<String>,
-	// public - organization
-	pub org_name: Option<String>,
-	pub org_add_name: Option<String>,
-	// personal_data
+impl UserId {
+	pub fn new(id: &str, ext: &str) -> Self {
+        let mut id = id.to_owned();
+        let mut ext = ext.to_owned();
+        if id == "" {
+            id = "0".to_owned();
+        }
+		if ext == "" {
+            ext = "1".to_owned();
+        }
+        Self { id, ext }
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut s = self.id.clone();
+        s.push('-');
+        s += &self.ext;
+        s
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum UserDataPublic {
+    Person(UserDataPublicPerson),
+    Organization(UserDataPublicOrganization),
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UserDataPublicPerson {
+    pub salutation: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UserDataPublicOrganization {
+    pub org_name: Option<String>,
+    pub org_add_name: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UserDataPrivate {
 	pub street: Option<String>,
 	pub zip: Option<String>,
 	pub city: Option<String>,
 	pub country: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct User {
+    pub userid: UserId,
+	pub public: UserDataPublic,
+	pub private: UserDataPrivate,
 
 	// stats: None
 	// messaging: None
@@ -50,12 +91,10 @@ struct Stats {
     stats_data: StatsData,
 }
 
-fn filename(user_id: &str, ext: &str, path: &str, file_extension: &str) -> String {
+fn filename(userid: &UserId, path: &str, file_extension: &str) -> String {
     let mut s = String::new();
     s += path;
-    s += user_id;
-    s.push('-');
-    s += ext;
+    s += &userid.to_string();
     s.push('.');
     s += file_extension;
     s
@@ -63,7 +102,7 @@ fn filename(user_id: &str, ext: &str, path: &str, file_extension: &str) -> Strin
 
 impl Stats {
 	pub fn new(user: &User) -> Self {
-		let filename = filename(&user.user_id, &user.ext, PATH_STATS, &".stats");
+		let filename = filename(&user.userid, PATH_STATS, &".stats");
         let f = File::open(&filename).unwrap();
         let stats_data: StatsData = serde_json::from_reader(f).unwrap();
         Stats {
@@ -82,44 +121,29 @@ impl Stats {
 }
 
 impl User {
-	fn sanitize(user_id: &str, ext: &str) -> (String, String) {
-        let mut user_id = user_id.to_owned();
-        let mut ext = ext.to_owned();
-        if user_id == "" {
-            user_id = "0".to_owned();
-        }
-		if ext == "" {
-            ext = "1".to_owned();
-        }
-        (user_id, ext)
+    fn user_filename(userid: &UserId) -> String {
+        filename(userid, PATH_USERS, "user")
     }
 
-    fn user_filename(user_id: &str, ext: &str) -> String {
-        filename(user_id, ext, PATH_USERS, "user")
+	fn secrets_filename(userid: &UserId) -> String {
+        filename(userid, PATH_SECRETS, "secrets")
     }
 
-	fn secrets_filename(user_id: &str, ext: &str) -> String {
-        filename(user_id, ext, PATH_SECRETS, "secrets")
-    }
-
-    fn exists(user_id: &str, ext: Option<&str>) -> bool {
-        let ext = ext.unwrap_or(&"");
-		let (user_id, ext) = Self::sanitize(&user_id, &ext);
-		let filename = Self::user_filename(&user_id, &ext);
+    fn exists(userid: &UserId) -> bool {
+		let filename = Self::user_filename(&userid);
         is_file(&filename)
     }
 
-	fn get(user_id: &str, ext: &str, personal_data: bool) -> Option<User> {
-		let (user_id, ext) = Self::sanitize(&user_id, &ext);
-		let filename = Self::user_filename(&user_id, &ext);
+	fn get(userid: &UserId, personal_data: bool) -> Option<User> {
+		let filename = Self::user_filename(&userid);
         let f = File::open(&filename).ok()?;
-        let user: User = serde_json::from_reader(f).ok()?;
+        let user: User = serde_json::from_reader(f).unwrap();
 		// user.messaging = Messaging(user)
         Some(user)
     }
 
 	fn create(
-        user_id: &str,
+        id: &str,
         ext: &str,
         password: &str,
         salutation: &str,
@@ -130,27 +154,27 @@ impl User {
         city: &str,
         country: &str
     ) -> bool {
-		let user_filename = Self::user_filename(user_id, ext);
-		let secrets_filename = Self::secrets_filename(user_id, ext);
+        let userid = UserId::new(id, ext);
+		let user_filename = Self::user_filename(&userid);
+		let secrets_filename = Self::secrets_filename(&userid);
 		// if the user exists, don't overwrite it!
-		if User::exists(user_id, Some(ext)) {
+		if User::exists(&userid) {
 			println!("user already exists!");
             return false;
         }
 		let user = User {
-            user_id: user_id.to_owned(),
-            ext: ext.to_owned(),
-			salutation: Some(salutation.to_owned()),
-			first_name: Some(first_name.to_owned()),
-			last_name: Some(last_name.to_owned()),
-			street: Some(street.to_owned()),
-			zip: Some(zip.to_owned()),
-			city: Some(city.to_owned()),
-            country: Some(country.to_owned()),
-
-            personal_data: false,
-            org_name: None,
-            org_add_name: None,
+            userid: userid,
+            public: UserDataPublic::Person(UserDataPublicPerson {
+                salutation: Some(salutation.to_owned()),
+                first_name: Some(first_name.to_owned()),
+                last_name: Some(last_name.to_owned()),
+            }),
+            private: UserDataPrivate {
+                street: Some(street.to_owned()),
+                zip: Some(zip.to_owned()),
+                city: Some(city.to_owned()),
+                country: Some(country.to_owned()),
+            },
 		};
         let json_data = serde_json::to_string(&user).unwrap();
         let mut file = File::create(user_filename).unwrap();
@@ -166,19 +190,17 @@ impl User {
         true
     }
 
-	pub fn login(user_id: &str, ext: &str, password: &str, force: bool) -> bool {
-		let (user_id, ext) = Self::sanitize(&user_id, &ext);
-		let filename = Self::secrets_filename(&user_id, &ext);
+	pub fn login(userid: &UserId, password: &str) -> Option<Self> {
+		let filename = Self::secrets_filename(userid);
         if let Ok(f) = File::open(&filename) {
             let secrets: Result<Secrets, _> = serde_json::from_reader(f);
             if let Ok(secrets) = secrets {
-                password == secrets.password || force
-            } else {
-                false
+                if password == secrets.password {
+                    return Self::get(&userid, true);
+                }
             }
-        } else {
-            false
         }
+        None
     }
 }
 

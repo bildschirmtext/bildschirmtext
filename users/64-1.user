@@ -1,5 +1,15 @@
 {
-	"salutation": "Herr",
-	"first_name": "Michael",
-	"last_name": "Steil"
+	"userid": {
+		"id": "64",
+		"ext": "1"
+	},
+	"public": {
+		"Person": {
+			"salutation": "Herr",
+			"first_name": "Michael",
+			"last_name": "Steil"
+		}
+	},
+	"private": {
+	}
 }

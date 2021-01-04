@@ -74,6 +74,7 @@ pub enum ActionResult {
 }
 
 pub enum UserRequest {
+    Login(UserId, String),
     Goto(PageId, bool),
     SendAgain,
     Error(Error)
@@ -159,6 +160,19 @@ impl Session {
                     },
                 };
                 match req {
+                    UserRequest::Login(userid, password) => {
+                        if let Some(user) = User::login(&userid, &password) {
+                            println!("login ok");
+                            self.user = Some(user);
+                            target_pageid = PageId::from_str("000001").unwrap();
+                            add_to_history = false;
+                            continue 'main;
+                        } else {
+                            println!("login incorrect");
+                            show_error(&Error::Custom("Ungültiger Teilnehmer/Kennwort -> #".to_owned()), stream);
+                            continue 'input;
+                        }
+                    },
                     UserRequest::Goto(t, a) => {
                         target_pageid = t;
                         add_to_history = a;

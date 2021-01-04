@@ -1,5 +1,15 @@
 {
-	"salutation": "",
-	"first_name": "",
-	"last_name": "Gastbenutzer"
+	"userid": {
+		"id": "0",
+		"ext": "1"
+	},
+	"public": {
+		"Person": {
+			"salutation": "",
+			"first_name": "",
+			"last_name": "Gastbenutzer"
+		}
+	},
+	"private": {
+	}
 }
