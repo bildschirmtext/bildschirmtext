@@ -5,7 +5,6 @@ use std::str::FromStr;
 use super::cept::*;
 use super::editor::*;
 use super::pages::*;
-use super::user::*;
 use super::dispatch::*;
 
 const INPUT_NAME_NAVIGATION: &'static str = "$navigation";
@@ -17,6 +16,7 @@ enum InputEvent {
 }
 
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct PageId {
     pub page: String,
     pub sub: usize,
@@ -253,7 +253,7 @@ impl Session {
                         }),
                     confirm: false,
                     no_55: true,
-                    no_navigation: false,
+                    prohibit_command_mode: false,
                     price: None,
                     action: None,
                 };
@@ -266,7 +266,7 @@ impl Session {
             let mut editors = vec!();
             for input_field in &inputs.fields {
                 let mut editor = Editor::new(input_field);
-                editor.no_navigation = inputs.no_navigation;
+                editor.prohibit_command_mode = inputs.prohibit_command_mode;
                 editor.draw(stream);
                 editors.push(editor);
             }
@@ -389,7 +389,7 @@ impl Session {
     fn decode_command(&mut self, command_input: &str) -> UserRequest {
         if command_input == "" {
             // *# = back
-            println!("command: back");
+            println!("command: back {:?}", self.history);
             if self.history.len() < 2 {
                 println!("ERROR: No history.");
                 UserRequest::Error(Error::Code(10))
@@ -403,7 +403,7 @@ impl Session {
                         target_pageid = self.history.pop().unwrap();
                     }
                 }
-                UserRequest::Goto(target_pageid, false)
+                UserRequest::Goto(target_pageid, true)
             }
         } else if command_input == "09" {
             // hard reload

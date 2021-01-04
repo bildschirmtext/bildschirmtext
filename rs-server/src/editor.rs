@@ -99,7 +99,7 @@ pub struct Inputs {
     #[serde(default)]
     pub no_55: bool,
     #[serde(default)]
-    pub no_navigation: bool,
+    pub prohibit_command_mode: bool,
     #[serde(skip_serializing, skip_deserializing)]
     pub action: Option<fn(&PageId, &HashMap<String, String>) -> UserRequest>,
 }
@@ -109,14 +109,22 @@ pub struct Editor {
     data: Vec<String>,
     x: u8,
     y: u8,
-    pub no_navigation: bool,
+    pub prohibit_command_mode: bool,
     last_c: char,
 }
 
 impl Editor {
     pub fn new(input_field: &InputField) -> Self {
-        let data = vec!(input_field.default.clone().unwrap_or_default());
-        Editor { input_field: input_field.clone(), data, x: 0, y: 0, no_navigation: false, last_c: '\0' }
+        let mut editor = Editor {
+            input_field: input_field.clone(),
+            data: vec!(),
+            x: 0,
+            y: 0,
+            prohibit_command_mode: false,
+            last_c: '\0'
+        };
+        editor.set_string(input_field.default.as_ref().unwrap_or(&"".to_owned()));
+        editor
     }
 
 	pub fn string(&self) -> String {
@@ -132,14 +140,17 @@ impl Editor {
     }
 
 	pub fn set_string(&mut self, string: &str) {
-		self.data = vec!();
-		for line in string.lines().take(self.input_field.height as usize) {
-            let mut line = line.to_owned();
-            while line.len() < self.input_field.width as usize {
-                line.push(' ');
+        // fill lines with spaces to match field width
+		self.data = string.lines().take(self.input_field.height as usize).map(
+            |line| {
+                let mut line = line.to_owned();
+                while line.len() < self.input_field.width as usize {
+                    line.push(' ');
+                }
+                line
             }
-            self.data.push(line);
-        }
+        ).collect();
+        // fill up with space-filled lines to match field height
         let mut empty_line = String::new();
         while empty_line.len() < self.input_field.width as usize {
             empty_line.push(' ');
@@ -147,7 +158,6 @@ impl Editor {
         while self.data.len() < self.input_field.height as usize {
             self.data.push(empty_line.clone());
         }
-//		sys.stderr.write("self.__data:\n" + pprint.pformat(self.__data) + "\n")
     }
 
 	pub fn set_color(&self) -> Cept {
@@ -174,7 +184,7 @@ impl Editor {
             let l = match self.input_field.input_type {
                 InputType::Password => "*".repeat(l.len()),
 			    _ => {
-                    if l.starts_with("\x13") { // XXX cept_ini()
+                    if l.starts_with(cept_ini_str()) {
                         "*".to_owned() + &l[1..]
                     } else {
                         l.to_owned()
@@ -436,7 +446,7 @@ impl Editor {
                                 x1 += "00";
                                 let mut x2 = cept_ini_str().to_owned();
                                 x2 += "09";
-                                    if !self.no_navigation || val == x1 || val == x2 {
+                                    if !self.prohibit_command_mode || val == x1 || val == x2 {
                                     return (Some(val), false);
                                 }
                                 println!("ignoring navigation");

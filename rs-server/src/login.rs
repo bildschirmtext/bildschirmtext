@@ -72,7 +72,7 @@ fn create_login() -> Page {
                     ..Default::default()
                 }
             ),
-            no_navigation: true,
+            prohibit_command_mode: true,
             action: Some(action_login),
             ..Default::default()
         }),
