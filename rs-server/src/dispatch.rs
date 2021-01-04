@@ -15,14 +15,6 @@ pub fn get_page(pageid: &PageId, user: Option<&User>) -> Option<Page> {
     }
 }
 
-pub fn validate(pageid: &PageId, input_data: &HashMap<String, String>) -> Validate {
-    if pageid.page.starts_with("00000") || pageid.page == "9" {
-        super::login::validate(pageid, input_data)
-    } else {
-        Validate::Ok
-    }
-}
-
 pub fn handle(pageid: &PageId, input_data: &HashMap<String, String>) -> String {
     panic!();
 }

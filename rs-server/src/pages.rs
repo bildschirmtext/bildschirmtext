@@ -27,7 +27,6 @@ impl Link {
 }
 
 #[derive(Serialize, Deserialize)]
-#[derive(Debug)]
 pub struct Meta {
     pub publisher_name: Option<String>,
     pub clear_screen: Option<bool>,

@@ -211,7 +211,7 @@ impl Session {
                             end_on_legal_string: true,
                             echo_ter: true,
                             command_mode: false,
-                            validate: false,
+                            validate: None,
                             default: None,
                         }),
                     confirm: false,
@@ -257,8 +257,8 @@ impl Session {
 
 
                 let mut validate_result = Validate::Ok;
-                if input_field.validate {
-                    validate_result = super::dispatch::validate(pageid, &input_data);
+                if let Some(validate) = input_field.validate {
+                    validate_result = validate(&pageid, &input_data);
                 }
 
                 match validate_result {

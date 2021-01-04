@@ -34,9 +34,11 @@
 // passed the list of links as legal inputs. "*" will create a command mode
 // editor on top of the main editor in line 24.
 
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use super::cept::*;
+use super::session::*;
 
 #[derive(Clone, PartialEq)]
 #[derive(Serialize, Deserialize)]
@@ -55,7 +57,6 @@ impl Default for InputType {
 }
 
 #[derive(Serialize, Deserialize)]
-#[derive(Debug)]
 #[derive(Clone)]
 pub struct InputField {
     pub name: String,
@@ -82,12 +83,11 @@ pub struct InputField {
     pub echo_ter: bool,
     #[serde(default)]
     pub command_mode: bool,
-    #[serde(default)]
-    pub validate: bool,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub validate: Option<fn(&PageId, &HashMap<String, String>) -> Validate>,
 }
 
 #[derive(Serialize, Deserialize)]
-#[derive(Debug)]
 #[derive(Default)]
 pub struct Inputs {
     pub fields: Vec<InputField>,
@@ -393,7 +393,7 @@ impl Editor {
                             cursor_home: false,
                             end_on_illegal_character: false,
                             end_on_legal_string: false,
-                            validate: false,
+                            validate: None,
                         };
                         let mut editor = Editor::new(&input_field);
                         editor.set_string(&cept_ini_str());

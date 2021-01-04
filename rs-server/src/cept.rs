@@ -66,7 +66,7 @@ impl Cept {
     pub fn add_str_characterset(&mut self, s_in: &str, characterset: Option<usize>) {
         for c in s_in.chars() {
             match c {
-                '¤' => self.data.push(b'$'),         // $ and ¤ are swapped
+                '¤' => self.data.push(b'$'), // $ and ¤ are swapped
                 '$' => self.g2code(b"$"), // $ and ¤ are swapped
     			// '¦' => b"?",      // not available
     			// '¨' => b"?",      // not available

@@ -17,7 +17,7 @@ pub fn create(pageid: &PageId, user: Option<&User>) -> Option<Page> {
     }
 }
 
-pub fn validate(pageid: &PageId, input_data: &HashMap<String, String>) -> Validate {
+pub fn validate_login(pageid: &PageId, input_data: &HashMap<String, String>) -> Validate {
     if User::login(
         input_data.get("user_id").unwrap(),
         input_data.get("ext").unwrap(),
@@ -75,7 +75,6 @@ fn create_login() -> Page {
                     "line": 20,
                     "name": "password",
                     "type": "password",
-                    "validate": true,
                     "width": 14
                 }
             ],
@@ -86,7 +85,11 @@ fn create_login() -> Page {
         "publisher_color": 7
     }
     "#;
-    let meta: Meta = serde_json::from_str(meta_str).unwrap();
+    let mut meta: Meta = serde_json::from_str(meta_str).unwrap();
+    if let Some(inputs) = &mut meta.inputs {
+        // XXX no need for the if-let, but unwrap() should partially move meta :(
+        inputs.fields[2].validate = Some(validate_login);
+    }
 
     let mut page = Page::new(meta);
     page.cept.parallel_mode();
