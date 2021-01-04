@@ -1,7 +1,6 @@
 use super::cept::*;
-use super::pages::*;
+use super::page::*;
 use super::session::*;
-use super::dispatch::*;
 
 pub fn create(pageid: &PageId) -> Option<Page> {
     if pageid.page == "8" {

@@ -1,5 +1,5 @@
 use crate::session::*;
-use super::pages::*;
+use super::page::*;
 use super::user::*;
 
 pub struct PrivateContext<'a> {

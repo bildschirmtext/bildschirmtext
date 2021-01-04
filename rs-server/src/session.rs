@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use super::cept::*;
 use super::editor::*;
-use super::pages::*;
+use super::page::*;
 use super::dispatch::*;
 
 const INPUT_NAME_NAVIGATION: &'static str = "$navigation";

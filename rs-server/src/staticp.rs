@@ -1,12 +1,9 @@
 use std::fs::File;
 use std::io::Read;
 use std::fs::metadata;
-use super::pages::*;
+use super::page::*;
 use super::session::*;
-use super::dispatch::*;
-
-const PATH_DATA: &str = "../data/";
-
+use super::paths::*;
 
 pub fn create(pageid: &PageId) -> Option<Page> {
     let mut cept = None;

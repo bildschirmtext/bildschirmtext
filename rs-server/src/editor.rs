@@ -38,7 +38,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use super::cept::*;
-use super::pages::*;
+use super::page::*;
 use super::session::*;
 
 pub const CEPT_INI: u8 = 0x13;

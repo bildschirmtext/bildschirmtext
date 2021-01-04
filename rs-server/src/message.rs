@@ -8,8 +8,6 @@
 // use super::session::*;
 // use super::staticp::*;
 
-// const PATH_MESSAGES: &str = "../messages/";
-
 // #[derive(Serialize, Deserialize)]
 // struct MessageDatabase {
 //     messages: Vec<Message>,

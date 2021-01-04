@@ -1,17 +1,8 @@
-use std::collections::HashMap;
 use std::{fs::File, io::Write};
 use serde::{Deserialize, Serialize};
 use chrono::{Local, DateTime, TimeZone};
-use std::str::FromStr;
-use super::cept::*;
-use super::pages::*;
 use super::staticp::*;
-use super::session::*;
-use super::dispatch::*;
-
-const PATH_USERS: &str = "../users/";
-const PATH_SECRETS: &str = "../secrets/";
-const PATH_STATS: &str = "../stats/";
+use super::paths::*;
 
 #[derive(Serialize, Deserialize)]
 pub struct UserId {
