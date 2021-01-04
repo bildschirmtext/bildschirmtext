@@ -26,7 +26,7 @@ const DISPATCH_TABLE: &[(&[u8], CanSeePrivateContext)] = &[
     (b"9",      CanSeePrivateContext::Yes(super::login::create)),
     (b"77",     CanSeePrivateContext::No (super::ui_user::create)),
     (b"7-",     CanSeePrivateContext::No (super::historic::create)),
-    (b"*",      CanSeePrivateContext::No (super::stat::create)),
+    (b"*",      CanSeePrivateContext::No (super::staticp::create)),
 ];
 
 pub fn get_page(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {

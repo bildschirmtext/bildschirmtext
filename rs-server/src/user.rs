@@ -5,7 +5,7 @@ use chrono::{Local, DateTime, TimeZone};
 use std::str::FromStr;
 use super::cept::*;
 use super::pages::*;
-use super::stat::*;
+use super::staticp::*;
 use super::session::*;
 use super::dispatch::*;
 

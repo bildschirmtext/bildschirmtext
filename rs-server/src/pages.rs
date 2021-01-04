@@ -4,7 +4,7 @@ use chrono::Local;
 use super::cept::*;
 use super::editor::*;
 use super::session::*;
-use super::stat::*;
+use super::staticp::*;
 
 #[derive(Serialize, Deserialize)]
 pub struct Palette {

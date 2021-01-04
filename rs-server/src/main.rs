@@ -7,7 +7,7 @@ mod login;
 mod message;
 mod pages;
 mod session;
-mod stat;
+mod staticp;
 mod user;
 mod ui_user;
 

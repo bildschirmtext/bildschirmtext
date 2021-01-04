@@ -6,7 +6,7 @@
 // use super::cept::*;
 // use super::pages::*;
 // use super::session::*;
-// use super::stat::*;
+// use super::staticp::*;
 
 // const PATH_MESSAGES: &str = "../messages/";
 
