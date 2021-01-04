@@ -140,16 +140,17 @@ impl Page {
 
             if Some(filename_include.clone()) != client_state.include || self.meta.clear_screen == Some(true) {
                 client_state.include = Some(filename_include.clone());
-                // if os.path.isfile(filename_include) {
-                    let mut cept_include : Vec<u8> = vec!();
-                    let mut f = File::open(&filename_include).unwrap();
-                    f.read_to_end(&mut cept_include);
-                    println!("loading: {}", filename_include);
-                // } else if os.path.isfile(filename_include_cm) {
-                // 	data_include = CM.read(filename_include_cm)
-                // } else {
-                //     sys.stderr.write("include file not found.\n")
-                // }
+                let mut cept_include : Vec<u8> = vec!();
+                println!("loading: {}", filename_include);
+                if let Ok(mut f) = File::open(&filename_include) {
+                    if let Ok(_) = f.read_to_end(&mut cept_include) {
+                        // ok
+                    } else {
+                        println!("ERROR reading include file! [1]");
+                    }
+                } else {
+                    println!("ERROR creating user! [1]");
+                }
                 // palette definition has to end with 0x1f; add one if
                 // the include data doesn't start with one
                 if cept_include[0] != 0x1f {

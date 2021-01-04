@@ -116,8 +116,13 @@ impl Stats {
 		// update the last use field with the current time
 		self.stats_data.last_use = Some(Local::now().timestamp());
         let json_data = serde_json::to_string(&self.stats_data).unwrap();
-        let mut file = File::create(&self.filename).unwrap();
-        file.write_all(&json_data.as_bytes());
+        if let Ok(mut file) = File::create(&self.filename) {
+            if let Ok(_) = file.write_all(&json_data.as_bytes()) {
+                return;
+            }
+            println!("ERROR updating stats! [1]");
+        }
+        println!("ERROR updating stats! [2]");
     }
 
     pub fn last_use(&self) -> Option<DateTime<Local>> {
@@ -143,12 +148,10 @@ impl User {
         is_file(&filename)
     }
 
-	fn get(userid: &UserId, personal_data: bool) -> Option<User> {
+	fn get(userid: &UserId) -> Option<User> {
 		let filename = Self::user_filename(&userid);
         let f = File::open(&filename).ok()?;
-        let user: User = serde_json::from_reader(f).unwrap();
-		// user.messaging = Messaging(user)
-        Some(user)
+        serde_json::from_reader(f).ok()
     }
 
 	pub fn create(
@@ -186,17 +189,24 @@ impl User {
             },
 		};
         let json_data = serde_json::to_string(&user).unwrap();
-        let mut file = File::create(user_filename).unwrap();
-        file.write_all(&json_data.as_bytes());
+        if let Ok(mut file) = File::create(user_filename) {
+            if let Ok(_) = file.write_all(&json_data.as_bytes()) {
+                let secrets = Secrets {
+                    password: password.to_owned(),
+                };
+                let json_data = serde_json::to_string(&secrets).unwrap();
+                if let Ok(mut file) = File::create(secrets_filename) {
+                    if let Ok(_) = file.write_all(&json_data.as_bytes()) {
+                        return true;
+                    }
+                    println!("ERROR creating user! [1]");
+                }
+                println!("ERROR creating user! [2]");
+            }
+            println!("ERROR creating user! [3]");
+        }
 
-		let secrets = Secrets {
-			password: password.to_owned(),
-		};
-        let json_data = serde_json::to_string(&secrets).unwrap();
-        let mut file = File::create(secrets_filename).unwrap();
-        file.write_all(&json_data.as_bytes());
-
-        true
+        false
     }
 
 	pub fn login(userid: &UserId, password: &str) -> Option<Self> {
@@ -205,7 +215,7 @@ impl User {
             let secrets: Result<Secrets, _> = serde_json::from_reader(f);
             if let Ok(secrets) = secrets {
                 if password == secrets.password {
-                    return Self::get(&userid, true)
+                    return Self::get(&userid)
                 }
             }
         }
