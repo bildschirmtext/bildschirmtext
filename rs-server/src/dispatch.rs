@@ -9,7 +9,7 @@ pub fn get_page(pageid: &PageId, user: Option<&User>) -> Option<Page> {
     } else if pageid.page == "77" {
         super::user::create(pageid)
     } else if pageid.page.starts_with('7') {
-        Some(super::historic::create(&pageid.reduced_by(1)))
+        super::historic::create(&pageid.reduced_by(1))
     } else {
         super::stat::create(pageid)
     }

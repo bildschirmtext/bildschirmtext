@@ -303,6 +303,8 @@ impl Session {
             if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
                 return InputEvent::Navigation(val.to_owned())
             } else {
+                // fill defaults with current state, so in case we get called again,
+                // the user can keep editing
                 let mut vec = vec!();
                 for (i, field) in inputs.fields.iter().enumerate() {
                     vec.push((i, Some(input_data.get(&field.name).unwrap().clone())));
@@ -421,5 +423,7 @@ fn show_error(error: &Error, stream: &mut (impl Write + Read)) {
     let mut cept = create_system_message(error, None);
     cept.sequence_end_of_page();
     write_stream(stream, cept.data());
-    wait_for_ter(stream);
+    if let Error::Custom(_) = error {
+        wait_for_ter(stream);
+    }
 }

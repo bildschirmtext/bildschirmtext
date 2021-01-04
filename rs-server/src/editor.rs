@@ -534,6 +534,7 @@ pub fn wait_for_ter(stream: &mut (impl Read + Write)) {
             break
         }
     }
+    // clear
     let mut cept = create_system_message(&Error::None, None);
     cept.sequence_end_of_page();
     write_stream(stream, cept.data());
