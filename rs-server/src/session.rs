@@ -71,12 +71,13 @@ pub enum Error {
 
 pub enum ActionResult {
     Ok,
-	Error,
+	Error(Error),
 	Restart,
 }
 
 pub enum UserRequest {
     Login(UserId, String),
+    MessageGoto(Error, PageId, bool),
     Goto(PageId, bool),
     SendAgain,
     Error(Error)
@@ -188,6 +189,12 @@ impl Session {
                         add_to_history = a;
                         continue 'main;
                     },
+                    UserRequest::MessageGoto(e, t, a) => {
+                        show_error(&e, stream);
+                        target_pageid = t;
+                        add_to_history = a;
+                        continue 'main;
+                    },
                     UserRequest::SendAgain => {
                         write_stream(stream, current_page_cept.data());
                     },
@@ -295,7 +302,8 @@ impl Session {
                     ActionResult::Ok => {
                         i += 1;
                     },
-                    ActionResult::Error => {
+                    ActionResult::Error(e) => {
+                        show_error(&e, stream);
                         skip = false;
                         continue;
                     },

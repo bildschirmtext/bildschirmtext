@@ -1,6 +1,8 @@
+use std::collections::HashMap;
 use std::{fs::File, io::Write};
 use serde::{Deserialize, Serialize};
 use chrono::{Local, DateTime, TimeZone};
+use std::str::FromStr;
 use super::cept::*;
 use super::pages::*;
 use super::stat::*;
@@ -494,7 +496,14 @@ fn create_add_user() -> Page {
         "publisher_name": "!BTX"
     }
     "#;
-    let meta: Meta = serde_json::from_str(meta_str).unwrap();
+    let mut meta: Meta = serde_json::from_str(meta_str).unwrap();
+    if let Some(inputs) = &mut meta.inputs {
+        // XXX no need for the if-let, but unwrap() should partially move meta :(
+        inputs.fields[0].action = Some(callback_validate_user_id);
+        inputs.fields[2].action = Some(callback_validate_last_name);
+        inputs.fields[14].action = Some(callback_validate_password);
+        inputs.action = Some(callback_add_user);
+    }
 
     let mut cept = Cept::new();
     cept += create_title("Neuen Benutzer einrichten");
@@ -537,65 +546,48 @@ fn create_add_user() -> Page {
     Page { cept, meta }
 }
 
-// fn callback_validate_user_id(input_data, dummy) {
-//     if User::exists(input_data["user_id"]):
-//         msg = Util.create_custom_system_message("Teilnehmernummer bereits vergeben! -> #")
-//         sys.stdout.buffer.write(msg)
-//         sys.stdout.flush()
-//         Util.wait_for_ter()
-//         return Util.VALIDATE_INPUT_BAD
-//     else:
-//         return Util.VALIDATE_INPUT_OK
-// }
+fn callback_validate_user_id(pageid: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
+    if User::exists(&UserId::new(input_data.get("user_id").unwrap(), "1")) {
+        ActionResult::Error(Error::Custom("Teilnehmernummer bereits vergeben! -> #".to_string()))
+    } else {
+        ActionResult::Ok
+    }
+}
 
-// fn callback_validate_last_name(input_data, dummy) {
-//     if not input_data["last_name"]:
-//         msg = Util.create_custom_system_message("Name darf nicht leer sein! -> #")
-//         sys.stdout.buffer.write(msg)
-//         sys.stdout.flush()
-//         Util.wait_for_ter()
-//         return Util.VALIDATE_INPUT_BAD
-//     else:
-//         return Util.VALIDATE_INPUT_OK
-// }
+fn callback_validate_last_name(pageid: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
+    if input_data.get("last_name").unwrap() == "" {
+        ActionResult::Error(Error::Custom("Name darf nicht leer sein! -> #".to_string()))
+    } else {
+        ActionResult::Ok
+    }
+}
 
-// fn callback_validate_password(input_data, dummy) {
-//     if len(input_data["password"]) < 4:
-//         msg = Util.create_custom_system_message("Kennwort muß mind. 4-stellig sein! -> #")
-//         sys.stdout.buffer.write(msg)
-//         sys.stdout.flush()
-//         Util.wait_for_ter()
-//         return Util.VALIDATE_INPUT_BAD
-//     else:
-//         return Util.VALIDATE_INPUT_OK
-// }
+fn callback_validate_password(pageid: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
+    if input_data.get("password").unwrap().len() < 4 {
+        ActionResult::Error(Error::Custom("Kennwort muß mind. 4-stellig sein! -> #".to_string()))
+    } else {
+        ActionResult::Ok
+    }
+}
 
-// fn callback_add_user(input_data: Vec<(String, String)>) {
-//     println!("input_data: {}", input_data);
-//     if User::create(
-//         input_data["user_id"],
-//         "1", // ext
-//         input_data["password"],
-//         input_data["salutation"],
-//         input_data["last_name"],
-//         input_data["first_name"],
-//         input_data["street"],
-//         input_data["zip"],
-//         input_data["city"],
-//         input_data["country"]
-//     ):
-//         msg = Util.create_custom_system_message("Benutzer angelegt. Bitte neu anmelden. -> #")
-//         sys.stdout.buffer.write(msg)
-//         sys.stdout.flush()
-//         Util.wait_for_ter()
-//         return "00000"
-//     else:
-//         msg = Util.create_custom_system_message("Benutzer konnte nicht angelegt werden. -> #")
-//         sys.stdout.buffer.write(msg)
-//         sys.stdout.flush()
-//         Util.wait_for_ter()
-//         return "77"
-// }
+pub fn callback_add_user(_: &PageId, input_data: &HashMap<String, String>) -> UserRequest {
+    if User::create(
+        input_data.get("user_id").unwrap(),
+        "1", // ext
+        input_data.get("password").unwrap(),
+        input_data.get("salutation").unwrap(),
+        input_data.get("last_name").unwrap(),
+        input_data.get("first_name").unwrap(),
+        input_data.get("street").unwrap(),
+        input_data.get("zip").unwrap(),
+        input_data.get("city").unwrap(),
+        input_data.get("country").unwrap()
+    ) {
+        UserRequest::MessageGoto(Error::Custom("Benutzer angelegt. Bitte neu anmelden. -> #".to_string()), PageId::from_str("00000").unwrap(), true)
+    } else {
+        UserRequest::Error(Error::Custom("Benutzer konnte nicht angelegt werden. -> #".to_string()))
+    }
+}
 
 pub fn create(pageid: &PageId) -> Option<Page> {
     if pageid.page == "77" {

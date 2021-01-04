@@ -69,7 +69,6 @@ fn create_login() -> Page {
                     name: "password".to_owned(),
                     input_type: InputType::Password,
                     width: 14,
-                    // action: Some(validate_login),
                     ..Default::default()
                 }
             ),
