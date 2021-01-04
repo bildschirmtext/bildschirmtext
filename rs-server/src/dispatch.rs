@@ -24,7 +24,7 @@ enum CanSeePrivateContext {
 const DISPATCH_TABLE: &[(&[u8], CanSeePrivateContext)] = &[
     (b"00000*", CanSeePrivateContext::Yes(super::login::create)),
     (b"9",      CanSeePrivateContext::Yes(super::login::create)),
-    (b"77",     CanSeePrivateContext::No (super::user::create)),
+    (b"77",     CanSeePrivateContext::No (super::ui_user::create)),
     (b"7-",     CanSeePrivateContext::No (super::historic::create)),
     (b"*",      CanSeePrivateContext::No (super::stat::create)),
 ];

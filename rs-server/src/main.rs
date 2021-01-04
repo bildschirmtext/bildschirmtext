@@ -9,6 +9,7 @@ mod pages;
 mod session;
 mod stat;
 mod user;
+mod ui_user;
 
 // use serde_json::{Result, Value};
 // use std::fs::File;
