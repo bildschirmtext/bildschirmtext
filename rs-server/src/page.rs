@@ -84,11 +84,6 @@ impl Page {
         let mut cept;
         cept = self.cept_preamble_from_meta(client_state, pageid);
         cept += self.cept_main_from_page(client_state, pageid);
-
-        // if compress {
-        //     page_cept_data_1 = Cept.compress(page_cept_data_1)
-        // }
-
         cept
     }
 
@@ -98,75 +93,25 @@ impl Page {
 
         cept.hide_cursor();
 
-        if self.meta.clear_screen == Some(true) {
+        let clear_screen = self.meta.clear_screen;
+
+        if clear_screen == Some(true) {
             cept.serial_limited_mode();
             cept.clear_screen();
             client_state.include = None;
         }
 
-        let basedir = find_basedir(pageid).unwrap().0;
-
-        // define palette
-        if let Some(palette) = &self.meta.palette {
-            let mut filename_palette = basedir.to_owned();
-            filename_palette += &palette;
-            filename_palette += ".pal";
-            println!("filename_palette = {}", filename_palette);
-            // println!("last_filename_palette = {}", last_filename_palette);
-            if Some(filename_palette.clone()) != client_state.palette {
-                client_state.palette = Some(filename_palette.clone());
-                let f = File::open(&filename_palette).unwrap();
-                let palette: Palette = serde_json::from_reader(f).unwrap();
-                cept.define_palette(&palette.palette, palette.start_color);
-            } else {
-                println!("skipping palette");
-            }
+        if let Some(basedir) = find_basedir(pageid) {
+            let basedir = basedir.0;
+            load_palette(&mut cept, self.meta.palette.as_ref(), &basedir, client_state);
+            load_include(&mut cept, self.meta.include.as_ref(), clear_screen, &basedir, client_state);
         } else {
-            client_state.palette = None;
+            println!("ERROR: basedir not found!");
         }
-
-        if let Some(include) = &self.meta.include {
-            let mut filename_include = basedir.to_owned();
-            filename_include += &include;
-            filename_include += ".inc";
-            // if is_file(filename_include) {
-            // 	filename_include_cm = basedir + meta["include"] + ".inc.cm"
-            // 	filename_include = basedir + meta["include"] + ".inc"
-            // } else {
-            // 	filename_include_cm =""
-            //     filename_include = basedir + meta["include"] + ".cept"
-            // }
-            println!("Filename_include = {}", filename_include);
-
-            if Some(filename_include.clone()) != client_state.include || self.meta.clear_screen == Some(true) {
-                client_state.include = Some(filename_include.clone());
-                let mut cept_include : Vec<u8> = vec!();
-                println!("loading: {}", filename_include);
-                if let Ok(mut f) = File::open(&filename_include) {
-                    if let Ok(_) = f.read_to_end(&mut cept_include) {
-                        // ok
-                    } else {
-                        println!("ERROR reading include file! [1]");
-                    }
-                } else {
-                    println!("ERROR creating user! [1]");
-                }
-                // palette definition has to end with 0x1f; add one if
-                // the include data doesn't start with one
-                if cept_include[0] != 0x1f {
-                    cept.set_cursor(1, 1)
-                }
-                cept.add_raw(&cept_include);
-            // }
-            } else {
-                client_state.include = None;
-            }
-
         // b = baud if baud else 1200
         // if len(cept) > (b/9) * SH291_THRESHOLD_SEC {
             // cept = Util.create_system_message(291) + cept
         // }
-        }
         cept
     }
 
@@ -347,4 +292,64 @@ pub fn create_system_message(error: &Error, price: Option<u32>) -> Cept {
     }
     msg.service_break_back();
     msg
+}
+
+fn resource_filename(basedir: &str, resource_name: &str, extention: &str) -> String {
+    let mut filename = basedir.to_owned();
+    filename += resource_name;
+    filename.push('.');
+    filename += extention;
+    filename
+}
+
+fn load_palette(cept: &mut Cept, palette_name: Option<&String>, basedir: &str, client_state: &mut ClientState) {
+    if let Some(palette_name) = palette_name {
+        let filename = resource_filename(basedir, palette_name, "pal");
+        if Some(filename.clone()) != client_state.palette {
+            client_state.palette = Some(filename.clone());
+            println!("loading: {}", filename);
+            if let Ok(f) = File::open(&filename) {
+                let palette: Result<Palette, _> = serde_json::from_reader(f);
+                if let Ok(palette) = palette {
+                    cept.define_palette(&palette.palette, palette.start_color);
+                } else {
+                    println!("ERROR reading palette file! [1]");
+                }
+            } else {
+                println!("ERROR reading palette file! [2]");
+            }
+        } else {
+            println!("skipping palette");
+        }
+    } else {
+        client_state.palette = None;
+    }
+}
+
+fn load_include(cept: &mut Cept, include_name: Option<&String>, clear_screen: Option<bool>, basedir: &str, client_state: &mut ClientState) {
+    if let Some(include_name) = include_name {
+        let filename = resource_filename(basedir, include_name, "inc");
+        if Some(filename.clone()) != client_state.include || clear_screen == Some(true) {
+            client_state.include = Some(filename.clone());
+            let mut cept_include : Vec<u8> = vec!();
+            println!("loading: {}", filename);
+            if let Ok(mut f) = File::open(&filename) {
+                if let Ok(_) = f.read_to_end(&mut cept_include) {
+                    // ok
+                } else {
+                    println!("ERROR reading include file! [1]");
+                }
+            } else {
+                println!("ERROR creating user! [1]");
+            }
+            // palette definition has to end with 0x1f; add one if
+            // the include data doesn't start with one
+            if cept_include[0] != 0x1f {
+                cept.set_cursor(1, 1)
+            }
+            cept.add_raw(&cept_include);
+        } else {
+            client_state.include = None;
+        }
+    }
 }
