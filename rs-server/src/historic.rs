@@ -3,7 +3,7 @@ use super::pages::*;
 use super::session::*;
 use super::dispatch::*;
 
-pub fn create(pageid: &PageId, private_context: Option<PrivateContext>) -> Option<Page> {
+pub fn create(pageid: &PageId, _: Option<PrivateContext>) -> Option<Page> {
     if pageid.page == "8" {
         Some(create_historic_main_page())
     } else if pageid.page == "10" || pageid.page == "11" || pageid.page == "12" {

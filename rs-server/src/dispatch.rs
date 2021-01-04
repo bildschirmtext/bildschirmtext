@@ -8,24 +8,45 @@ pub struct PrivateContext<'a> {
     pub stats: Option<&'a Stats>,
 }
 
-const DISPATCH_TABLE: &[(&[u8], fn(&PageId, Option<PrivateContext>) -> Option<Page>, usize, bool)] = &[
-    (b"00000*", super::login::create,    0, true),
-    (b"9",      super::login::create,    0, true),
-    (b"77",     super::user::create,     0, false),
-    (b"7*",     super::historic::create, 1, false),
-    (b"*",      super::stat::create,     0, false),
+enum CanSeePrivateContext {
+    No,
+    Yes,
+}
+
+// * If a mask does not end in '*' or '-', the page number must match exactly.
+// * If a mask ends in '*', it only has to be a prefix of the page number.
+// * If a mask ends in '-', it only has to be a prefix of the page number. The prefix of the
+//   page number will be stripped when passed into the function.
+// * Only use CanSeePrivateContext::Yes for BTX-internal pages that need to access the
+//   user's info and statistics!
+// N.B.: The table must be in the right order: longer prefixes must come first!
+const DISPATCH_TABLE: &[(&[u8], fn(&PageId, Option<PrivateContext>) -> Option<Page>, CanSeePrivateContext)] = &[
+    (b"00000*", super::login::create,    CanSeePrivateContext::Yes),
+    (b"9",      super::login::create,    CanSeePrivateContext::Yes),
+    (b"77",     super::user::create,     CanSeePrivateContext::No),
+    (b"7-",     super::historic::create, CanSeePrivateContext::No),
+    (b"*",      super::stat::create,     CanSeePrivateContext::No),
 ];
 
 pub fn get_page(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
-    for (mask, function, reduce, private) in DISPATCH_TABLE {
-        let matches = if *mask.last().unwrap() == b'*' {
+    for (mask, function, private) in DISPATCH_TABLE {
+        let matches;
+        let reduce;
+        let last = *mask.last().unwrap();
+        if last == b'*' || last == b'-' {
             let mask = std::str::from_utf8(&mask[0..mask.len() - 1]).unwrap();
-            pageid.page.starts_with(mask)
+            matches = pageid.page.starts_with(mask);
+            reduce = if last == b'*' { 0 } else { mask.len() };
         } else {
-            pageid.page == std::str::from_utf8(mask).unwrap()
+            matches = pageid.page == std::str::from_utf8(mask).unwrap();
+            reduce = 0;
         };
         if matches {
-            return function(&pageid.reduced_by(*reduce), if *private { Some(private_context) } else { None });
+            let private_context = match private {
+                CanSeePrivateContext::Yes => Some(private_context),
+                CanSeePrivateContext::No => None,
+            };
+            return function(&pageid.reduced_by(reduce), private_context);
         }
     }
     return None;
