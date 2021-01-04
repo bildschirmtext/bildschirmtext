@@ -6,8 +6,7 @@ use super::session::*;
 use super::user::*;
 use super::dispatch::*;
 
-pub fn create(pageid: &PageId, private_context: Option<PrivateContext>) -> Option<Page> {
-    let private_context = private_context.unwrap();
+pub fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
     if pageid.page == "00000" {
         Some(create_login())
     } else if pageid.page == "000001" {

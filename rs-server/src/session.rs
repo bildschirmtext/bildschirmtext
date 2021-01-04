@@ -278,13 +278,12 @@ impl Session {
                 }
 
                 if let Some(val) = &val {
-                    if val.starts_with(0x13 as char) { // XXX Cept.ini()
+                    if val.starts_with(cept_ini() as char) {
                         return InputEvent::Command(val[1..].to_string());
                     }
                 }
 
                 input_data.insert(input_field.name.to_string(), val.unwrap().to_string());
-
 
                 let action_result = if let Some(action) = input_field.action {
                     action(&pageid, &input_data)

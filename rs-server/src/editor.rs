@@ -540,7 +540,7 @@ pub fn wait_for_ter(stream: &mut (impl Read + Write)) {
     write_stream(stream, cept.data());
 }
 
-fn cept_ini() -> u8 {
+pub fn cept_ini() -> u8 {
     0x13
 }
 

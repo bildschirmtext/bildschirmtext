@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use crate::session::*;
 use super::pages::*;
 use super::user::*;
@@ -9,8 +8,8 @@ pub struct PrivateContext<'a> {
 }
 
 enum CanSeePrivateContext {
-    No,
-    Yes,
+    No(fn(&PageId) -> Option<Page>),
+    Yes(fn(&PageId, PrivateContext) -> Option<Page>),
 }
 
 // * If a mask does not end in '*' or '-', the page number must match exactly.
@@ -20,16 +19,16 @@ enum CanSeePrivateContext {
 // * Only use CanSeePrivateContext::Yes for BTX-internal pages that need to access the
 //   user's info and statistics!
 // N.B.: The table must be in the right order: longer prefixes must come first!
-const DISPATCH_TABLE: &[(&[u8], fn(&PageId, Option<PrivateContext>) -> Option<Page>, CanSeePrivateContext)] = &[
-    (b"00000*", super::login::create,    CanSeePrivateContext::Yes),
-    (b"9",      super::login::create,    CanSeePrivateContext::Yes),
-    (b"77",     super::user::create,     CanSeePrivateContext::No),
-    (b"7-",     super::historic::create, CanSeePrivateContext::No),
-    (b"*",      super::stat::create,     CanSeePrivateContext::No),
+const DISPATCH_TABLE: &[(&[u8], CanSeePrivateContext)] = &[
+    (b"00000*", CanSeePrivateContext::Yes(super::login::create    )),
+    (b"9",      CanSeePrivateContext::Yes(super::login::create    )),
+    (b"77",     CanSeePrivateContext::No(super::user::create     )),
+    (b"7-",     CanSeePrivateContext::No(super::historic::create)),
+    (b"*",      CanSeePrivateContext::No(super::stat::create     )),
 ];
 
 pub fn get_page(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
-    for (mask, function, private) in DISPATCH_TABLE {
+    for (mask, function) in DISPATCH_TABLE {
         let matches;
         let reduce;
         let last = *mask.last().unwrap();
@@ -42,11 +41,15 @@ pub fn get_page(pageid: &PageId, private_context: PrivateContext) -> Option<Page
             reduce = 0;
         };
         if matches {
-            let private_context = match private {
-                CanSeePrivateContext::Yes => Some(private_context),
-                CanSeePrivateContext::No => None,
+            let pageid = &pageid.reduced_by(reduce);
+            return match function {
+                CanSeePrivateContext::No(function) => {
+                    function(pageid)
+                }
+                CanSeePrivateContext::Yes(function) => {
+                    function(pageid, private_context)
+                }
             };
-            return function(&pageid.reduced_by(reduce), private_context);
         }
     }
     return None;
