@@ -52,8 +52,8 @@ pub struct UserDataPublicPerson {
 
 #[derive(Serialize, Deserialize)]
 pub struct UserDataPublicOrganization {
-    pub org_name: Option<String>,
-    pub org_add_name: Option<String>,
+    pub name1: Option<String>,
+    pub name2: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]

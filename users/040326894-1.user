@@ -1,1 +1,17 @@
-{"salutation": "", "first_name": "HamburgerSparkasse", "last_name": "", "street": "Ferdinandstr. 5", "zip": "2000", "city": "Hamburg 1", "country": "de"}
+{
+	"userid": {
+		"id": "040326894",
+		"ext": "1"
+	},
+	"public": {
+		"Organization": {
+			"name1": "Hamburger Sparkasse"
+		}
+	},
+	"private": {
+		"street": "Ferdinandstr. 5",
+		"zip": "2000",
+		"city": "Hamburg 1",
+		"country": "de"
+	}
+}

@@ -1,9 +1,18 @@
 {
-	"salutation": "",
-	"org_name": "Deutsche Bundespost",
-	"org_add_name": "Christian Schwarz-Schilling",
-	"street": "Heinrich-Konen-Str. 1",
-	"zip": "53227",
-	"city": "Bonn",
-	"country": "de"
+	"userid": {
+		"id": "02114793123",
+		"ext": "1"
+	},
+	"public": {
+		"Organization": {
+			"name1": "Deutsche Bundespost",
+			"name2": "Christian Schwarz-Schilling",
+		}
+	},
+	"private": {
+		"street": "Heinrich-Konen-Str. 1",
+		"zip": "53227",
+		"city": "Bonn",
+		"country": "de"
+	}
 }
