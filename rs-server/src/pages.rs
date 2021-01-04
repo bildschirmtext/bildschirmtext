@@ -26,6 +26,7 @@ impl Link {
     }
 }
 
+#[derive(Default)]
 #[derive(Serialize, Deserialize)]
 pub struct Meta {
     pub publisher_name: Option<String>,

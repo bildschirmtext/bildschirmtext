@@ -37,59 +37,58 @@ pub fn validate_login(pageid: &PageId, input_data: &HashMap<String, String>) -> 
 }
 
 fn create_login() -> Page {
-    let meta_str = r#"
-    {
-        "clear_screen": false,
-        "inputs": {
-            "confirm": false,
-            "fields": [
-                {
-                    "bgcolor": 12,
-                    "column": 26,
-                    "fgcolor": 3,
-                    "height": 1,
-                    "hint": "Teilnehmernummer oder # eingeben",
-                    "line": 18,
-                    "name": "user_id",
-                    "width": 10
+    let meta = Meta {
+        clear_screen: Some(false),
+        inputs: Some(Inputs {
+            confirm: false,
+            fields: vec!(
+                InputField {
+                    bgcolor: Some(12),
+                    column: 26,
+                    fgcolor: Some(3),
+                    height: 1,
+                    hint: Some("Teilnehmernummer oder # eingeben".to_owned()),
+                    line: 18,
+                    name: "user_id".to_owned(),
+                    width: 10,
+                    ..Default::default()
                 },
-                {
-                    "bgcolor": 12,
-                    "column": 37,
-                    "cursor_home": true,
-                    "default": "1",
-                    "fgcolor": 3,
-                    "height": 1,
-                    "hint": "Mitbenutzer oder # eingeben",
-                    "line": 18,
-                    "name": "ext",
-                    "type": "number",
-                    "width": 1
+                InputField {
+                    bgcolor: Some(12),
+                    column: 37,
+                    cursor_home: true,
+                    default: Some("1".to_owned()),
+                    fgcolor: Some(3),
+                    height: 1,
+                    hint: Some("Mitbenutzer oder # eingeben".to_owned()),
+                    line: 18,
+                    name: "ext".to_owned(),
+                    input_type: InputType::Numeric,
+                    width: 1,
+                    ..Default::default()
                 },
-                {
-                    "bgcolor": 12,
-                    "column": 26,
-                    "fgcolor": 3,
-                    "height": 1,
-                    "hint": "N\u00e4chstes Feld mit #; Leer f\u00fcr Gast",
-                    "line": 20,
-                    "name": "password",
-                    "type": "password",
-                    "width": 14
+                InputField {
+                    bgcolor: Some(12),
+                    column: 26,
+                    fgcolor: Some(3),
+                    height: 1,
+                    hint: Some("Nächstes Feld mit #; Leer für Gast".to_owned()),
+                    line: 20,
+                    name: "password".to_owned(),
+                    input_type: InputType::Password,
+                    width: 14,
+                    validate: Some(validate_login),
+                    ..Default::default()
                 }
-            ],
-            "no_navigation": true,
-            "target": "page:000001a"
-        },
-        "links": [],
-        "publisher_color": 7
-    }
-    "#;
-    let mut meta: Meta = serde_json::from_str(meta_str).unwrap();
-    if let Some(inputs) = &mut meta.inputs {
-        // XXX no need for the if-let, but unwrap() should partially move meta :(
-        inputs.fields[2].validate = Some(validate_login);
-    }
+            ),
+            no_navigation: true,
+            target: Some("page:000001a".to_owned()),
+            ..Default::default()
+        }),
+        links: None,
+        publisher_color: Some(7),
+        ..Default::default()
+    };
 
     let mut page = Page::new(meta);
     page.cept.parallel_mode();

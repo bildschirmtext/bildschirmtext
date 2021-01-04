@@ -58,6 +58,7 @@ impl Default for InputType {
 
 #[derive(Serialize, Deserialize)]
 #[derive(Clone)]
+#[derive(Default)]
 pub struct InputField {
     pub name: String,
     pub line: u8,
