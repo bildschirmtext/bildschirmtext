@@ -38,6 +38,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use super::cept::*;
+use super::pages::*;
 use super::session::*;
 
 #[derive(Clone, PartialEq)]
@@ -85,14 +86,13 @@ pub struct InputField {
     #[serde(default)]
     pub command_mode: bool,
     #[serde(skip_serializing, skip_deserializing)]
-    pub validate: Option<fn(&PageId, &HashMap<String, String>) -> Validate>,
+    pub action: Option<fn(&PageId, &HashMap<String, String>) -> ActionResult>,
 }
 
 #[derive(Serialize, Deserialize)]
 #[derive(Default)]
 pub struct Inputs {
     pub fields: Vec<InputField>,
-    pub target: Option<String>,
     pub price: Option<u32>,
     #[serde(default)]
     pub confirm: bool,
@@ -100,6 +100,8 @@ pub struct Inputs {
     pub no_55: bool,
     #[serde(default)]
     pub no_navigation: bool,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub action: Option<fn(&PageId, &HashMap<String, String>) -> UserRequest>,
 }
 
 pub struct Editor {
@@ -394,7 +396,7 @@ impl Editor {
                             cursor_home: false,
                             end_on_illegal_character: false,
                             end_on_legal_string: false,
-                            validate: None,
+                            action: None,
                         };
                         let mut editor = Editor::new(&input_field);
                         editor.set_string(&cept_ini_str());
@@ -512,6 +514,23 @@ pub fn readchar(stream: &mut impl Read) -> u8 {
     let mut buf = [0];
     stream.read(&mut buf);
     buf[0]
+}
+
+pub fn wait_for_ter(stream: &mut (impl Read + Write)) {
+    // TODO: use an editor for this, too!
+    let mut cept = Cept::new();
+    cept.sequence_end_of_page();
+    write_stream(stream, cept.data());
+    loop {
+        let c = readchar(stream);
+        if c == cept_ter() {
+            write_stream(stream, &[c]);
+            break
+        }
+    }
+    let mut cept = create_system_message(&Error::None, None);
+    cept.sequence_end_of_page();
+    write_stream(stream, cept.data());
 }
 
 fn cept_ini() -> u8 {

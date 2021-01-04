@@ -291,37 +291,59 @@ fn format_currency(price: u32) -> String {
     format!("DM  {},{:02}", price / 100, price % 100)
 }
 
-pub fn create_system_message(code: usize, price: Option<u32>) -> Cept {
-    let mut text = String::new();
-    let mut prefix = "SH";
-    if code == 0 {
-        text = "                               ".to_owned();
-    } else if code == 10 {
-        text = "Rückblättern nicht möglich     ".to_owned();
-    } else if code == 44 {
-        text = "Absenden? Ja:19 Nein:2         ".to_owned();
-    } else if code == 47 {
-        text = format!("Absenden für {}? Ja:19 Nein:2", format_currency(price.unwrap()));
-    } else if code == 55 {
-        text = "Eingabe wird bearbeitet        ".to_owned();
-    } else if code == 73 {
-        let current_datetime = Utc::now().format("%d.%m.%Y %H:%M").to_string();
-        text = format!("Abgesandt {}, -> #  ", current_datetime);
-        prefix = "1B";
-    } else if code == 100 || code == 101 {
-        text = "Seite nicht vorhanden          ".to_owned();
-    } else if code == 291 {
-        text = "Seite wird aufgebaut           ".to_owned();
-    }
-
+pub fn create_system_message(error: &Error, price: Option<u32>) -> Cept {
     let mut msg = Cept::new();
     msg.service_break(24);
     msg.clear_line();
-    msg.add_str_characterset(&text, Some(1));
-    msg.hide_text();
-    msg.add_raw(b"\x08");
-    msg.add_str(prefix);
-    msg.add_str(&format!("{:03}", code));
+
+    match error {
+        Error::None => {
+        }
+        Error::Code(code) => {
+            let mut text = String::new();
+            let mut prefix = "SH";
+            match *code {
+                0 => {
+                    text = "".to_owned();
+                },
+                10 => {
+                    text = "Rückblättern nicht möglich".to_owned();
+                },
+                44 => {
+                    text = "Absenden? Ja:19 Nein:2".to_owned();
+                },
+                47 => {
+                    text = format!("Absenden für {}? Ja:19 Nein:2", format_currency(price.unwrap()));
+                },
+                55 => {
+                    text = "Eingabe wird bearbeitet".to_owned();
+                },
+                73 => {
+                    let current_datetime = Utc::now().format("%d.%m.%Y %H:%M").to_string();
+                    text = format!("Abgesandt {}, -> #", current_datetime);
+                    prefix = "1B";
+                },
+                100 | 101 => {
+                    text = "Seite nicht vorhanden".to_owned();
+                },
+                291 => {
+                    text = "Seite wird aufgebaut".to_owned();
+                }
+                _ => {},
+            }
+            while text.len() < 31 {
+                text.push(' ');
+            }
+            msg.add_str_characterset(&text, Some(1));
+            msg.hide_text();
+            msg.add_raw(b"\x08");
+            msg.add_str(prefix);
+            msg.add_str(&format!("{:03}", code));
+        },
+        Error::Custom(text) => {
+            msg.add_str_characterset(text, Some(1));
+        }
+    }
     msg.service_break_back();
     msg
 }

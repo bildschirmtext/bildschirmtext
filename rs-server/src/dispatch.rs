@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::session::{PageId, Validate};
+use crate::session::*;
 use super::pages::*;
 use super::user::*;
 
@@ -13,8 +13,4 @@ pub fn get_page(pageid: &PageId, user: Option<&User>) -> Option<Page> {
     } else {
         super::stat::create(pageid)
     }
-}
-
-pub fn handle(pageid: &PageId, input_data: &HashMap<String, String>) -> String {
-    panic!();
 }

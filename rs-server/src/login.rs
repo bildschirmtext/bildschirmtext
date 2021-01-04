@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use chrono::Utc;
+use std::str::FromStr;
 use super::editor::*;
 use super::pages::*;
 use super::session::*;
@@ -17,7 +18,7 @@ pub fn create(pageid: &PageId, user: Option<&User>) -> Option<Page> {
     }
 }
 
-pub fn validate_login(pageid: &PageId, input_data: &HashMap<String, String>) -> Validate {
+pub fn action_login(_: &PageId, input_data: &HashMap<String, String>) -> UserRequest {
     if User::login(
         input_data.get("user_id").unwrap(),
         input_data.get("ext").unwrap(),
@@ -25,14 +26,10 @@ pub fn validate_login(pageid: &PageId, input_data: &HashMap<String, String>) -> 
         false
     ) {
         println!("login ok");
-        Validate::Ok
+        UserRequest::Goto(PageId::from_str("000001").unwrap(), true)
     } else {
         println!("login incorrect");
-        // msg = Util.create_custom_system_message("Ungültiger Teilnehmer/Kennwort -> #")
-        // sys.stdout.buffer.write(msg)
-        // sys.stdout.flush()
-        // Util.wait_for_ter()
-        Validate::Restart
+        UserRequest::Error(Error::Custom("Ungültiger Teilnehmer/Kennwort -> #".to_owned()))
     }
 }
 
@@ -77,12 +74,12 @@ fn create_login() -> Page {
                     name: "password".to_owned(),
                     input_type: InputType::Password,
                     width: 14,
-                    validate: Some(validate_login),
+                    // action: Some(validate_login),
                     ..Default::default()
                 }
             ),
             no_navigation: true,
-            target: Some("page:000001a".to_owned()),
+            action: Some(action_login),
             ..Default::default()
         }),
         links: None,

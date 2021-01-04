@@ -61,7 +61,13 @@ impl FromStr for PageId {
     }
 }
 
-pub enum Validate {
+pub enum Error {
+    None,
+    Code(usize),
+    Custom(String),
+}
+
+pub enum ActionResult {
     Ok,
 	Error,
 	Restart,
@@ -70,7 +76,7 @@ pub enum Validate {
 pub enum UserRequest {
     Goto(PageId, bool),
     SendAgain,
-    Error(usize)
+    Error(Error)
 }
 
 pub struct ClientState {
@@ -133,7 +139,7 @@ impl Session {
                 } else {
                     100
                 };
-                show_error(error, stream);
+                show_error(&Error::Code(error), stream);
             }
 
             'input: loop {
@@ -147,10 +153,10 @@ impl Session {
                     },
                     InputEvent::Navigation(val) => {
                         self.decode_link(links.as_ref(), &val)
-                    }
+                    },
                     InputEvent::TextFields(input_data) => {
-                        self.decode_text_fields(input_data)
-                    }
+                        self.decode_text_fields(&self.current_pageid, inputs.as_ref(), &input_data)
+                    },
                 };
                 match req {
                     UserRequest::Goto(t, a) => {
@@ -162,7 +168,7 @@ impl Session {
                         write_stream(stream, current_page_cept.data());
                     },
                     UserRequest::Error(e) => {
-                        show_error(e, stream);
+                        show_error(&e, stream);
                         continue 'input;
                     }
                 }
@@ -211,14 +217,14 @@ impl Session {
                             end_on_legal_string: true,
                             echo_ter: true,
                             command_mode: false,
-                            validate: None,
+                            action: None,
                             default: None,
                         }),
                     confirm: false,
                     no_55: true,
-                    target: None,
                     no_navigation: false,
                     price: None,
+                    action: None,
                 };
                 &i
             } else {
@@ -256,20 +262,21 @@ impl Session {
                 input_data.insert(input_field.name.to_string(), val.unwrap().to_string());
 
 
-                let mut validate_result = Validate::Ok;
-                if let Some(validate) = input_field.validate {
-                    validate_result = validate(&pageid, &input_data);
-                }
+                let action_result = if let Some(action) = input_field.action {
+                    action(&pageid, &input_data)
+                } else {
+                    ActionResult::Ok
+                };
 
-                match validate_result {
-                    Validate::Ok => {
+                match action_result {
+                    ActionResult::Ok => {
                         i += 1;
                     },
-                    Validate::Error => {
+                    ActionResult::Error => {
                         skip = false;
                         continue;
                     },
-                    Validate::Restart => {
+                    ActionResult::Restart => {
                         i = 0;
                         skip = false;
                         continue;
@@ -288,20 +295,12 @@ impl Session {
                     // }
                 }
             } else if !inputs.no_55 {
-                let cept = create_system_message(55, None);
+                let cept = create_system_message(&Error::Code(55), None);
                 write_stream(stream, cept.data());
             }
 
             // send "input_data" to "inputs.target"
-            if let Some(target) = &inputs.target {
-                if target.starts_with("page:") {
-                    return InputEvent::Command(target[5..].to_owned());
-                } else {
-                    // XXX we should loop
-                    let handle_result = super::dispatch::handle(pageid, &input_data);
-                    return InputEvent::Command(handle_result);
-                }
-            } else if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
+            if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
                 return InputEvent::Navigation(val.to_owned())
             } else {
                 return InputEvent::TextFields(input_data);
@@ -313,9 +312,9 @@ impl Session {
     fn confirm(inputs: &Inputs, stream: &mut (impl Write + Read)) -> bool { // "send?" message
         let price = inputs.price;
         let mut cept = if price.is_some() && price != Some(0) {
-            create_system_message(47, price)
+            create_system_message(&Error::Code(47), price)
         } else {
-            create_system_message(44, None)
+            create_system_message(&Error::Code(44), None)
         };
         cept.set_cursor(24, 1);
         cept.sequence_end_of_page();
@@ -353,7 +352,7 @@ impl Session {
             println!("command: back");
             if self.history.len() < 2 {
                 println!("ERROR: No history.");
-                UserRequest::Error(10)
+                UserRequest::Error(Error::Code(10))
             } else {
                 let _ = self.history.pop();
                 let mut target_pageid = self.history.pop().unwrap();
@@ -397,19 +396,23 @@ impl Session {
             UserRequest::Goto(pageid, true)
         } else {
             println!("ERROR: Illegal navigation");
-            UserRequest::Error(100)
+            UserRequest::Error(Error::Code(100))
         }
     }
 
-    fn decode_text_fields(&self, input_data: HashMap<String, String>) -> UserRequest {
-        println!("input_data: {:?}", input_data);
-        UserRequest::SendAgain // XXX TODO handle text field input
+    fn decode_text_fields(&self, pageid: &PageId, inputs: Option<&Inputs>, input_data: &HashMap<String, String>) -> UserRequest {
+        let action_result = if let Some(action) = inputs.unwrap().action {
+            action(&pageid, &input_data)
+        } else {
+            UserRequest::SendAgain // XXX
+        };
+        action_result
     }
-
 }
 
-fn show_error(error: usize, stream: &mut (impl Write + Read)) {
+fn show_error(error: &Error, stream: &mut (impl Write + Read)) {
     let mut cept = create_system_message(error, None);
     cept.sequence_end_of_page();
     write_stream(stream, cept.data());
+    wait_for_ter(stream);
 }
