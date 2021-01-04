@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use chrono::Utc;
+use chrono::Local;
 use std::str::FromStr;
 use super::editor::*;
 use super::pages::*;
@@ -175,7 +175,7 @@ fn create_start(user: Option<&User>) -> Page {
         autoplay: None,
     };
 
-    let now = Utc::now();
+    let now = Local::now();
     let current_date = now.format("%d.%m.%Y  %H:%M").to_string();
     let last_date;
     let last_time;

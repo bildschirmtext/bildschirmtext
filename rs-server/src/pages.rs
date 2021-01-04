@@ -1,6 +1,6 @@
 use std::{fs::File, io::Read};
 use serde::{Deserialize, Serialize};
-use chrono::Utc;
+use chrono::Local;
 use super::cept::*;
 use super::editor::*;
 use super::session::*;
@@ -319,7 +319,7 @@ pub fn create_system_message(error: &Error, price: Option<u32>) -> Cept {
                     text = "Eingabe wird bearbeitet".to_owned();
                 },
                 73 => {
-                    let current_datetime = Utc::now().format("%d.%m.%Y %H:%M").to_string();
+                    let current_datetime = Local::now().format("%d.%m.%Y %H:%M").to_string();
                     text = format!("Abgesandt {}, -> #", current_datetime);
                     prefix = "1B";
                 },

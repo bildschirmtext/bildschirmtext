@@ -1,6 +1,6 @@
 use std::{fs::File, io::Write};
 use serde::{Deserialize, Serialize};
-use chrono::Utc;
+use chrono::Local;
 use super::cept::*;
 use super::pages::*;
 use super::stat::*;
@@ -113,7 +113,7 @@ impl Stats {
 
 	pub fn update(&mut self) {
 		// update the last use field with the current time
-		self.stats_data.last_use = Some(Utc::now().timestamp());
+		self.stats_data.last_use = Some(Local::now().timestamp());
         let json_data = serde_json::to_string(&self.stats_data).unwrap();
         let mut file = File::create(&self.filename).unwrap();
         file.write_all(&json_data.as_bytes());
