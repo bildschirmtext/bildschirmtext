@@ -41,6 +41,10 @@ use super::cept::*;
 use super::pages::*;
 use super::session::*;
 
+pub const CEPT_INI: u8 = 0x13;
+pub const CEPT_TER: u8 = 0x1c;
+pub const CEPT_DCT: u8 = 0x1a;
+
 #[derive(Clone, PartialEq)]
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
@@ -184,7 +188,7 @@ impl Editor {
             let l = match self.input_field.input_type {
                 InputType::Password => "*".repeat(l.len()),
 			    _ => {
-                    if l.starts_with(cept_ini_str()) {
+                    if l.starts_with(CEPT_INI as char) {
                         "*".to_owned() + &l[1..]
                     } else {
                         l.to_owned()
@@ -365,7 +369,7 @@ impl Editor {
             }
 			// println!("In: {:x}", c);
 
-			if self.input_field.command_mode && c == cept_ini() && self.string().chars().last().unwrap() == cept_ini() as char {
+			if self.input_field.command_mode && c == CEPT_INI && self.string().chars().last().unwrap() == CEPT_INI as char {
 				// exit command mode, tell parent to clear
                 return (None, false);
             }
@@ -388,9 +392,9 @@ impl Editor {
 			// if c >= 0x20
 			//     c is Unicode
 
-			if c < 0x20 { //and c != cept_ini():
+			if c < 0x20 { //and c != CEPT_INI:
 				prefix = vec!();
-				if c == cept_ini() {
+				if c == CEPT_INI {
 					if !self.input_field.command_mode {
                         println!("entering command mode");
                         let input_field = InputField {
@@ -415,13 +419,13 @@ impl Editor {
                             action: None,
                         };
                         let mut editor = Editor::new(&input_field);
-                        editor.set_string(&cept_ini_str());
+                        editor.set_string(&(CEPT_INI as char).to_string());
 						editor.draw(stream);
 						let (val, dct) = editor.edit(false, stream);
                         println!("exited command mode");
                         if let Some(val) = val {
                             // Editor.debug_print(val);
-                            let mut x = cept_ini_str().to_owned();
+                            let mut x = (CEPT_INI as char).to_string();
                             x += "02";
 							if val.starts_with(&x) && val.len() == 4 {
 								// editor codes *021# etc.
@@ -442,9 +446,9 @@ impl Editor {
                                 }
                             } else {
 								// global code
-                                let mut x1 = cept_ini_str().to_owned();
+                                let mut x1 = (CEPT_INI as char).to_string();
                                 x1 += "00";
-                                let mut x2 = cept_ini_str().to_owned();
+                                let mut x2 = (CEPT_INI as char).to_string();
                                 x2 += "09";
                                     if !self.prohibit_command_mode || val == x1 || val == x2 {
                                     return (Some(val), false);
@@ -458,12 +462,12 @@ impl Editor {
 						start = true;
                         continue;
                     }
-                } else if c == cept_ter() {
+                } else if c == CEPT_TER {
 					if self.input_field.echo_ter {
                         write_stream(stream, &[b'#']);
                     }
                     break
-                } else if c == cept_dct() {
+                } else if c == CEPT_DCT {
 					dct = true;
                     break;
                 }
@@ -518,9 +522,6 @@ impl Editor {
                 }
             }
         }
-			// sys.stderr.write("self.data:\n" + pprint.pformat(selfdata) + "\n")
-			// sys.stderr.write("self.string:\n" + pprint.pformat(self.string) + "\n")
-
 
         return (Some(self.string()), dct);
     }
@@ -539,7 +540,7 @@ pub fn wait_for_ter(stream: &mut (impl Read + Write)) {
     write_stream(stream, cept.data());
     loop {
         let c = readchar(stream);
-        if c == cept_ter() {
+        if c == CEPT_TER {
             write_stream(stream, &[c]);
             break
         }
@@ -548,22 +549,6 @@ pub fn wait_for_ter(stream: &mut (impl Read + Write)) {
     let mut cept = create_system_message(&Error::None, None);
     cept.sequence_end_of_page();
     write_stream(stream, cept.data());
-}
-
-pub fn cept_ini() -> u8 {
-    0x13
-}
-
-fn cept_ter() -> u8 {
-    0x1c
-}
-
-fn cept_dct() -> u8 {
-    0x1a
-}
-
-fn cept_ini_str() -> &'static str {
-    "\x13"
 }
 
 pub fn write_stream(stream: &mut impl Write, data: &[u8]) {

@@ -285,7 +285,7 @@ impl Session {
                 }
 
                 if let Some(val) = &val {
-                    if val.starts_with(cept_ini() as char) {
+                    if val.starts_with(CEPT_INI as char) {
                         return InputEvent::Command(val[1..].to_string());
                     }
                 }

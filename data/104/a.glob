@@ -1,5 +1,5 @@
 {
-    "clear_screen": false,
+    "clear_screen": true,
     "links": [
         {
             "code": "1",
