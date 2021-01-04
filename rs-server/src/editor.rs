@@ -225,17 +225,23 @@ impl Editor {
         }
     }
 
+    // N.B.: This has overwrite semantics
 	pub fn try_insert_character(&mut self, c: char) -> String {
-        let mut s = self.data[self.y as usize].clone();
+        let s1 = &self.data[self.y as usize];
 		if self.x < self.input_field.width {
-            s.insert(self.x as usize, c);
+            let mut s2: String = s1.chars().take(self.x as usize).collect();
+            s2.push(c);
+            s2.extend(s1.chars().skip(self.x as usize + 1));
+            s2
+        } else {
+            s1.to_owned()
         }
-        s
     }
 
+    // N.B.: This has overwrite semantics
     pub fn insert_character(&mut self, c: char) -> bool {
 		if self.x < self.input_field.width {
-            self.data[self.y as usize].insert(self.x as usize, c);
+            self.data[self.y as usize] = self.try_insert_character(c);
             self.x += 1;
             true
         } else {
@@ -347,7 +353,7 @@ impl Editor {
             } else {
                 c = readchar(stream);
             }
-			println!("In: {:x}", c);
+			// println!("In: {:x}", c);
 
 			if self.input_field.command_mode && c == cept_ini() && self.string().chars().last().unwrap() == cept_ini() as char {
 				// exit command mode, tell parent to clear

@@ -144,10 +144,10 @@ impl Session {
 
             'input: loop {
                 // *** get user input
-                let input_data = self.get_inputs(&self.current_pageid, inputs.as_ref(), links.as_ref(), stream);
+                let input_event = self.get_inputs(&self.current_pageid, inputs.as_mut(), links.as_ref(), stream);
 
                 // *** handle input
-                let req = match input_data {
+                let req = match input_event {
                     InputEvent::Command(command_input) => {
                         self.decode_command(&command_input)
                     },
@@ -181,12 +181,12 @@ impl Session {
     // * for pages with text fields, draw them and allow editing them
     // * for pages with without text fields, allow entering a link
     // In both cases, it is possible to escape into command mode.
-    fn get_inputs(&self, pageid: &PageId, inputs: Option<&Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputEvent {
+    fn get_inputs(&self, pageid: &PageId, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputEvent {
         if self.autoplay {
             println!("autoplay!");
             InputEvent::Navigation("".to_owned()) // inject "#"
         } else {
-            let i;
+            let mut i;
             let inputs = if inputs.is_none() {
                 // for pages without text fields, create a single text
                 // field at the bottom of the screen to input a link
@@ -226,7 +226,7 @@ impl Session {
                     price: None,
                     action: None,
                 };
-                &i
+                &mut i
             } else {
                 inputs.unwrap()
             };
@@ -303,6 +303,13 @@ impl Session {
             if let Some(val) = input_data.get(INPUT_NAME_NAVIGATION) {
                 return InputEvent::Navigation(val.to_owned())
             } else {
+                let mut vec = vec!();
+                for (i, field) in inputs.fields.iter().enumerate() {
+                    vec.push((i, Some(input_data.get(&field.name).unwrap().clone())));
+                }
+                for (i, v) in vec {
+                    inputs.fields[i].default = v;
+                }
                 return InputEvent::TextFields(input_data);
             }
 

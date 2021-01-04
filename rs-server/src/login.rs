@@ -19,6 +19,7 @@ pub fn create(pageid: &PageId, user: Option<&User>) -> Option<Page> {
 }
 
 pub fn action_login(_: &PageId, input_data: &HashMap<String, String>) -> UserRequest {
+    println!("user: '{}'", input_data.get("user_id").unwrap());
     if User::login(
         input_data.get("user_id").unwrap(),
         input_data.get("ext").unwrap(),
