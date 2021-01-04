@@ -3,11 +3,12 @@ use std::io::Read;
 use std::fs::metadata;
 use super::pages::*;
 use super::session::*;
+use super::dispatch::*;
 
 const PATH_DATA: &str = "../data/";
 
 
-pub fn create(pageid: &PageId) -> Option<Page> {
+pub fn create(pageid: &PageId, private_context: Option<PrivateContext>) -> Option<Page> {
     let mut cept = None;
 
     if let Some((basedir, filename)) = find_basedir(pageid) {

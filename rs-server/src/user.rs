@@ -5,6 +5,7 @@ use super::cept::*;
 use super::pages::*;
 use super::stat::*;
 use super::session::*;
+use super::dispatch::*;
 
 const PATH_USERS: &str = "../users/";
 const PATH_SECRETS: &str = "../secrets/";
@@ -596,7 +597,7 @@ fn create_add_user() -> Page {
 //         return "77"
 // }
 
-pub fn create(pageid: &PageId) -> Option<Page> {
+pub fn create(pageid: &PageId, private_context: Option<PrivateContext>) -> Option<Page> {
     if pageid.page == "77" {
         Some(create_add_user())
     } else {

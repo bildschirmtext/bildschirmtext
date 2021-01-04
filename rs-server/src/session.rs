@@ -6,6 +6,7 @@ use super::cept::*;
 use super::editor::*;
 use super::pages::*;
 use super::user::*;
+use super::dispatch::*;
 
 const INPUT_NAME_NAVIGATION: &'static str = "$navigation";
 
@@ -123,7 +124,11 @@ impl Session {
         'main: loop {
             // *** show page
             println!("showing page: {}", target_pageid.to_string());
-            if let Some(page) = super::dispatch::get_page(&target_pageid, self.user.as_ref(), self.stats.as_ref()) {
+            let private_context = PrivateContext {
+                user: self.user.as_ref(),
+                stats: self.stats.as_ref(),
+            };
+            if let Some(page) = super::dispatch::get_page(&target_pageid, private_context) {
                 current_page_cept = page.construct_page_cept(&mut self.client_state, &target_pageid);
                 write_stream(stream, current_page_cept.data());
                 links = page.meta.links;

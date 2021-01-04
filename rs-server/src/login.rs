@@ -4,12 +4,14 @@ use super::editor::*;
 use super::pages::*;
 use super::session::*;
 use super::user::*;
+use super::dispatch::*;
 
-pub fn create(pageid: &PageId, user: Option<&User>, stats: Option<&Stats>) -> Option<Page> {
+pub fn create(pageid: &PageId, private_context: Option<PrivateContext>) -> Option<Page> {
+    let private_context = private_context.unwrap();
     if pageid.page == "00000" {
         Some(create_login())
     } else if pageid.page == "000001" {
-        Some(create_start(user, stats)) // XXX user
+        Some(create_start(private_context)) // XXX user
     } else if pageid.page == "9" {
         Some(create_logout())
     } else {
@@ -159,13 +161,13 @@ fn last_use(stats: Option<&Stats>) -> (String, String) {
     ("--.--.----".to_owned(), "--:--".to_owned())
 }
 
-fn create_start(user: Option<&User>, stats: Option<&Stats>) -> Page {
+fn create_start(private_context: PrivateContext) -> Page {
     let mut links = vec!(Link::new("#", "0"));
 
     // if user.messaging.has_new_messages():
     //     links["8"] = "88"
 
-    if user.is_none() {
+    if private_context.user.is_none() {
         links.push(Link::new("7", "77"));
     }
 
@@ -185,10 +187,10 @@ fn create_start(user: Option<&User>, stats: Option<&Stats>) -> Page {
 
     let now = Local::now();
     let current_date = now.format("%d.%m.%Y  %H:%M").to_string();
-    let (last_date, last_time) = last_use(stats);
+    let (last_date, last_time) = last_use(private_context.stats);
 
     let mut user_name;
-    if let Some(user) = user {
+    if let Some(user) = &private_context.user {
         user_name = String::new();
         match &user.public {
             UserDataPublic::Person(person) => {
