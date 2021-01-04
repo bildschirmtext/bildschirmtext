@@ -8,7 +8,7 @@ use super::dispatch::*;
 const PATH_DATA: &str = "../data/";
 
 
-pub fn create(pageid: &PageId, private_context: Option<PrivateContext>) -> Option<Page> {
+pub fn create(pageid: &PageId, _: Option<PrivateContext>) -> Option<Page> {
     let mut cept = None;
 
     if let Some((basedir, filename)) = find_basedir(pageid) {

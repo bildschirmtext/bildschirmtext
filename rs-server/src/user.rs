@@ -597,7 +597,7 @@ fn create_add_user() -> Page {
 //         return "77"
 // }
 
-pub fn create(pageid: &PageId, private_context: Option<PrivateContext>) -> Option<Page> {
+pub fn create(pageid: &PageId, _: Option<PrivateContext>) -> Option<Page> {
     if pageid.page == "77" {
         Some(create_add_user())
     } else {
