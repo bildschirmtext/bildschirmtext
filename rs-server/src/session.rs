@@ -1,3 +1,4 @@
+use super::user::*;
 use std::io::{Read, Write};
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -87,6 +88,7 @@ pub struct ClientState {
 
 pub struct Session {
     user: Option<User>,
+    stats: Option<Stats>,
     client_state: ClientState,
     current_pageid: PageId,
     history: Vec<PageId>,
@@ -97,6 +99,7 @@ impl Session {
     pub fn new() -> Self {
         Self {
             user: None,
+            stats: None,
             client_state:ClientState {
                 palette: None,
                 include: None,
@@ -118,12 +121,9 @@ impl Session {
         let mut current_page_cept = Cept::new();
 
         'main: loop {
-            // XXX if User.user() is not None:
-            // 	User.user().stats.update()
-
             // *** show page
             println!("showing page: {}", target_pageid.to_string());
-            if let Some(page) = super::dispatch::get_page(&target_pageid, self.user.as_ref()) {
+            if let Some(page) = super::dispatch::get_page(&target_pageid, self.user.as_ref(), self.stats.as_ref()) {
                 current_page_cept = page.construct_page_cept(&mut self.client_state, &target_pageid);
                 write_stream(stream, current_page_cept.data());
                 links = page.meta.links;
@@ -141,6 +141,10 @@ impl Session {
                     100
                 };
                 show_error(&Error::Code(error), stream);
+            }
+
+            if let Some(stats) = &mut self.stats {
+                stats.update();
             }
 
             'input: loop {
@@ -163,6 +167,7 @@ impl Session {
                     UserRequest::Login(userid, password) => {
                         if let Some(user) = User::login(&userid, &password) {
                             println!("login ok");
+                            self.stats = Some(Stats::new(&user));
                             self.user = Some(user);
                             target_pageid = PageId::from_str("000001").unwrap();
                             add_to_history = false;

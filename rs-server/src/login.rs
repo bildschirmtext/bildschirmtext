@@ -1,16 +1,15 @@
 use std::collections::HashMap;
-use chrono::Local;
-use std::str::FromStr;
+use chrono::{Local, DateTime, TimeZone};
 use super::editor::*;
 use super::pages::*;
 use super::session::*;
 use super::user::*;
 
-pub fn create(pageid: &PageId, user: Option<&User>) -> Option<Page> {
+pub fn create(pageid: &PageId, user: Option<&User>, stats: Option<&Stats>) -> Option<Page> {
     if pageid.page == "00000" {
         Some(create_login())
     } else if pageid.page == "000001" {
-        Some(create_start(user)) // XXX user
+        Some(create_start(user, stats)) // XXX user
     } else if pageid.page == "9" {
         Some(create_logout())
     } else {
@@ -151,7 +150,16 @@ fn create_logout() -> Page {
     page
 }
 
-fn create_start(user: Option<&User>) -> Page {
+fn last_use(stats: Option<&Stats>) -> (String, String) {
+    if let Some(stats) = &stats {
+        if let Some(t) = stats.last_use() {
+            return (t.format("%d.%m.%Y").to_string(), t.format("%H:%M").to_string());
+        }
+    }
+    ("--.--.----".to_owned(), "--:--".to_owned())
+}
+
+fn create_start(user: Option<&User>, stats: Option<&Stats>) -> Page {
     let mut links = vec!(Link::new("#", "0"));
 
     // if user.messaging.has_new_messages():
@@ -177,15 +185,7 @@ fn create_start(user: Option<&User>) -> Page {
 
     let now = Local::now();
     let current_date = now.format("%d.%m.%Y  %H:%M").to_string();
-    let last_date;
-    let last_time;
-    // if user.stats.last_login is not None:
-    //     t = datetime.datetime.fromtimestamp(user.stats.last_login)
-    //     last_date = t.strftime("%d.%m.%Y")
-    //     last_time = t.strftime("%H:%M")
-    // else:
-        last_date = "--.--.----".to_owned();
-        last_time = "--:--".to_owned();
+    let (last_date, last_time) = last_use(stats);
 
     let mut user_name;
     if let Some(user) = user {

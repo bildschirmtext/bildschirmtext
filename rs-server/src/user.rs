@@ -1,6 +1,6 @@
 use std::{fs::File, io::Write};
 use serde::{Deserialize, Serialize};
-use chrono::Local;
+use chrono::{Local, DateTime, TimeZone};
 use super::cept::*;
 use super::pages::*;
 use super::stat::*;
@@ -70,7 +70,6 @@ pub struct User {
 	pub public: UserDataPublic,
 	pub private: UserDataPrivate,
 
-	// stats: None
 	// messaging: None
 }
 
@@ -82,11 +81,12 @@ pub struct Secrets {
 //XXX global_user = None
 
 #[derive(Serialize, Deserialize)]
+#[derive(Default)]
 struct StatsData {
     last_use: Option<i64>,
 }
 
-struct Stats {
+pub struct Stats {
     filename: String,
     stats_data: StatsData,
 }
@@ -102,12 +102,19 @@ fn filename(userid: &UserId, path: &str, file_extension: &str) -> String {
 
 impl Stats {
 	pub fn new(user: &User) -> Self {
-		let filename = filename(&user.userid, PATH_STATS, &".stats");
-        let f = File::open(&filename).unwrap();
-        let stats_data: StatsData = serde_json::from_reader(f).unwrap();
-        Stats {
+		let filename = filename(&user.userid, PATH_STATS, &"stats");
+        if let Ok(f) = File::open(&filename) {
+            let stats_data: Result<StatsData, _> = serde_json::from_reader(f);
+            if let Ok(stats_data) = stats_data {
+                return Stats {
+                    filename,
+                    stats_data,
+                }
+            }
+        }
+        Self {
             filename,
-            stats_data,
+            stats_data: StatsData::default()
         }
     }
 
@@ -117,6 +124,14 @@ impl Stats {
         let json_data = serde_json::to_string(&self.stats_data).unwrap();
         let mut file = File::create(&self.filename).unwrap();
         file.write_all(&json_data.as_bytes());
+    }
+
+    pub fn last_use(&self) -> Option<DateTime<Local>> {
+        if let Some(last_use) = self.stats_data.last_use {
+            Some(Local.timestamp(last_use, 0))
+        } else {
+            None
+        }
     }
 }
 
@@ -196,7 +211,7 @@ impl User {
             let secrets: Result<Secrets, _> = serde_json::from_reader(f);
             if let Ok(secrets) = secrets {
                 if password == secrets.password {
-                    return Self::get(&userid, true);
+                    return Self::get(&userid, true)
                 }
             }
         }
