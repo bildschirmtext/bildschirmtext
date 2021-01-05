@@ -5,6 +5,7 @@ use super::staticp::*;
 use super::paths::*;
 
 #[derive(Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct UserId {
     pub id: String,
     pub ext: String,
