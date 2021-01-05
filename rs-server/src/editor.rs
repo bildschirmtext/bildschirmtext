@@ -38,7 +38,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use super::cept::*;
-use super::page::*;
+use super::sysmsg::*;
 use super::session::*;
 
 pub const CEPT_INI: u8 = 0x13;
@@ -546,9 +546,7 @@ pub fn wait_for_ter(stream: &mut (impl Read + Write)) {
         }
     }
     // clear
-    let mut cept = create_system_message(&Error::None, None);
-    cept.sequence_end_of_page();
-    write_stream(stream, cept.data());
+    show_error(&Error::None, stream);
 }
 
 pub fn write_stream(stream: &mut impl Write, data: &[u8]) {

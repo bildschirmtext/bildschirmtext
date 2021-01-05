@@ -9,6 +9,7 @@ mod page;
 mod paths;
 mod session;
 mod staticp;
+mod sysmsg;
 mod user;
 mod ui_user;
 

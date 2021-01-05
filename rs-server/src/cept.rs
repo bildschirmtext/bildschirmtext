@@ -581,6 +581,22 @@ impl Cept {
 		self.data.push(0x9e);
     }
 
+    pub fn set_fg_color_optimized(&mut self, c: u8) {
+        if c < 8 {
+            self.set_fg_color_simple(c);
+        } else {
+            self.set_fg_color(c - 8);
+        }
+    }
+
+    pub fn set_bg_color_optimized(&mut self, c: u8) {
+        if c < 8 {
+            self.set_bg_color_simple(c);
+        } else {
+            self.set_bg_color(c - 8);
+        }
+    }
+
     pub fn extend(&mut self, other: &Cept) {
         self.data.extend(&other.data);
     }

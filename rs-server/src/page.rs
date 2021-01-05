@@ -1,10 +1,15 @@
 use std::{fs::File, io::Read};
 use serde::{Deserialize, Serialize};
-use chrono::Local;
 use super::cept::*;
 use super::editor::*;
 use super::session::*;
 use super::staticp::*;
+use super::sysmsg::*;
+
+// how many seconds does pal/char transmission have to take
+// until we show the SH291 message
+const SH291_THRESHOLD_SEC: usize = 2;
+const BAUD_RATE: usize = 1200;
 
 #[derive(Serialize, Deserialize)]
 pub struct Palette {
@@ -109,9 +114,9 @@ impl Page {
             println!("ERROR: basedir not found!");
         }
         // b = baud if baud else 1200
-        // if len(cept) > (b/9) * SH291_THRESHOLD_SEC {
-            // cept = Util.create_system_message(291) + cept
-        // }
+        if cept.data().len() > (BAUD_RATE / 9) * SH291_THRESHOLD_SEC {
+            cept = create_system_message(&Error::new(ErrorCode::TransferringPage)) + cept;
+        }
         cept
     }
 
@@ -131,7 +136,6 @@ impl Page {
         }
 
         cept.add_raw(self.cept.data());
-
         cept.serial_limited_mode();
 
         Self::headerfooter(&mut cept, pageid, self.meta.publisher_name.as_deref(), self.meta.publisher_color.unwrap());
@@ -145,7 +149,6 @@ impl Page {
     pub fn headerfooter(cept: &mut Cept, pageid: &PageId, publisher_name: Option<&str>, publisher_color: u8) {
         let mut hide_price = false;
         let mut publisher_name = publisher_name;
-
 
         let hide_header_footer = if let Some(p) = publisher_name {
             // Early screenshots had a two-line publisher name with
@@ -185,113 +188,34 @@ impl Page {
         cept.add_raw(b"\x08");
         cept.code_9d();
         cept.add_raw(b"\x08");
-
-        let color_string = if publisher_color < 8 {
-            let mut c = Cept::new();
-            c.set_fg_color(publisher_color);
-            c
-        } else {
-            let mut c = Cept::new();
-            c.set_fg_color_simple(publisher_color - 8);
-            c
-        };
-
-        cept.add_raw(color_string.data());
-
+        cept.set_fg_color_optimized(publisher_color);
         cept.set_cursor(24, 19);
-
         if !hide_header_footer {
             cept.add_str(&format!("{pageid:>width$}", pageid=pageid.to_string(), width=22));
         }
-
         cept.cursor_home();
         cept.set_palette(1);
         cept.set_fg_color(8);
         cept.add_raw(b"\x08");
         cept.code_9d();
         cept.add_raw(b"\x08");
-
-        cept.add_raw(color_string.data());
-
+        cept.set_fg_color_optimized(publisher_color);
         cept.add_raw(b"\r");
-
-
-        // TODO: price
         if !hide_header_footer & !hide_price {
             cept.add_str(publisher_name.unwrap());
             cept.set_cursor(1, 31);
             cept.add_raw(b"  ");
-            cept.add_str(&format_currency(0));
+            cept.add_str(&format_currency(0)); // TODO: price
         }
-
         cept.cursor_home();
         cept.set_palette(0);
         cept.protect_line();
         cept.add_raw(b"\n");
     }
-
-
 }
 
-fn format_currency(price: u32) -> String {
+pub fn format_currency(price: u32) -> String {
     format!("DM  {},{:02}", price / 100, price % 100)
-}
-
-pub fn create_system_message(error: &Error, price: Option<u32>) -> Cept {
-    let mut msg = Cept::new();
-    msg.service_break(24);
-    msg.clear_line();
-
-    match error {
-        Error::None => {
-        }
-        Error::Code(code) => {
-            let mut text = String::new();
-            let mut prefix = "SH";
-            match *code {
-                0 => {
-                    text = "".to_owned();
-                },
-                10 => {
-                    text = "Rückblättern nicht möglich".to_owned();
-                },
-                44 => {
-                    text = "Absenden? Ja:19 Nein:2".to_owned();
-                },
-                47 => {
-                    text = format!("Absenden für {}? Ja:19 Nein:2", format_currency(price.unwrap()));
-                },
-                55 => {
-                    text = "Eingabe wird bearbeitet".to_owned();
-                },
-                73 => {
-                    let current_datetime = Local::now().format("%d.%m.%Y %H:%M").to_string();
-                    text = format!("Abgesandt {}, -> #", current_datetime);
-                    prefix = "1B";
-                },
-                100 | 101 => {
-                    text = "Seite nicht vorhanden".to_owned();
-                },
-                291 => {
-                    text = "Seite wird aufgebaut".to_owned();
-                }
-                _ => {},
-            }
-            while text.len() < 31 {
-                text.push(' ');
-            }
-            msg.add_str_characterset(&text, Some(1));
-            msg.hide_text();
-            msg.add_raw(b"\x08");
-            msg.add_str(prefix);
-            msg.add_str(&format!("{:03}", code));
-        },
-        Error::Custom(text) => {
-            msg.add_str_characterset(text, Some(1));
-        }
-    }
-    msg.service_break_back();
-    msg
 }
 
 fn resource_filename(basedir: &str, resource_name: &str, extention: &str) -> String {

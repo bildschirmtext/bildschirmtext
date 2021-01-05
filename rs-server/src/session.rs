@@ -6,6 +6,7 @@ use super::cept::*;
 use super::editor::*;
 use super::page::*;
 use super::dispatch::*;
+use super::sysmsg::*;
 
 const INPUT_NAME_NAVIGATION: &'static str = "$navigation";
 
@@ -61,12 +62,6 @@ impl FromStr for PageId {
             })
         }
     }
-}
-
-pub enum Error {
-    None,
-    Code(usize),
-    Custom(String),
 }
 
 pub enum ActionResult {
@@ -142,11 +137,11 @@ impl Session {
             } else {
                 println!("ERROR: Page not found: {}", target_pageid.to_string());
                 let error = if target_pageid.sub > 0 {
-                    101
+                    ErrorCode::SubPageDoesNotExist
                 } else {
-                    100
+                    ErrorCode::PageDoesNotExist
                 };
-                show_error(&Error::Code(error), stream);
+                show_error(&Error::new(error), stream);
             }
 
             if let Some(stats) = &mut self.stats {
@@ -326,8 +321,7 @@ impl Session {
                     // }
                 }
             } else if !inputs.no_55 {
-                let cept = create_system_message(&Error::Code(55), None);
-                write_stream(stream, cept.data());
+                show_error(&Error::new(ErrorCode::Processing), stream);
             }
 
             // send "input_data" to "inputs.target"
@@ -351,11 +345,12 @@ impl Session {
 
     fn confirm(inputs: &Inputs, stream: &mut (impl Write + Read)) -> bool { // "send?" message
         let price = inputs.price;
-        let mut cept = if price.is_some() && price != Some(0) {
-            create_system_message(&Error::Code(47), price)
+        if price.is_some() && price != Some(0) {
+            show_error(&Error::Code(ErrorCode::ConfirmSendPay, price), stream);
         } else {
-            create_system_message(&Error::Code(44), None)
+            show_error(&Error::Code(ErrorCode::ConfirmSend, None), stream);
         };
+        let mut cept = Cept::new();
         cept.set_cursor(24, 1);
         cept.sequence_end_of_page();
         write_stream(stream, cept.data());
@@ -392,7 +387,7 @@ impl Session {
             println!("command: back {:?}", self.history);
             if self.history.len() < 2 {
                 println!("ERROR: No history.");
-                UserRequest::Error(Error::Code(10))
+                UserRequest::Error(Error::new(ErrorCode::CantGoBack))
             } else {
                 let _ = self.history.pop();
                 let mut target_pageid = self.history.pop().unwrap();
@@ -436,7 +431,7 @@ impl Session {
             UserRequest::Goto(pageid, true)
         } else {
             println!("ERROR: Illegal navigation");
-            UserRequest::Error(Error::Code(100))
+            UserRequest::Error(Error::new(ErrorCode::PageDoesNotExist))
         }
     }
 
@@ -450,11 +445,3 @@ impl Session {
     }
 }
 
-fn show_error(error: &Error, stream: &mut (impl Write + Read)) {
-    let mut cept = create_system_message(error, None);
-    cept.sequence_end_of_page();
-    write_stream(stream, cept.data());
-    if let Error::Custom(_) = error {
-        wait_for_ter(stream);
-    }
-}
