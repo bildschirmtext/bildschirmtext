@@ -4,7 +4,7 @@ use crate::session::*;
 use crate::user::*;
 use super::cept::*;
 use super::page::*;
-use super::msg::*;
+use super::sysmsg::*;
 
 fn line() -> Cept {
     let mut cept = Cept::new();
@@ -305,7 +305,7 @@ fn create_add_user() -> Page {
 
 fn callback_validate_user_id(_: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
     if User::exists(&UserId::new(input_data.get("user_id").unwrap(), "1")) {
-        ActionResult::Error(Msg::Custom("Teilnehmernummer bereits vergeben! -> #".to_string()))
+        ActionResult::Error(SysMsg::Custom("Teilnehmernummer bereits vergeben! -> #".to_string()))
     } else {
         ActionResult::Ok
     }
@@ -313,7 +313,7 @@ fn callback_validate_user_id(_: &PageId, input_data: &HashMap<String, String>) -
 
 fn callback_validate_last_name(_: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
     if input_data.get("last_name").unwrap() == "" {
-        ActionResult::Error(Msg::Custom("Name darf nicht leer sein! -> #".to_string()))
+        ActionResult::Error(SysMsg::Custom("Name darf nicht leer sein! -> #".to_string()))
     } else {
         ActionResult::Ok
     }
@@ -321,7 +321,7 @@ fn callback_validate_last_name(_: &PageId, input_data: &HashMap<String, String>)
 
 fn callback_validate_password(_: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
     if input_data.get("password").unwrap().len() < 4 {
-        ActionResult::Error(Msg::Custom("Kennwort muß mind. 4-stellig sein! -> #".to_string()))
+        ActionResult::Error(SysMsg::Custom("Kennwort muß mind. 4-stellig sein! -> #".to_string()))
     } else {
         ActionResult::Ok
     }
@@ -340,9 +340,9 @@ pub fn callback_add_user(_: &PageId, input_data: &HashMap<String, String>) -> Us
         input_data.get("city").unwrap(),
         input_data.get("country").unwrap()
     ) {
-        UserRequest::MessageGoto(Msg::Custom("Benutzer angelegt. Bitte neu anmelden. -> #".to_string()), PageId::from_str("00000").unwrap(), true)
+        UserRequest::MessageGoto(SysMsg::Custom("Benutzer angelegt. Bitte neu anmelden. -> #".to_string()), PageId::from_str("00000").unwrap(), true)
     } else {
-        UserRequest::Error(Msg::Custom("Benutzer konnte nicht angelegt werden. -> #".to_string()))
+        UserRequest::Error(SysMsg::Custom("Benutzer konnte nicht angelegt werden. -> #".to_string()))
     }
 }
 

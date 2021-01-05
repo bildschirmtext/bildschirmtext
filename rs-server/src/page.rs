@@ -4,7 +4,7 @@ use super::cept::*;
 use super::editor::*;
 use super::session::*;
 use super::staticp::*;
-use super::msg::*;
+use super::sysmsg::*;
 
 // how many seconds does pal/char transmission have to take
 // until we show the SH291 message
@@ -118,7 +118,7 @@ impl Page {
         // appear frozen, so in this case, we show a message indicating that something
         // is going on.
         if cept.data().len() > (BAUD_RATE / 9) * SH291_THRESHOLD_SEC {
-            cept = create_msg(&Msg::new(MsgCode::TransferringPage)) + cept;
+            cept = create_sysmsg(&SysMsg::new(SysMsgCode::TransferringPage)) + cept;
         }
         cept
     }

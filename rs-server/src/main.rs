@@ -4,14 +4,14 @@ mod dispatch;
 mod editor;
 mod historic;
 mod login;
-mod mail;
+mod messaging;
 mod page;
 mod paths;
 mod session;
 mod staticp;
-mod msg;
+mod sysmsg;
 mod user;
-mod ui_mail;
+mod ui_messaging;
 mod ui_user;
 
 // use serde_json::{Result, Value};
