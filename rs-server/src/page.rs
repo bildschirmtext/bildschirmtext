@@ -115,7 +115,7 @@ impl Page {
         }
         // b = baud if baud else 1200
         if cept.data().len() > (BAUD_RATE / 9) * SH291_THRESHOLD_SEC {
-            cept = create_system_message(&Error::new(ErrorCode::TransferringPage)) + cept;
+            cept = create_system_message(&Msg::new(MsgCode::TransferringPage)) + cept;
         }
         cept
     }

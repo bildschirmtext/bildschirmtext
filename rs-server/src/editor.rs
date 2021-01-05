@@ -546,7 +546,7 @@ pub fn wait_for_ter(stream: &mut (impl Read + Write)) {
         }
     }
     // clear
-    show_error(&Error::None, stream);
+    show_msg(&Msg::None, stream);
 }
 
 pub fn write_stream(stream: &mut impl Write, data: &[u8]) {

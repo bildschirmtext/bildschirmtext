@@ -6,7 +6,7 @@ use super::cept::*;
 use super::page::*;
 
 #[derive(PartialEq, Clone, Copy)]
-pub enum ErrorCode {
+pub enum MsgCode {
     CantGoBack = 10,
     ConfirmSend = 44,
     ConfirmSendPay = 47,
@@ -18,42 +18,42 @@ pub enum ErrorCode {
 }
 
 #[derive(PartialEq)]
-pub enum Error {
+pub enum Msg {
     None,
-    Code(ErrorCode, Option<u32>),
+    Code(MsgCode, Option<u32>),
     Custom(String),
 }
 
-impl Error {
-    pub fn new(code: ErrorCode) -> Self {
-        Error::Code(code, None)
+impl Msg {
+    pub fn new(code: MsgCode) -> Self {
+        Self::Code(code, None)
     }
 }
 
-pub fn create_system_message(error: &Error) -> Cept {
+pub fn create_system_message(error: &Msg) -> Cept {
     let mut msg = Cept::new();
     msg.service_break(24);
     msg.clear_line();
 
     match error {
-        Error::None => {
+        Msg::None => {
         }
-        Error::Code(code, price) => {
+        Msg::Code(code, price) => {
             let mut text;
             let mut prefix = "SH";
             match code {
-                ErrorCode::CantGoBack => text = "Rückblättern nicht möglich".to_owned(),
-                ErrorCode::ConfirmSend => text = "Absenden? Ja:19 Nein:2".to_owned(),
-                ErrorCode::ConfirmSendPay => text = format!("Absenden für {}? Ja:19 Nein:2", format_currency(price.unwrap())),
-                ErrorCode::Processing => text = "Eingabe wird bearbeitet".to_owned(),
-                ErrorCode::Sent => {
+                MsgCode::CantGoBack => text = "Rückblättern nicht möglich".to_owned(),
+                MsgCode::ConfirmSend => text = "Absenden? Ja:19 Nein:2".to_owned(),
+                MsgCode::ConfirmSendPay => text = format!("Absenden für {}? Ja:19 Nein:2", format_currency(price.unwrap())),
+                MsgCode::Processing => text = "Eingabe wird bearbeitet".to_owned(),
+                MsgCode::Sent => {
                     let current_datetime = Local::now().format("%d.%m.%Y %H:%M").to_string();
                     text = format!("Abgesandt {}, -> #", current_datetime);
                     prefix = "1B";
                 },
-                ErrorCode::PageDoesNotExist => text = "Seite nicht vorhanden".to_owned(),
-                ErrorCode::SubPageDoesNotExist => text = "Seite nicht vorhanden".to_owned(),
-                ErrorCode::TransferringPage => text = "Seite wird aufgebaut".to_owned(),
+                MsgCode::PageDoesNotExist => text = "Seite nicht vorhanden".to_owned(),
+                MsgCode::SubPageDoesNotExist => text = "Seite nicht vorhanden".to_owned(),
+                MsgCode::TransferringPage => text = "Seite wird aufgebaut".to_owned(),
                 _ => text = "".to_owned(),
             }
             while text.len() < 31 {
@@ -65,7 +65,7 @@ pub fn create_system_message(error: &Error) -> Cept {
             msg.add_str(prefix);
             msg.add_str(&format!("{:03}", *code as u32));
         },
-        Error::Custom(text) => {
+        Msg::Custom(text) => {
             msg.add_str_characterset(text, Some(1));
         }
     }
@@ -73,14 +73,14 @@ pub fn create_system_message(error: &Error) -> Cept {
     msg
 }
 
-pub fn show_error(error: &Error, stream: &mut (impl Write + Read)) {
+pub fn show_msg(error: &Msg, stream: &mut (impl Write + Read)) {
     let mut cept = create_system_message(error);
-    if *error != Error::new(ErrorCode::Processing) {
+    if *error != Msg::new(MsgCode::Processing) {
         // XXX test this somewhere else
         cept.sequence_end_of_page();
     }
     write_stream(stream, cept.data());
-    if let Error::Custom(_) = error {
+    if let Msg::Custom(_) = error {
         wait_for_ter(stream);
     }
 }

@@ -306,7 +306,7 @@ fn create_add_user() -> Page {
 
 fn callback_validate_user_id(_: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
     if User::exists(&UserId::new(input_data.get("user_id").unwrap(), "1")) {
-        ActionResult::Error(Error::Custom("Teilnehmernummer bereits vergeben! -> #".to_string()))
+        ActionResult::Error(Msg::Custom("Teilnehmernummer bereits vergeben! -> #".to_string()))
     } else {
         ActionResult::Ok
     }
@@ -314,7 +314,7 @@ fn callback_validate_user_id(_: &PageId, input_data: &HashMap<String, String>) -
 
 fn callback_validate_last_name(_: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
     if input_data.get("last_name").unwrap() == "" {
-        ActionResult::Error(Error::Custom("Name darf nicht leer sein! -> #".to_string()))
+        ActionResult::Error(Msg::Custom("Name darf nicht leer sein! -> #".to_string()))
     } else {
         ActionResult::Ok
     }
@@ -322,7 +322,7 @@ fn callback_validate_last_name(_: &PageId, input_data: &HashMap<String, String>)
 
 fn callback_validate_password(_: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
     if input_data.get("password").unwrap().len() < 4 {
-        ActionResult::Error(Error::Custom("Kennwort muß mind. 4-stellig sein! -> #".to_string()))
+        ActionResult::Error(Msg::Custom("Kennwort muß mind. 4-stellig sein! -> #".to_string()))
     } else {
         ActionResult::Ok
     }
@@ -341,9 +341,9 @@ pub fn callback_add_user(_: &PageId, input_data: &HashMap<String, String>) -> Us
         input_data.get("city").unwrap(),
         input_data.get("country").unwrap()
     ) {
-        UserRequest::MessageGoto(Error::Custom("Benutzer angelegt. Bitte neu anmelden. -> #".to_string()), PageId::from_str("00000").unwrap(), true)
+        UserRequest::MessageGoto(Msg::Custom("Benutzer angelegt. Bitte neu anmelden. -> #".to_string()), PageId::from_str("00000").unwrap(), true)
     } else {
-        UserRequest::Error(Error::Custom("Benutzer konnte nicht angelegt werden. -> #".to_string()))
+        UserRequest::Error(Msg::Custom("Benutzer konnte nicht angelegt werden. -> #".to_string()))
     }
 }
 

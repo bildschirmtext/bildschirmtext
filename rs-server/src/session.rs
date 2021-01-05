@@ -66,16 +66,16 @@ impl FromStr for PageId {
 
 pub enum ActionResult {
     Ok,
-	Error(Error),
+	Error(Msg),
 	Restart,
 }
 
 pub enum UserRequest {
     Login(UserId, String),
-    MessageGoto(Error, PageId, bool),
+    MessageGoto(Msg, PageId, bool),
     Goto(PageId, bool),
     SendAgain,
-    Error(Error)
+    Error(Msg)
 }
 
 pub struct ClientState {
@@ -137,11 +137,11 @@ impl Session {
             } else {
                 println!("ERROR: Page not found: {}", target_pageid.to_string());
                 let error = if target_pageid.sub > 0 {
-                    ErrorCode::SubPageDoesNotExist
+                    MsgCode::SubPageDoesNotExist
                 } else {
-                    ErrorCode::PageDoesNotExist
+                    MsgCode::PageDoesNotExist
                 };
-                show_error(&Error::new(error), stream);
+                show_msg(&Msg::new(error), stream);
             }
 
             if let Some(stats) = &mut self.stats {
@@ -175,7 +175,7 @@ impl Session {
                             continue 'main;
                         } else {
                             println!("login incorrect");
-                            show_error(&Error::Custom("Ungültiger Teilnehmer/Kennwort -> #".to_owned()), stream);
+                            show_msg(&Msg::Custom("Ungültiger Teilnehmer/Kennwort -> #".to_owned()), stream);
                             continue 'input;
                         }
                     },
@@ -185,7 +185,7 @@ impl Session {
                         continue 'main;
                     },
                     UserRequest::MessageGoto(e, t, a) => {
-                        show_error(&e, stream);
+                        show_msg(&e, stream);
                         target_pageid = t;
                         add_to_history = a;
                         continue 'main;
@@ -193,8 +193,8 @@ impl Session {
                     UserRequest::SendAgain => {
                         write_stream(stream, current_page_cept.data());
                     },
-                    UserRequest::Error(e) => {
-                        show_error(&e, stream);
+                    UserRequest::Error(msg) => {
+                        show_msg(&msg, stream);
                         continue 'input;
                     }
                 }
@@ -298,7 +298,7 @@ impl Session {
                         i += 1;
                     },
                     ActionResult::Error(e) => {
-                        show_error(&e, stream);
+                        show_msg(&e, stream);
                         skip = false;
                         continue;
                     },
@@ -321,7 +321,7 @@ impl Session {
                     // }
                 }
             } else if !inputs.no_55 {
-                show_error(&Error::new(ErrorCode::Processing), stream);
+                show_msg(&Msg::new(MsgCode::Processing), stream);
             }
 
             // send "input_data" to "inputs.target"
@@ -346,9 +346,9 @@ impl Session {
     fn confirm(inputs: &Inputs, stream: &mut (impl Write + Read)) -> bool { // "send?" message
         let price = inputs.price;
         if price.is_some() && price != Some(0) {
-            show_error(&Error::Code(ErrorCode::ConfirmSendPay, price), stream);
+            show_msg(&Msg::Code(MsgCode::ConfirmSendPay, price), stream);
         } else {
-            show_error(&Error::Code(ErrorCode::ConfirmSend, None), stream);
+            show_msg(&Msg::Code(MsgCode::ConfirmSend, None), stream);
         };
         let mut cept = Cept::new();
         cept.set_cursor(24, 1);
@@ -387,7 +387,7 @@ impl Session {
             println!("command: back {:?}", self.history);
             if self.history.len() < 2 {
                 println!("ERROR: No history.");
-                UserRequest::Error(Error::new(ErrorCode::CantGoBack))
+                UserRequest::Error(Msg::new(MsgCode::CantGoBack))
             } else {
                 let _ = self.history.pop();
                 let mut target_pageid = self.history.pop().unwrap();
@@ -431,7 +431,7 @@ impl Session {
             UserRequest::Goto(pageid, true)
         } else {
             println!("ERROR: Illegal navigation");
-            UserRequest::Error(Error::new(ErrorCode::PageDoesNotExist))
+            UserRequest::Error(Msg::new(MsgCode::PageDoesNotExist))
         }
     }
 
