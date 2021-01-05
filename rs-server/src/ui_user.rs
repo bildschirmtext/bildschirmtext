@@ -4,8 +4,7 @@ use crate::session::*;
 use crate::user::*;
 use super::cept::*;
 use super::page::*;
-use super::sysmsg::*;
-use super::sysmsg::*;
+use super::msg::*;
 
 fn line() -> Cept {
     let mut cept = Cept::new();

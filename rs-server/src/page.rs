@@ -4,7 +4,7 @@ use super::cept::*;
 use super::editor::*;
 use super::session::*;
 use super::staticp::*;
-use super::sysmsg::*;
+use super::msg::*;
 
 // how many seconds does pal/char transmission have to take
 // until we show the SH291 message
@@ -113,9 +113,12 @@ impl Page {
         } else {
             println!("ERROR: basedir not found!");
         }
-        // b = baud if baud else 1200
+
+        // If the include data is large and the connection is slow, the system may
+        // appear frozen, so in this case, we show a message indicating that something
+        // is going on.
         if cept.data().len() > (BAUD_RATE / 9) * SH291_THRESHOLD_SEC {
-            cept = create_system_message(&Msg::new(MsgCode::TransferringPage)) + cept;
+            cept = create_msg(&Msg::new(MsgCode::TransferringPage)) + cept;
         }
         cept
     }

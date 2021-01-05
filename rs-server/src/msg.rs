@@ -30,14 +30,13 @@ impl Msg {
     }
 }
 
-pub fn create_system_message(error: &Msg) -> Cept {
+pub fn create_msg(error: &Msg) -> Cept {
     let mut msg = Cept::new();
     msg.service_break(24);
     msg.clear_line();
 
     match error {
-        Msg::None => {
-        }
+        Msg::None => {}
         Msg::Code(code, price) => {
             let mut text;
             let mut prefix = "SH";
@@ -74,7 +73,7 @@ pub fn create_system_message(error: &Msg) -> Cept {
 }
 
 pub fn show_msg(error: &Msg, stream: &mut (impl Write + Read)) {
-    let mut cept = create_system_message(error);
+    let mut cept = create_msg(error);
     if *error != Msg::new(MsgCode::Processing) {
         // XXX test this somewhere else
         cept.sequence_end_of_page();

@@ -6,7 +6,7 @@ use super::cept::*;
 use super::editor::*;
 use super::page::*;
 use super::dispatch::*;
-use super::sysmsg::*;
+use super::msg::*;
 
 const INPUT_NAME_NAVIGATION: &'static str = "$navigation";
 
