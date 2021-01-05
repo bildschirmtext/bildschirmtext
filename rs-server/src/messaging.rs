@@ -17,27 +17,27 @@ struct MessageDatabase {
 #[derive(Clone)]
 #[derive(Serialize, Deserialize)]
 struct Message {
-    body: String,
-    from_userid: UserId,
-    personal_data: bool,
-    timestamp: i64,
-    is_read: bool,
-    uuid: Uuid,
+    pub body: String,
+    pub from_userid: UserId,
+    pub personal_data: bool,
+    pub timestamp: i64,
+    pub is_read: bool,
+    pub uuid: Uuid,
 }
 
 impl Message {
-	fn from_date(&self) -> String {
+	pub fn from_date(&self) -> String {
         let t = Local.timestamp(self.timestamp, 0);
         t.format("%d.%m.%Y").to_string()
     }
 
-	fn from_time(&self) -> String {
+	pub fn from_time(&self) -> String {
         let t = Local.timestamp(self.timestamp, 0);
         t.format("%H:%M").to_string()
     }
 }
 
-struct Messaging {
+pub struct Messaging {
 	userid: UserId,
     database: MessageDatabase,
 }
@@ -47,7 +47,7 @@ struct Messaging {
 // XXX it will be lost.
 
 impl Messaging {
-	fn for_userid(userid: &UserId) -> Self {
+	pub fn for_userid(userid: &UserId) -> Self {
         Self {
             userid: userid.clone(),
             database: MessageDatabase::default(),
@@ -80,7 +80,7 @@ impl Messaging {
         file.write_all(&json_data.as_bytes());
     }
 
-	fn select(&mut self, is_read: bool, start: usize, count: Option<usize>) -> Vec<&Message> {
+	pub fn select(&mut self, is_read: bool, start: usize, count: Option<usize>) -> Vec<&Message> {
         let database = self.database();
 
         let mut ms = vec!();
@@ -105,7 +105,7 @@ impl Messaging {
         return ms;
     }
 
-	fn mark_as_read(&mut self, index: usize) {
+	pub fn mark_as_read(&mut self, index: usize) {
         let database = self.database();
 		if !database.messages[index].is_read {
 			database.messages[index].is_read = true;
@@ -113,11 +113,11 @@ impl Messaging {
         }
     }
 
-	fn has_new_messages(&mut self) {
+	pub fn has_new_messages(&mut self) {
         self.select(false, 0, None).len() != 0;
     }
 
-	fn send(&mut self, user_id: &str, ext: &str, body: &str) {
+	pub fn send(&mut self, user_id: &str, ext: &str, body: &str) {
         let userid = self.userid.clone();
         let database = self.database();
 		database.messages.push(

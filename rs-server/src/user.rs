@@ -149,7 +149,7 @@ impl User {
         is_file(&filename)
     }
 
-	fn get(userid: &UserId) -> Option<User> {
+	pub fn get(userid: &UserId) -> Option<User> {
 		let filename = Self::user_filename(&userid);
         let f = File::open(&filename).ok()?;
         serde_json::from_reader(f).ok()

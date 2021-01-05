@@ -3,10 +3,12 @@
 // use chrono::Local;
 // use crate::{editor::{InputField, Inputs}, sysmsg::SysMsg};
 
-// use super::user::*;
 // use super::cept::*;
+// use super::dispatch::*;
+// use super::messaging::*;
 // use super::page::*;
 // use super::session::*;
+// use super::user::*;
 
 // // private
 // fn messaging_create_title(title: &str) -> Cept {
@@ -59,7 +61,7 @@
 //     cept
 // }
 
-// fn messaging_create_main_menu() -> (Meta, Cept) {
+// fn messaging_create_main_menu() -> Page {
 //     let meta = Meta {
 //         publisher_name: Some("!BTX".to_owned()),
 //         include: Some("a".to_owned()),
@@ -89,10 +91,12 @@
 //             "Mitteilungen mit Alphatastatur"
 //         ]
 //     );
-//     (meta, cept)
+//     Page { meta, cept }
 // }
 
-// fn messaging_create_list(userid: &UserId, is_read: bool) -> (Meta, Cept) {
+// fn messaging_create_list(userid: &UserId, is_read: bool) -> Page {
+//     let messaging = Messaging::for_userid(&userid);
+
 //     let title = if is_read {
 //         "Zurückgelegte Mitteilungen"
 //     } else {
@@ -106,24 +110,38 @@
 
 //     let target_prefix = if is_read {"89" } else { "88" };
 
-//     let messages = user.messaging.select(is_read, 0, 9);
+//     let messages = messaging.select(is_read, 0, Some(9));
 
 //     for index in 0..9 {
 //         cept.add_str(&(index + 1).to_string());
 //         cept.add_str("  ");
 //         if index < messages.len() {
 //             let message = messages[index];
-//             if message.from_user.org_name {
-//                 cept.add_str(message.from_user.org_name);
+//             let from_user = User::get(&message.from_userid);
+//             if let Some(from_user) = from_user {
+//                 match from_user.public {
+//                     UserDataPublic::Person(person) => {
+//                         if let Some(first_name) = &person.first_name {
+//                             cept.add_str(&first_name);
+//                             cept.add_raw(b" ");
+//                         }
+//                         if let Some(last_name) = &person.last_name {
+//                             cept.add_str(last_name);
+//                             cept.add_raw(b"\r\n   ");
+//                         }
+//                     },
+//                     UserDataPublic::Organization(organization) => {
+//                         if let Some(name1) = &organization.name1 {
+//                             cept.add_str(name1);
+//                         }
+//                     },
+//                 }
 //             } else {
-//                 cept.add_str(message.from_user.first_name);
-//                 cept.add_raw(b" ");
-//                 cept.add_str(message.from_user.last_name);
-//                 cept.add_raw(b"\r\n   ");
+
 //             }
-//             cept.add_str(message.from_date());
+//             cept.add_str(&message.from_date());
 //             cept.add_raw(b"   ");
-//             cept.add_str(message.from_time());
+//             cept.add_str(&message.from_time());
 //             cept.add_raw(b"\r\n");
 //             links.push(Link::new(&(index + 1).to_string(), &(target_prefix.to_owned() + &(index + 1).to_string())));
 //         } else {
@@ -139,11 +157,13 @@
 //         publisher_color: Some(7),
 //         ..Default::default()
 //     };
-//     (meta, cept)
+//     Page { meta, cept }
 // }
 
-// fn messaging_create_message_detail(user: &User, index: usize, is_read: bool) -> Option<(Meta, Cept)> {
-//     let messages = user.messaging.select(is_read, index, 1);
+// fn messaging_create_message_detail(userid: &UserId, index: usize, is_read: bool) -> Option<Page> {
+//     let messaging = Messaging::for_userid(&userid);
+
+//     let messages = messaging.select(is_read, index, Some(1));
 //     if messages.len() == 0 {
 //         return None;
 //     }
@@ -167,14 +187,16 @@
 //     let from_street;
 //     let from_zip;
 //     let from_city;
-//     if message.from_user.personal_data {
-//         from_street = message.from_user.street;
-//         from_zip = message.from_user.zip;
-//         from_city = message.from_user.city;
+//     let from_user = User::get(&message.from_userid);
+//     if let Some(from_user) = from_user {
+//         from_street = from_user.private.street.unwrap_or("".to_owned());
+//         from_zip = from_user.private.zip.unwrap_or("".to_owned());
+//         from_city = from_user.private.city.unwrap_or("".to_owned());
 //     } else {
-//         from_street = "";
-//         from_zip = "";
-//         from_city = "";
+//         // XXX user not found
+//         from_street = "".to_owned();
+//         from_zip = "".to_owned();
+//         from_city = "".to_owned();
 //     }
 
 //     let cept = Cept::new();
@@ -182,15 +204,15 @@
 //     cept.set_cursor(2, 1);
 //     cept.set_fg_color(3);
 //     cept.add_str("von ");
-//     cept.add_str(message.from_user.user_id.ljust(12));
+//     cept.add_str(message.from_userid.id.ljust(12));
 //     cept.add_str(" ");
-//     cept.add_raw(message.from_user.ext.rjust(5, '0'));
-//     cept.set_cursor(2, 41 - from_date.len());
-//     cept.add_str(from_date);
+//     cept.add_raw(message.from_userid.ext.rjust(5, '0'));
+//     cept.set_cursor(2, 41 - from_date.len() as u8);
+//     cept.add_str(&from_date);
 //     cept.repeat(b' ', 4);
 //     cept.add_str(message.from_user.org_name);
-//     cept.set_cursor(3, 41 - from_time.len());
-//     cept.add_str(from_time);
+//     cept.set_cursor(3, 41 - from_time.len() as u8);
+//     cept.add_str(&from_time);
 //     cept.repeat(b' ', 4);
 //     cept.set_fg_color_simple(0);
 //     cept.add_str(message.from_user.first_name);
@@ -198,15 +220,15 @@
 //     cept.add_str(message.from_user.last_name);
 //     cept.add_raw(b"\r\n");
 //     cept.repeat(b' ', 4);
-//     cept.add_str(from_street);
+//     cept.add_str(&from_street);
 //     cept.add_raw(b"\r\n");
 //     cept.repeat(b' ', 4);
-//     cept.add_str(from_zip);
+//     cept.add_str(&from_zip);
 //     cept.add_raw(b' ');
-//     cept.add_str(from_city);
+//     cept.add_str(&from_city);
 //     cept.add_raw(b"\r\n");
 //     cept.add_str("an  ");
-//     cept.add_str(user.user_id.ljust(12));
+//     cept.add_str(userid.id.ljust(12));
 //     cept.add_str(" ");
 //     cept.add_str(user.ext.rjust(5, '0'));
 //     cept.add_raw(b"\r\n");
@@ -215,7 +237,7 @@
 //     cept.add_str(" ");
 //     cept.add_str(&user.last_name.unwrap());
 //     cept.add_raw(b"\r\n\n");
-//     cept.add_str(message.body());
+//     cept.add_str(&message.body());
 //     cept.set_cursor(23, 1);
 //     cept.add_raw(b"0");
 //     cept.add_raw(&[
@@ -223,30 +245,30 @@
 //         0x1b, 0x7e                                            // G1 into right charset
 //     ]);
 //     cept.add_str(" Gesamtübersicht");
-//     cept.repeat(' ', 22);
+//     cept.repeat(b' ', 22);
 
-//     user.messaging.mark_as_read(message.index);
+//     messaging.mark_as_read(message.index);
 
-//     Some((meta, cept))
+//     Some(Page { meta, cept })
 // }
 
 // pub fn callback_validate_user_id(_: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
-//     if User::exists(input_data.user_id) {
+//     if User::exists(&UserId::new(input_data.get("user_id").unwrap(), "1")) { // XXX
 //         ActionResult::Ok
 //     } else {
-//         ActionResult::Error(SysMsg::Custom("Teilnehmerkennung ungültig! -> #"))
+//         ActionResult::Error(SysMsg::Custom("Teilnehmerkennung ungültig! -> #".to_owned()))
 //     }
 // }
 
 // pub fn callback_validate_ext(_: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
-//     if User::exists(input_data.user_id, input_data.ext) {
+//     if User::exists(&UserId::new(input_data.get("user_id").unwrap(), input_data.get("ext").unwrap())) {
 //         ActionResult::Ok
 //     } else {
-//         ActionResult::Error(SysMsg::Custom("Mitbenutzernummer ungültig! -> #"))
+//         ActionResult::Error(SysMsg::Custom("Mitbenutzernummer ungültig! -> #".to_owned()))
 //     }
 // }
 
-// fn messaging_create_compose(user: &User) -> (Meta, Cept) {
+// fn messaging_create_compose(userid: &UserId) -> Page {
 //     let meta = Meta {
 //         include: Some("a".to_owned()),
 //         clear_screen: Some(true),
@@ -257,7 +279,7 @@
 //         inputs: Some(Inputs {
 //             fields: vec!(
 //                 InputField {
-//                     name: "user_id",
+//                     name: "user_id".to_owned(),
 //                     input_type: "user_id",
 //                     line: 8,
 //                     column: 20,
@@ -269,7 +291,7 @@
 //                     ..Default::default()
 //                 },
 //                 InputField {
-//                     name: "ext",
+//                     name: "ext".to_owned(),
 //                     input_type: "ext",
 //                     line: 8,
 //                     column: 37,
@@ -282,7 +304,7 @@
 //                     ..Default::default()
 //                 },
 //                 InputField {
-//                     name: "body",
+//                     name: "body".to_owned(),
 //                     line: 12,
 //                     column: 1,
 //                     height: 10,
@@ -355,23 +377,40 @@
 //         0x19,                                            // switch to G2 for one character
 //         0x2b, 0xfe, 0x7f,                                    // "+."
 //     ]);
-//     (meta, cept)
+//     Page { meta, cept }
 // }
 
-// fn create_page(user: &User, pageid: &PageId) -> Option<Page> {
-//     if pageid == "8a" {
-//         return messaging_create_main_menu()
-//     } else if pageid == "88a" {
-//         return messaging_create_list(user, false)
-//     } else if pageid == "89a" {
-//         return messaging_create_list(user, true)
-//     // } else if re.search("^88\da$", pageid) {
-//     //     return messaging_create_message_detail(user, int(pageid[2..-1]) - 1, False)
-//     // } else if re.search("^89\da$", pageid) {
-//     //     return messaging_create_message_detail(user, int(pageid[2..-1]) - 1, True)
-//     } else if pageid == "810a" {
-//         return messaging_create_compose(user)
+// fn create_page(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
+//     let user = private_context.user;
+
+//     if let Some(user) = user {
+//         if pageid.page == "8" {
+//             Some(messaging_create_main_menu())
+//         } else if pageid.page == "88" {
+//             Some(messaging_create_list(&user.userid, false))
+//         } else if pageid.page == "89" {
+//             Some(messaging_create_list(&user.userid, true))
+//         // } else if re.search("^88\da$", pageid.page) {
+//         //     return messaging_create_message_detail(user, int(pageid.page[2..-1]) - 1, False)
+//         // } else if re.search("^89\da$", pageid.page) {
+//         //     return messaging_create_message_detail(user, int(pageid.page[2..-1]) - 1, True)
+//         } else if pageid.page == "810" {
+//             Some(messaging_create_compose(&user.userid))
+//         } else {
+//             None
+//         }
 //     } else {
-//         return None
+//         None
 //     }
 // }
+
+
+// // if pageid.page == "00000" {
+// //     Some(create_login())
+// // } else if pageid.page == "000001" {
+// //     Some(create_start(private_context)) // XXX user
+// // } else if pageid.page == "9" {
+// //     Some(create_logout())
+// // } else {
+// //      None
+// // }
