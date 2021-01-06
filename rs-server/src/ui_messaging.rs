@@ -18,10 +18,8 @@ fn messaging_create_title(title: &str) -> Cept {
     cept.set_cursor(2, 1);
     cept.set_palette(1);
     cept.set_screen_bg_color_simple(4);
-    cept.add_raw(&[
-        0x1b, 0x28, 0x40,           // load G0 into G0
-        0x0f                   // G0 into left charset
-    ]);
+    cept.load_g0_g0();
+    cept.set_left_g0();
     cept.parallel_mode();
     cept.set_palette(0);
     cept.code_9e();
@@ -47,7 +45,6 @@ fn messaging_create_menu(title: &str, items: &[&str]) -> Cept {
     cept.add_raw(b"\n\r\n\r");
     let mut i = 1;
     for item in items {
-        let s = String::new();
         cept.add_str(&i.to_string());
         cept.add_str("  ");
         cept.add_str(item);
@@ -279,8 +276,8 @@ fn messaging_create_compose(user: &User) -> Page {
                 }
             ),
             action: Some(send_message),
+            confirm: true,
             price: Some(30),
-            // target: "page:8",
             ..Default::default()
         }),
         ..Default::default()
@@ -294,12 +291,8 @@ fn messaging_create_compose(user: &User) -> Page {
     cept.set_cursor(2, 1);
     cept.set_palette(1);
     cept.set_screen_bg_color_simple(4);
-    cept.add_raw(&[
-        0x1b, 0x28, 0x40                                    // load G0 into G0
-    ]);
-    cept.add_raw(&[
-        0x0f                                            // G0 into left charset
-    ]);
+    cept.load_g0_g0();
+    cept.set_left_g0();
     cept.parallel_mode();
     cept.set_palette(0);
     cept.code_9e();
@@ -343,7 +336,8 @@ fn messaging_create_compose(user: &User) -> Page {
 }
 
 fn send_message(_: &PageId, input_data: &HashMap<String, String>) -> UserRequest {
-    // send(input_data["user_id"], input_data["ext"], input_data["body"])
+    let to_userid = UserId::new(input_data.get("user_id").unwrap(), input_data.get("ext").unwrap());
+    // send(from_userid, &to_userid, input_data.get("body").unwrap());
     UserRequest::MessageGoto(SysMsg::Code(SysMsgCode::Sent, None), PageId::from_str("8").unwrap(), true)
 }
 

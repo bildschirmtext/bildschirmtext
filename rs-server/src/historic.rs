@@ -16,10 +16,8 @@ fn create_title(page: &mut Page, title: &str) {
     page.cept.set_cursor(2, 1);
     page.cept.set_palette(1);
     page.cept.set_screen_bg_color_simple(4);
-    page.cept.add_raw(
-        &[0x1b, 0x28, 0x40,       // load G0 into G0
-            0x0f]                   // G0 into left charset
-    );
+    page.cept.load_g0_g0();
+    page.cept.set_left_g0();
     page.cept.parallel_mode();
     page.cept.set_palette(0);
     page.cept.code_9e();

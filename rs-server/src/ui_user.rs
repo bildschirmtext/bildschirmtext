@@ -21,10 +21,8 @@ fn create_title(title: &str) -> Cept {
     cept.set_cursor(2, 1);
     cept.set_palette(1);
     cept.set_screen_bg_color_simple(4);
-    cept.add_raw(&[
-        0x1b, 0x28, 0x40,           // load G0 into G0
-        0x0f,                   // G0 into left charset
-    ]);
+    cept.load_g0_g0();
+    cept.set_left_g0();
     cept.parallel_mode();
     cept.set_palette(0);
     cept.code_9e();
