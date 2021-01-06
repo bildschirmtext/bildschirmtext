@@ -492,11 +492,9 @@ impl Editor {
                             if s == legal_input {
                                 character_legal = true;
                                 string_legal = true;
-                                println!("string_legal!");
                                 break
                             } else if legal_input.starts_with(s) {
                                 character_legal = true;
-                                println!("character_legal!");
                                 break;
                             }
                         }

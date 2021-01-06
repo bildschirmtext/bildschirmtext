@@ -16,7 +16,7 @@ struct MessageDatabase {
 
 #[derive(Clone)]
 #[derive(Serialize, Deserialize)]
-struct Message {
+pub struct Message {
     pub body: String,
     pub from_id_str: String,
     pub from_name: String,
@@ -105,33 +105,37 @@ impl MessageBox {
         return ms;
     }
 
-	pub fn mark_as_read(&mut self, index: usize) {
+	pub fn mark_as_read(&mut self, uuid: Uuid) {
         let database = self.database();
-		if !database.messages[index].is_read {
-			database.messages[index].is_read = true;
-            self.save();
+        for message in &mut database.messages {
+            if message.uuid == uuid {
+                if !message.is_read {
+                    message.is_read = true;
+                    break;
+                }
+            }
         }
+        self.save();
     }
 
 	pub fn has_new_messages(&mut self) {
         self.select(false, 0, None).len() != 0;
     }
+}
 
-	pub fn send(&mut self, to_userid: &UserId, body: &str) {
-        let mut to_message_box = MessageBox::for_userid(to_userid);
-        let database = to_message_box.database();
-        let from_userid = &self.userid;
-		database.messages.push(
-            Message {
-				from_id_str: from_userid.to_string(),
-				from_name: User::get(&from_userid).unwrap().name(),
-				timestamp: Utc::now().timestamp(),
-                body: body.to_owned(),
-                is_read: false,
-                uuid: Uuid::new_v4(),
-			},
-		);
-        to_message_box.save();
-    }
+pub fn send(from_userid: &UserId, to_userid: &UserId, body: &str) {
+    let mut to_message_box = MessageBox::for_userid(to_userid);
+    let database = to_message_box.database();
+    database.messages.push(
+        Message {
+            from_id_str: from_userid.to_string(),
+            from_name: User::get(&from_userid).unwrap().name(),
+            timestamp: Utc::now().timestamp(),
+            body: body.to_owned(),
+            is_read: false,
+            uuid: Uuid::new_v4(),
+        },
+    );
+    to_message_box.save();
 }
 

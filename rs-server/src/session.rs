@@ -38,6 +38,7 @@ impl PageId {
         }
     }
 
+    // XXX implement Display trait instead!
     pub fn to_string(&self) -> String {
         let mut s = self.page.clone();
         s.push((b'a' + self.sub as u8) as char);
@@ -313,12 +314,7 @@ impl Session {
             // ask for confirmation
             if inputs.confirm {
                 if Self::confirm(&inputs, stream) {
-                    // if inputs.action == "send_message" {
-                    // 	User.user().messaging.send(input_data["user_id"], input_data["ext"], input_data["body"])
-                    // 	system_message_sent_message()
-                    // } else {
-                    //     // TODO we stay on the page, in the navigator?
-                    // }
+                    // XXX
                 }
             } else if !inputs.no_55 {
                 show_sysmsg(&SysMsg::new(SysMsgCode::Processing), stream);
