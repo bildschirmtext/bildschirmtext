@@ -20,7 +20,6 @@ struct Message {
     pub body: String,
     pub from_id_str: String,
     pub from_name: String,
-    pub personal_data: bool,
     pub timestamp: i64,
     pub is_read: bool,
     pub uuid: Uuid,
@@ -38,7 +37,7 @@ impl Message {
     }
 }
 
-pub struct Messaging {
+pub struct MessageBox {
 	userid: UserId,
     database: MessageDatabase,
 }
@@ -47,7 +46,7 @@ pub struct Messaging {
 // XXX database, if a message comes in between self.database() and self.save(),
 // XXX it will be lost.
 
-impl Messaging {
+impl MessageBox {
 	pub fn for_userid(userid: &UserId) -> Self {
         Self {
             userid: userid.clone(),
@@ -118,21 +117,21 @@ impl Messaging {
         self.select(false, 0, None).len() != 0;
     }
 
-	pub fn send(&mut self, user_id: &str, ext: &str, body: &str) {
-        let userid = self.userid.clone();
-        let database = self.database();
+	pub fn send(&mut self, to_userid: &UserId, body: &str) {
+        let mut to_message_box = MessageBox::for_userid(to_userid);
+        let database = to_message_box.database();
+        let from_userid = &self.userid;
 		database.messages.push(
             Message {
-				from_id_str: userid.to_string(),
-				from_name: User::get(&userid).unwrap().name(),
-				personal_data: false,
+				from_id_str: from_userid.to_string(),
+				from_name: User::get(&from_userid).unwrap().name(),
 				timestamp: Utc::now().timestamp(),
                 body: body.to_owned(),
                 is_read: false,
                 uuid: Uuid::new_v4(),
 			},
 		);
-        self.save();
+        to_message_box.save();
     }
 }
 
