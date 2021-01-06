@@ -1,6 +1,9 @@
 use super::cept::*;
 use super::page::*;
 use super::session::*;
+use super::dispatch::*;
+
+pub const FUNCTIONS: AnonymousUserFns = AnonymousUserFns { create, validate: None, send: None };
 
 pub fn create(pageid: &PageId) -> Option<Page> {
     if pageid.page == "8" {
@@ -11,6 +14,8 @@ pub fn create(pageid: &PageId) -> Option<Page> {
         None
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 fn create_title(page: &mut Page, title: &str) {
     page.cept.set_cursor(2, 1);

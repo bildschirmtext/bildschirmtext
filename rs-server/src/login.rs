@@ -8,7 +8,9 @@ use super::user::*;
 use super::dispatch::*;
 use super::messaging::*;
 
-pub fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
+pub const FUNCTIONS: UserFns = UserFns { create: super::login::create, validate: None, send: Some(super::login::send) };
+
+fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
     if pageid.page == "00000" {
         Some(create_login())
     } else if pageid.page == "000001" {
@@ -20,7 +22,7 @@ pub fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> 
     }
 }
 
-pub fn send(pageid: &PageId, input_data: &HashMap<String, String>, private_context: PrivateContext) -> UserRequest {
+fn send(pageid: &PageId, input_data: &HashMap<String, String>, private_context: PrivateContext) -> UserRequest {
     if pageid.page == "00000" {
         UserRequest::Login(
             UserId::new(
@@ -33,6 +35,8 @@ pub fn send(pageid: &PageId, input_data: &HashMap<String, String>, private_conte
         unreachable!()
    }
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 fn create_login() -> Page {
     let meta = Meta {

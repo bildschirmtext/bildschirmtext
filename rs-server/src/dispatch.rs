@@ -36,12 +36,12 @@ pub enum Anonymous {
 //     user's info and statistics!
 // N.B.: The table must be in the right order: longer prefixes must come first!
 const DISPATCH_TABLE: &[(&[u8], Anonymous)] = &[
-    (b"00000*", Anonymous::No(UserFns { create: super::login::create, validate: None, send: Some(super::login::send) })),
-    (b"9",      Anonymous::No(UserFns { create: super::login::create, validate: None, send: Some(super::login::send) })),
-    (b"8*",     Anonymous::No(UserFns { create: super::ui_messaging::create, validate: Some(super::ui_messaging::validate), send: Some(super::ui_messaging::send) })),
-    (b"77",     Anonymous::Yes(AnonymousUserFns { create: super::ui_user::create, validate: Some(super::ui_user::validate), send: Some(super::ui_user::send) })),
-    (b"7-",     Anonymous::Yes(AnonymousUserFns { create: super::historic::create, validate: None, send: None })),
-    (b"*",      Anonymous::Yes(AnonymousUserFns { create: super::staticp::create, validate: None, send: None })),
+    (b"00000*", Anonymous::No(super::login::FUNCTIONS)),
+    (b"9",      Anonymous::No(super::login::FUNCTIONS)),
+    (b"8*",     Anonymous::No(super::ui_messaging::FUNCTIONS)),
+    (b"77",     Anonymous::Yes(super::ui_user::FUNCTIONS)),
+    (b"7-",     Anonymous::Yes(super::historic::FUNCTIONS)),
+    (b"*",      Anonymous::Yes(super::staticp::FUNCTIONS)),
 ];
 
 pub fn dispatch_pageid(pageid: &PageId) -> &Anonymous {

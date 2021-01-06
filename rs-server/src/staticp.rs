@@ -4,6 +4,9 @@ use std::fs::metadata;
 use super::page::*;
 use super::session::*;
 use super::paths::*;
+use super::dispatch::*;
+
+pub const FUNCTIONS: AnonymousUserFns = AnonymousUserFns { create, validate: None, send: None };
 
 pub fn create(pageid: &PageId) -> Option<Page> {
     let mut cept = None;
@@ -47,6 +50,8 @@ pub fn create(pageid: &PageId) -> Option<Page> {
 
     None
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 fn is_dir(path: &str) -> bool {
     if let Ok(md) = metadata(path) {
