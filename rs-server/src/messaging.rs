@@ -124,7 +124,7 @@ impl MessageBox {
     }
 }
 
-pub fn send(from_userid: &UserId, to_userid: &UserId, body: &str) {
+pub fn send_message(from_userid: &UserId, to_userid: &UserId, body: &str) {
     let mut to_message_box = MessageBox::for_userid(to_userid);
     let database = to_message_box.database();
     database.messages.push(

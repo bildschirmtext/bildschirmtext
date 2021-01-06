@@ -89,8 +89,8 @@ pub struct InputField {
     pub echo_ter: bool,
     #[serde(default)]
     pub command_mode: bool,
-    #[serde(skip_serializing, skip_deserializing)]
-    pub validate: Option<fn(&PageId, &HashMap<String, String>) -> ValidateResult>,
+    #[serde(default)]
+    pub validate: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -104,8 +104,6 @@ pub struct Inputs {
     pub no_55: bool,
     #[serde(default)]
     pub prohibit_command_mode: bool,
-    #[serde(skip_serializing, skip_deserializing)]
-    pub send: Option<fn(&PageId, &HashMap<String, String>) -> UserRequest>,
 }
 
 pub struct Editor {
@@ -411,12 +409,7 @@ impl Editor {
                             legal_values: None,
                             echo_ter: true,
                             command_mode: true,
-
-                            default: None,
-                            cursor_home: false,
-                            end_on_illegal_character: false,
-                            end_on_legal_string: false,
-                            validate: None,
+                            ..Default::default()
                         };
                         let mut editor = Editor::new(&input_field);
                         editor.set_string(&(CEPT_INI as char).to_string());

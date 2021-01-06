@@ -239,7 +239,6 @@ fn create_add_user() -> Page {
                     "width": 14
                 }
             ],
-            "target": "call:User_UI.callback_add_user"
         },
         "links": [
             { "code": "0", "target": "0" },
@@ -251,15 +250,7 @@ fn create_add_user() -> Page {
         "publisher_name": "!BTX"
     }
     "#;
-    let mut meta: Meta = serde_json::from_str(meta_str).unwrap();
-    if let Some(inputs) = &mut meta.inputs {
-        // XXX no need for the if-let, but unwrap() should partially move meta :(
-        inputs.fields[0].validate = Some(callback_validate_user_id);
-        inputs.fields[2].validate = Some(callback_validate_last_name);
-        inputs.fields[14].validate = Some(callback_validate_password);
-        inputs.send = Some(callback_add_user);
-    }
-
+    let meta: Meta = serde_json::from_str(meta_str).unwrap();
     let mut cept = Cept::new();
     cept += create_title("Neuen Benutzer einrichten");
     cept.add_raw(b"\r\n");
@@ -325,7 +316,24 @@ fn callback_validate_password(_: &PageId, input_data: &HashMap<String, String>) 
     }
 }
 
-pub fn callback_add_user(_: &PageId, input_data: &HashMap<String, String>) -> UserRequest {
+pub fn create(pageid: &PageId) -> Option<Page> {
+    if pageid.page == "77" {
+        Some(create_add_user())
+    } else {
+        None
+    }
+}
+
+pub fn validate(pageid: &PageId, name: &str, input_data: &HashMap<String, String>) -> ValidateResult {
+    match name {
+        "user_id" => callback_validate_user_id(pageid, input_data),
+        "last_name" => callback_validate_last_name(pageid, input_data),
+        "password" => callback_validate_password(pageid, input_data),
+        _ => unreachable!()
+    }
+}
+
+pub fn send(pageid: &PageId, input_data: &HashMap<String, String>) -> UserRequest {
     if User::create(
         input_data.get("user_id").unwrap(),
         "1", // ext
@@ -341,13 +349,5 @@ pub fn callback_add_user(_: &PageId, input_data: &HashMap<String, String>) -> Us
         UserRequest::MessageGoto(SysMsg::Custom("Benutzer angelegt. Bitte neu anmelden. -> #".to_string()), PageId::from_str("00000").unwrap(), true)
     } else {
         UserRequest::Error(SysMsg::Custom("Benutzer konnte nicht angelegt werden. -> #".to_string()))
-    }
-}
-
-pub fn create(pageid: &PageId) -> Option<Page> {
-    if pageid.page == "77" {
-        Some(create_add_user())
-    } else {
-        None
     }
 }

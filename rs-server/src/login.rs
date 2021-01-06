@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use chrono::Local;
+
 use super::editor::*;
 use super::page::*;
 use super::session::*;
@@ -19,14 +20,18 @@ pub fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> 
     }
 }
 
-pub fn send_login(_: &PageId, input_data: &HashMap<String, String>) -> UserRequest {
-    UserRequest::Login(
-        UserId::new(
-            input_data.get("user_id").unwrap(),
-            input_data.get("ext").unwrap(),
-        ),
-        input_data.get("password").unwrap().clone(),
-    )
+pub fn send(pageid: &PageId, input_data: &HashMap<String, String>, private_context: PrivateContext) -> UserRequest {
+    if pageid.page == "00000" {
+        UserRequest::Login(
+            UserId::new(
+                input_data.get("user_id").unwrap(),
+                input_data.get("ext").unwrap(),
+            ),
+            input_data.get("password").unwrap().clone(),
+        )
+    } else {
+        unreachable!()
+   }
 }
 
 fn create_login() -> Page {
@@ -74,7 +79,6 @@ fn create_login() -> Page {
                 }
             ),
             prohibit_command_mode: true,
-            send: Some(send_login),
             ..Default::default()
         }),
         links: None,

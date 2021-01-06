@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::session::*;
 use super::page::*;
 use super::user::*;
@@ -7,9 +8,22 @@ pub struct PrivateContext<'a> {
     pub stats: Option<&'a Stats>,
 }
 
-enum CanSeePrivateContext {
-    No(fn(&PageId) -> Option<Page>),
-    Yes(fn(&PageId, PrivateContext) -> Option<Page>),
+pub struct UserFns {
+    pub create: fn(&PageId, PrivateContext) -> Option<Page>,
+    pub validate: Option<fn(&PageId, name: &str, input_data: &HashMap<String, String>, PrivateContext) -> ValidateResult>,
+    pub send: Option<fn(&PageId, input_data: &HashMap<String, String>, PrivateContext) -> UserRequest>,
+}
+
+
+pub struct AnonymousUserFns {
+    pub create: fn(&PageId) -> Option<Page>,
+    pub validate: Option<fn(&PageId, name: &str, input_data: &HashMap<String, String>) -> ValidateResult>,
+    pub send: Option<fn(&PageId, input_data: &HashMap<String, String>) -> UserRequest>,
+}
+
+pub enum Anonymous {
+    Yes(AnonymousUserFns),
+    No(UserFns),
 }
 
 // Mask:
@@ -18,20 +32,20 @@ enum CanSeePrivateContext {
 //   * If a mask ends in '-', it only has to be a prefix of the page number. The prefix of the
 //     page number will be stripped when passed into the function.
 // Function:
-//   * Only use CanSeePrivateContext::Yes for BTX-internal pages that need to access the
+//   * Only use Anonymous::Yes for BTX-internal pages that need to access the
 //     user's info and statistics!
 // N.B.: The table must be in the right order: longer prefixes must come first!
-const DISPATCH_TABLE: &[(&[u8], CanSeePrivateContext)] = &[
-    (b"00000*", CanSeePrivateContext::Yes(super::login::create)),
-    (b"9",      CanSeePrivateContext::Yes(super::login::create)),
-    (b"8*",     CanSeePrivateContext::Yes(super::ui_messaging::create)),
-    (b"77",     CanSeePrivateContext::No (super::ui_user::create)),
-    (b"7-",     CanSeePrivateContext::No (super::historic::create)),
-    (b"*",      CanSeePrivateContext::No (super::staticp::create)),
+const DISPATCH_TABLE: &[(&[u8], Anonymous)] = &[
+    (b"00000*", Anonymous::No(UserFns { create: super::login::create, validate: None, send: Some(super::login::send) })),
+    (b"9",      Anonymous::No(UserFns { create: super::login::create, validate: None, send: Some(super::login::send) })),
+    (b"8*",     Anonymous::No(UserFns { create: super::ui_messaging::create, validate: Some(super::ui_messaging::validate), send: Some(super::ui_messaging::send) })),
+    (b"77",     Anonymous::Yes(AnonymousUserFns { create: super::ui_user::create, validate: Some(super::ui_user::validate), send: Some(super::ui_user::send) })),
+    (b"7-",     Anonymous::Yes(AnonymousUserFns { create: super::historic::create, validate: None, send: None })),
+    (b"*",      Anonymous::Yes(AnonymousUserFns { create: super::staticp::create, validate: None, send: None })),
 ];
 
-pub fn get_page(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
-    for (mask, function) in DISPATCH_TABLE {
+pub fn dispatch_pageid(pageid: &PageId) -> &Anonymous {
+    for (mask, functions) in DISPATCH_TABLE {
         let matches;
         let reduce;
         let last = *mask.last().unwrap();
@@ -48,15 +62,8 @@ pub fn get_page(pageid: &PageId, private_context: PrivateContext) -> Option<Page
         };
         if matches {
             let pageid = &pageid.reduced_by(reduce);
-            return match function {
-                CanSeePrivateContext::No(function) => {
-                    function(pageid)
-                }
-                CanSeePrivateContext::Yes(function) => {
-                    function(pageid, private_context)
-                }
-            };
+            return functions;
         }
     }
-    return None;
+    unreachable!();
 }

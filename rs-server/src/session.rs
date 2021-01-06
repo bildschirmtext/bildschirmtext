@@ -119,13 +119,24 @@ impl Session {
         let mut current_page_cept = Cept::new();
 
         'main: loop {
+            // dispatch page
+            let functions = super::dispatch::dispatch_pageid(&target_pageid);
+
             // *** show page
             println!("showing page: {}", target_pageid.to_string());
-            let private_context = PrivateContext {
-                user: self.user.as_ref(),
-                stats: self.stats.as_ref(),
+            let page = match functions {
+                Anonymous::Yes(functions) => {
+                    (functions.create)(&target_pageid)
+                }
+                Anonymous::No(functions) => {
+                    let private_context = PrivateContext {
+                        user: self.user.as_ref(),
+                        stats: self.stats.as_ref(),
+                    };
+                    (functions.create)(&target_pageid, private_context)
+                }
             };
-            if let Some(page) = super::dispatch::get_page(&target_pageid, private_context) {
+            if let Some(page) = page {
                 current_page_cept = page.construct_page_cept(&mut self.client_state, &target_pageid);
                 write_stream(stream, current_page_cept.data());
                 links = page.meta.links;
@@ -151,7 +162,7 @@ impl Session {
 
             'input: loop {
                 // *** get user input
-                let input_event = self.get_inputs(&self.current_pageid, inputs.as_mut(), links.as_ref(), stream);
+                let input_event = self.get_inputs(&self.current_pageid, inputs.as_mut(), links.as_ref(), functions, stream);
 
                 // *** handle input
                 let req = match input_event {
@@ -162,7 +173,7 @@ impl Session {
                         self.decode_link(links.as_ref(), &val)
                     },
                     InputEvent::TextFields(input_data) => {
-                        self.decode_text_fields(&self.current_pageid, inputs.as_ref(), &input_data)
+                        self.decode_text_fields(&self.current_pageid, inputs.as_ref(), &input_data, functions)
                     },
                 };
                 match req {
@@ -208,7 +219,7 @@ impl Session {
     // * for pages with text fields, draw them and allow editing them
     // * for pages with without text fields, allow entering a link
     // In both cases, it is possible to escape into command mode.
-    fn get_inputs(&self, pageid: &PageId, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, stream: &mut (impl Write + Read)) -> InputEvent {
+    fn get_inputs(&self, pageid: &PageId, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, functions: &Anonymous, stream: &mut (impl Write + Read)) -> InputEvent {
         if self.autoplay {
             println!("autoplay!");
             InputEvent::Navigation("".to_owned()) // inject "#"
@@ -244,14 +255,13 @@ impl Session {
                             end_on_legal_string: true,
                             echo_ter: true,
                             command_mode: false,
-                            validate: None,
+                            validate: false,
                             default: None,
                         }),
                     confirm: false,
                     no_55: true,
                     prohibit_command_mode: false,
                     price: None,
-                    send: None,
                 };
                 &mut i
             } else {
@@ -288,8 +298,27 @@ impl Session {
 
                 input_data.insert(input_field.name.to_string(), val.unwrap().to_string());
 
-                let validate_result = if let Some(validate) = input_field.validate {
-                    validate(&pageid, &input_data)
+                let validate_result = if input_field.validate {
+                     match functions {
+                        Anonymous::Yes(functions) => {
+                            if let Some(validate) = functions.validate {
+                                validate(&pageid, &input_field.name, &input_data)
+                            } else {
+                                ValidateResult::Ok
+                            }
+                        }
+                        Anonymous::No(functions) => {
+                            let private_context = PrivateContext {
+                                user: self.user.as_ref(),
+                                stats: self.stats.as_ref(),
+                            };
+                            if let Some(validate) = functions.validate {
+                                validate(&pageid, &input_field.name, &input_data, private_context)
+                            } else {
+                                ValidateResult::Ok
+                            }
+                        }
+                    }
                 } else {
                     ValidateResult::Ok
                 };
@@ -431,13 +460,26 @@ impl Session {
         }
     }
 
-    fn decode_text_fields(&self, pageid: &PageId, inputs: Option<&Inputs>, input_data: &HashMap<String, String>) -> UserRequest {
-        let send_result = if let Some(send) = inputs.unwrap().send {
-            send(&pageid, &input_data)
-        } else {
-            UserRequest::SendAgain // XXX
-        };
-        send_result
+    fn decode_text_fields(&self, pageid: &PageId, inputs: Option<&Inputs>, input_data: &HashMap<String, String>, functions: &Anonymous,) -> UserRequest {
+        match functions {
+            Anonymous::Yes(functions) => {
+                if let Some(send) = functions.send {
+                    send(&pageid, &input_data)
+                } else {
+                    UserRequest::SendAgain // XXX site has forms, but does not accept sending forms
+                }
+            }
+            Anonymous::No(functions) => {
+                let private_context = PrivateContext {
+                    user: self.user.as_ref(),
+                    stats: self.stats.as_ref(),
+                };
+                if let Some(send) = functions.send {
+                    send(&pageid, &input_data, private_context)
+                } else {
+                    UserRequest::SendAgain // XXX site has forms, but does not accept sending forms
+                }
+            }
+        }
     }
 }
-
