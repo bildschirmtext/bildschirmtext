@@ -1,6 +1,7 @@
 use std::{fs::File, io::Write};
 use serde::{Deserialize, Serialize};
 use chrono::{Local, DateTime, TimeZone};
+use std::fmt;
 use super::staticp::*;
 use super::paths::*;
 
@@ -29,6 +30,15 @@ impl UserId {
         s.push('-');
         s += &self.ext;
         s
+    }
+}
+
+impl fmt::Display for UserId {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_str(&self.id)?;
+        fmt.write_str("-")?;
+        fmt.write_str(&self.ext)?;
+        Ok(())
     }
 }
 
@@ -221,5 +231,28 @@ impl User {
             }
         }
         None
+    }
+
+    pub fn name(&self) -> String {
+        match &self.public {
+            UserDataPublic::Person(person) => {
+                let mut name = String::new();
+                if let Some(first_name) = &person.first_name {
+                    name += &first_name;
+                    name.push(' ');
+                }
+                if let Some(last_name) = &person.last_name {
+                    name += last_name;
+                }
+                name
+            },
+            UserDataPublic::Organization(organization) => {
+                if let Some(name1) = &organization.name1 {
+                    name1.clone()
+                } else {
+                    String::new()
+                }
+            },
+        }
     }
 }

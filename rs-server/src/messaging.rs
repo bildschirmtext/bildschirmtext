@@ -18,7 +18,8 @@ struct MessageDatabase {
 #[derive(Serialize, Deserialize)]
 struct Message {
     pub body: String,
-    pub from_userid: UserId,
+    pub from_id_str: String,
+    pub from_name: String,
     pub personal_data: bool,
     pub timestamp: i64,
     pub is_read: bool,
@@ -122,7 +123,8 @@ impl Messaging {
         let database = self.database();
 		database.messages.push(
             Message {
-				from_userid: userid,
+				from_id_str: userid.to_string(),
+				from_name: User::get(&userid).unwrap().name(),
 				personal_data: false,
 				timestamp: Utc::now().timestamp(),
                 body: body.to_owned(),
