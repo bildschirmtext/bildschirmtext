@@ -172,7 +172,7 @@ fn messaging_create_message_detail(userid: &UserId, index: usize, is_read: bool)
     cept.set_cursor(2, 1);
     cept.set_fg_color(3);
     cept.add_str("von ");
-    cept.add_str(&message.from_id_str);
+    cept.add_str(&message.from_address);
     cept.set_cursor(2, 41 - from_date.len() as u8);
     cept.add_str(&from_date);
     cept.repeat(b' ', 4);
@@ -230,7 +230,9 @@ pub fn callback_validate_ext(_: &PageId, input_data: &HashMap<String, String>) -
     }
 }
 
-fn messaging_create_compose(userid: &UserId) -> Page {
+fn messaging_create_compose(user: &User) -> Page {
+    let userid = &user.userid;
+
     let meta = Meta {
         include: Some("a".to_owned()),
         clear_screen: Some(true),
@@ -287,7 +289,6 @@ fn messaging_create_compose(userid: &UserId) -> Page {
     let now = Local::now();
     let current_date = now.format("%d.%m.%Y").to_string();
     let current_time = now.format("%H:%M").to_string();
-    let user = User::get(&userid).unwrap();
 
     let mut cept = Cept::new();
     cept.set_cursor(2, 1);
@@ -356,12 +357,12 @@ pub fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> 
             Some(messaging_create_list(&user.userid, false))
         } else if pageid.page == "89" {
             Some(messaging_create_list(&user.userid, true))
-        // } else if re.search("^88\da$", pageid.page) {
-        //     return messaging_create_message_detail(user, int(pageid.page[2..-1]) - 1, False)
-        // } else if re.search("^89\da$", pageid.page) {
-        //     return messaging_create_message_detail(user, int(pageid.page[2..-1]) - 1, True)
+        } else if pageid.page.starts_with("88") {
+            return messaging_create_message_detail(&user.userid, usize::from_str(&pageid.page[2..]).unwrap() - 1, false)
+        } else if pageid.page.starts_with("89") {
+            return messaging_create_message_detail(&user.userid, usize::from_str(&pageid.page[2..]).unwrap() - 1, true)
         } else if pageid.page == "810" {
-            Some(messaging_create_compose(&user.userid))
+            Some(messaging_create_compose(&user))
         } else {
             None
         }

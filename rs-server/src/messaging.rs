@@ -18,9 +18,10 @@ struct MessageDatabase {
 #[derive(Serialize, Deserialize)]
 pub struct Message {
     pub body: String,
-    pub from_id_str: String,
+    pub from_address: String,
     pub from_name: String,
     pub timestamp: i64,
+    #[serde(default)]
     pub is_read: bool,
     pub uuid: Uuid,
 }
@@ -118,8 +119,8 @@ impl MessageBox {
         self.save();
     }
 
-	pub fn has_new_messages(&mut self) {
-        self.select(false, 0, None).len() != 0;
+	pub fn has_new_messages(&mut self) -> bool {
+        self.select(false, 0, None).len() != 0
     }
 }
 
@@ -128,7 +129,7 @@ pub fn send(from_userid: &UserId, to_userid: &UserId, body: &str) {
     let database = to_message_box.database();
     database.messages.push(
         Message {
-            from_id_str: from_userid.to_string(),
+            from_address: from_userid.to_string(),
             from_name: User::get(&from_userid).unwrap().name(),
             timestamp: Utc::now().timestamp(),
             body: body.to_owned(),

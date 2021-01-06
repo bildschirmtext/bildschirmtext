@@ -5,6 +5,7 @@ use super::page::*;
 use super::session::*;
 use super::user::*;
 use super::dispatch::*;
+use super::messaging::*;
 
 pub fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
     if pageid.page == "00000" {
@@ -159,11 +160,20 @@ fn last_use(stats: Option<&Stats>) -> (String, String) {
     ("--.--.----".to_owned(), "--:--".to_owned())
 }
 
+fn has_new_messages(user: Option<&User>) -> bool {
+     if let Some(user) = user {
+        MessageBox::for_userid(&user.userid).has_new_messages()
+    } else {
+        false
+    }
+}
+
 fn create_start(private_context: PrivateContext) -> Page {
     let mut links = vec!(Link::new("#", "0"));
 
-    // if user.messaging.has_new_messages():
-    //     links["8"] = "88"
+    if has_new_messages(private_context.user) {
+        links.push(Link::new("8", "88"));
+    }
 
     if private_context.user.is_none() {
         links.push(Link::new("7", "77"));
@@ -213,9 +223,6 @@ fn create_start(private_context: PrivateContext) -> Page {
         user_name = "".to_owned();
     }
 
-    // notifications = Login_UI.notifications(user) //XXX
-    let notifications = "";
-
     let mut page = Page::new(meta);
 
     page.cept.clear_screen();
@@ -261,7 +268,7 @@ fn create_start(private_context: PrivateContext) -> Page {
     page.cept.add_str(&user_name);
     page.cept.add_raw(b"\r\n");
     page.cept.set_fg_color_simple(3);
-    page.cept.add_str(&notifications);
+    page.cept.add_str(&notifications(private_context.user));
     page.cept.set_fg_color_simple(7);
     page.cept.set_cursor(19, 1);
     page.cept.add_str("Sie benutzten Bildschirmtext zuletzt");
@@ -278,6 +285,23 @@ fn create_start(private_context: PrivateContext) -> Page {
     page.cept.set_line_bg_color_simple(4);
     page.cept.add_str("Weiter mit #  oder  *Seitennummer#");
     page
+}
+
+fn notifications(user: Option<&User>) -> String {
+    if let Some(user) = user {
+        if has_new_messages(Some(user)) {
+            "Neue Mitteilungen mit 8".to_owned()
+        } else {
+            "".to_owned()
+        }
+    } else {
+        "Als Gastbenutzer können Sie beliebige\n\
+        Bildschirmtext-Inhalte abrufen.\n\
+        Um Ihren eigenen Zugang einzurichten,\n\
+        mit dem Sie auch Mitteilungen versenden\n\
+        und empfangen können, drücken Sie jetzt\n\
+        bitte die 7.".to_owned()
+    }
 }
 
 fn btx_logo(page: &mut Page) {
