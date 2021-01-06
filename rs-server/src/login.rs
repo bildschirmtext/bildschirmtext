@@ -19,7 +19,7 @@ pub fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> 
     }
 }
 
-pub fn action_login(_: &PageId, input_data: &HashMap<String, String>) -> UserRequest {
+pub fn send_login(_: &PageId, input_data: &HashMap<String, String>) -> UserRequest {
     UserRequest::Login(
         UserId::new(
             input_data.get("user_id").unwrap(),
@@ -74,7 +74,7 @@ fn create_login() -> Page {
                 }
             ),
             prohibit_command_mode: true,
-            action: Some(action_login),
+            send: Some(send_login),
             ..Default::default()
         }),
         links: None,

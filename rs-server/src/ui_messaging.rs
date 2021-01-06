@@ -211,19 +211,19 @@ fn messaging_create_message_detail(userid: &UserId, index: usize, is_read: bool)
     Some(Page { meta, cept })
 }
 
-pub fn callback_validate_user_id(_: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
+pub fn callback_validate_user_id(_: &PageId, input_data: &HashMap<String, String>) -> ValidateResult {
     if User::exists(&UserId::new(input_data.get("user_id").unwrap(), "1")) { // XXX
-        ActionResult::Ok
+        ValidateResult::Ok
     } else {
-        ActionResult::Error(SysMsg::Custom("Teilnehmerkennung ungültig! -> #".to_owned()))
+        ValidateResult::Error(SysMsg::Custom("Teilnehmerkennung ungültig! -> #".to_owned()))
     }
 }
 
-pub fn callback_validate_ext(_: &PageId, input_data: &HashMap<String, String>) -> ActionResult {
+pub fn callback_validate_ext(_: &PageId, input_data: &HashMap<String, String>) -> ValidateResult {
     if User::exists(&UserId::new(input_data.get("user_id").unwrap(), input_data.get("ext").unwrap())) {
-        ActionResult::Ok
+        ValidateResult::Ok
     } else {
-        ActionResult::Error(SysMsg::Custom("Mitbenutzernummer ungültig! -> #".to_owned()))
+        ValidateResult::Error(SysMsg::Custom("Mitbenutzernummer ungültig! -> #".to_owned()))
     }
 }
 
@@ -248,7 +248,7 @@ fn messaging_create_compose(user: &User) -> Page {
                     width: 16,
                     bgcolor: Some(4),
                     fgcolor: Some(3),
-                    action: Some(callback_validate_user_id),
+                    validate: Some(callback_validate_user_id),
                     ..Default::default()
                 },
                 InputField {
@@ -261,7 +261,7 @@ fn messaging_create_compose(user: &User) -> Page {
                     bgcolor: Some(4),
                     fgcolor: Some(3),
                     default: Some("1".to_owned()),
-                    action: Some(callback_validate_ext),
+                    validate: Some(callback_validate_ext),
                     ..Default::default()
                 },
                 InputField {
@@ -275,7 +275,7 @@ fn messaging_create_compose(user: &User) -> Page {
                     ..Default::default()
                 }
             ),
-            action: Some(send_message),
+            send: Some(send_message),
             confirm: true,
             price: Some(30),
             ..Default::default()

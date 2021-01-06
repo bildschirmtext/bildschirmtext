@@ -65,7 +65,7 @@ impl FromStr for PageId {
     }
 }
 
-pub enum ActionResult {
+pub enum ValidateResult {
     Ok,
 	Error(SysMsg),
 	Restart,
@@ -244,14 +244,14 @@ impl Session {
                             end_on_legal_string: true,
                             echo_ter: true,
                             command_mode: false,
-                            action: None,
+                            validate: None,
                             default: None,
                         }),
                     confirm: false,
                     no_55: true,
                     prohibit_command_mode: false,
                     price: None,
-                    action: None,
+                    send: None,
                 };
                 &mut i
             } else {
@@ -288,22 +288,22 @@ impl Session {
 
                 input_data.insert(input_field.name.to_string(), val.unwrap().to_string());
 
-                let action_result = if let Some(action) = input_field.action {
-                    action(&pageid, &input_data)
+                let validate_result = if let Some(validate) = input_field.validate {
+                    validate(&pageid, &input_data)
                 } else {
-                    ActionResult::Ok
+                    ValidateResult::Ok
                 };
 
-                match action_result {
-                    ActionResult::Ok => {
+                match validate_result {
+                    ValidateResult::Ok => {
                         i += 1;
                     },
-                    ActionResult::Error(sysmsg) => {
+                    ValidateResult::Error(sysmsg) => {
                         show_sysmsg(&sysmsg, stream);
                         skip = false;
                         continue;
                     },
-                    ActionResult::Restart => {
+                    ValidateResult::Restart => {
                         i = 0;
                         skip = false;
                         continue;
@@ -432,12 +432,12 @@ impl Session {
     }
 
     fn decode_text_fields(&self, pageid: &PageId, inputs: Option<&Inputs>, input_data: &HashMap<String, String>) -> UserRequest {
-        let action_result = if let Some(action) = inputs.unwrap().action {
-            action(&pageid, &input_data)
+        let send_result = if let Some(send) = inputs.unwrap().send {
+            send(&pageid, &input_data)
         } else {
             UserRequest::SendAgain // XXX
         };
-        action_result
+        send_result
     }
 }
 
