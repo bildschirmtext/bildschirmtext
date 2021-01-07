@@ -5,34 +5,12 @@ use super::user::*;
 
 
 pub trait PageSession<'a> {
-    fn new(pageid: &'a PageId, user: Option<&'a User>, stats: Option<&'a Stats>) -> Self;
     fn create(&self) -> Option<Page>;
     fn validate(&self, name: &str, input_data: &HashMap<String, String>) -> ValidateResult;
     fn send(&self, input_data: &HashMap<String, String>) -> UserRequest;
 }
 
-pub struct PrivateContext<'a> {
-    pub user: Option<&'a User>,
-    pub stats: Option<&'a Stats>,
-}
-
-pub struct UserFns {
-    pub create: fn(&PageId, PrivateContext) -> Option<Page>,
-    pub validate: Option<fn(&PageId, name: &str, input_data: &HashMap<String, String>, PrivateContext) -> ValidateResult>,
-    pub send: Option<fn(&PageId, input_data: &HashMap<String, String>, PrivateContext) -> UserRequest>,
-}
-
-
-pub struct AnonymousUserFns {
-    pub create: fn(&PageId) -> Option<Page>,
-    pub validate: Option<fn(&PageId, name: &str, input_data: &HashMap<String, String>) -> ValidateResult>,
-    pub send: Option<fn(&PageId, input_data: &HashMap<String, String>) -> UserRequest>,
-}
-
-pub enum Anonymous {
-    Yes(AnonymousUserFns),
-    No(UserFns),
-}
+struct PageSessionNewFn<'a>(fn(&'a PageId, Option<&'a User>, Option<&'a Stats>) -> Box<dyn PageSession<'a>>);
 
 // Mask:
 //   * If a mask does not end in '*' or '-', the page number must match exactly.
@@ -43,16 +21,20 @@ pub enum Anonymous {
 //   * Only use Anonymous::Yes for BTX-internal pages that need to access the
 //     user's info and statistics!
 // N.B.: The table must be in the right order: longer prefixes must come first!
-const DISPATCH_TABLE: &[(&[u8], Anonymous)] = &[
-    (b"00000*", Anonymous::No(super::login::FUNCTIONS)),
-    (b"9",      Anonymous::No(super::login::FUNCTIONS)),
-    (b"8*",     Anonymous::No(super::ui_messaging::FUNCTIONS)),
-    (b"77",     Anonymous::Yes(super::ui_user::FUNCTIONS)),
-    (b"7-",     Anonymous::Yes(super::historic::FUNCTIONS)),
-    (b"*",      Anonymous::Yes(super::staticp::FUNCTIONS)),
+const DISPATCH_TABLE: &[(&[u8], PageSessionNewFn)] = &[
+    // (b"00000*", super::login::new),
+    // (b"9",      super::login::new),
+    (b"8*",     PageSessionNewFn(super::ui_messaging::new)),
+    // (b"77",     Box::new(super::ui_user::UsersPageSession::new)),
+    // (b"7-",     Box::new(super::historic::HistoricPageSession::new)),
+    // (b"*",      Box::new(super::staticp::StaticPageSession::new)),
 ];
 
 pub fn dispatch_pageid(pageid: &PageId) -> &Anonymous {
+
+    let x = super::staticp::StaticPageSession::new;
+
+
     for (mask, functions) in DISPATCH_TABLE {
         let matches;
         let reduce;

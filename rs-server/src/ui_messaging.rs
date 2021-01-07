@@ -17,10 +17,11 @@ pub struct MessagingPageSession<'a> {
     user: Option<&'a User>,
 }
 
+pub fn new<'a>(pageid: &'a PageId, user: Option<&'a User>, _: Option<&'a Stats>) -> Box<dyn PageSession<'a> + 'a> {
+    Box::new(MessagingPageSession { pageid, user })
+}
+
 impl<'a> PageSession<'a> for MessagingPageSession<'a> {
-    fn new(pageid: &'a PageId, user: Option<&'a User>, _: Option<&'a Stats>) -> Self {
-        Self { pageid, user }
-    }
 
     fn create(&self) -> Option<Page> {
         let user = self.user;
