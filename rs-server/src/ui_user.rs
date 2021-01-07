@@ -7,6 +7,54 @@ use super::page::*;
 use super::sysmsg::*;
 use super::dispatch::*;
 
+pub struct LoginPageSession<'a> {
+    pageid: &'a PageId,
+    user: Option<&'a User>,
+    stats: Option<&'a Stats>,
+}
+
+impl<'a> PageSession<'a> for LoginPageSession<'a> {
+    fn new(pageid: &'a PageId, user: Option<&'a User>, stats: Option<&'a Stats>) -> Self {
+        Self { pageid, user, stats }
+    }
+
+    fn create(&self) -> Option<Page> {
+        if self.pageid.page == "77" {
+            Some(create_add_user())
+        } else {
+            None
+        }
+    }
+
+    fn validate(&self, name: &str, input_data: &HashMap<String, String>) -> ValidateResult {
+        match name {
+            "user_id" => callback_validate_user_id(self.pageid, input_data),
+            "last_name" => callback_validate_last_name(self.pageid, input_data),
+            "password" => callback_validate_password(self.pageid, input_data),
+            _ => unreachable!()
+        }
+    }
+
+    fn send(&self, input_data: &HashMap<String, String>) -> UserRequest {
+        if User::create(
+            input_data.get("user_id").unwrap(),
+            "1", // ext
+            input_data.get("password").unwrap(),
+            input_data.get("salutation").unwrap(),
+            input_data.get("last_name").unwrap(),
+            input_data.get("first_name").unwrap(),
+            input_data.get("street").unwrap(),
+            input_data.get("zip").unwrap(),
+            input_data.get("city").unwrap(),
+            input_data.get("country").unwrap()
+        ) {
+            UserRequest::MessageGoto(SysMsg::Custom("Benutzer angelegt. Bitte neu anmelden. -> #".to_string()), PageId::from_str("00000").unwrap(), true)
+        } else {
+            UserRequest::Error(SysMsg::Custom("Benutzer konnte nicht angelegt werden. -> #".to_string()))
+        }
+    }
+}
+
 pub const FUNCTIONS: AnonymousUserFns = AnonymousUserFns { create, validate: Some(validate), send: Some(send) };
 
 pub fn create(pageid: &PageId) -> Option<Page> {

@@ -3,6 +3,14 @@ use crate::session::*;
 use super::page::*;
 use super::user::*;
 
+
+pub trait PageSession<'a> {
+    fn new(pageid: &'a PageId, user: Option<&'a User>, stats: Option<&'a Stats>) -> Self;
+    fn create(&self) -> Option<Page>;
+    fn validate(&self, name: &str, input_data: &HashMap<String, String>) -> ValidateResult;
+    fn send(&self, input_data: &HashMap<String, String>) -> UserRequest;
+}
+
 pub struct PrivateContext<'a> {
     pub user: Option<&'a User>,
     pub stats: Option<&'a Stats>,
