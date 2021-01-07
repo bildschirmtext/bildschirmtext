@@ -1,7 +1,39 @@
+use std::collections::HashMap;
+
+use crate::user::*;
+
 use super::cept::*;
 use super::page::*;
 use super::session::*;
 use super::dispatch::*;
+
+pub struct HistoricPageSession<'a> {
+    pageid: &'a PageId,
+}
+
+impl<'a> PageSession<'a> for HistoricPageSession<'a> {
+    fn new(pageid: &'a PageId, _: Option<&'a User>, _: Option<&'a Stats>) -> Self {
+        Self { pageid }
+    }
+
+    fn create(&self) -> Option<Page> {
+        if self.pageid.page == "8" {
+            Some(create_historic_main_page())
+        } else if self.pageid.page == "10" || self.pageid.page == "11" || self.pageid.page == "12" {
+            Some(create_historic_overview(self.pageid.page[0..2].parse().unwrap(), 0).unwrap())
+        } else {
+            None
+        }
+    }
+
+    fn validate(&self, _: &str, _: &HashMap<String, String>) -> ValidateResult {
+        unreachable!()
+    }
+
+    fn send(&self, _: &HashMap<String, String>) -> UserRequest {
+        unreachable!()
+    }
+}
 
 pub const FUNCTIONS: AnonymousUserFns = AnonymousUserFns { create, validate: None, send: None };
 

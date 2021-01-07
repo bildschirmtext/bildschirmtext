@@ -7,15 +7,13 @@ use super::page::*;
 use super::sysmsg::*;
 use super::dispatch::*;
 
-pub struct LoginPageSession<'a> {
+pub struct UsersPageSession<'a> {
     pageid: &'a PageId,
-    user: Option<&'a User>,
-    stats: Option<&'a Stats>,
 }
 
-impl<'a> PageSession<'a> for LoginPageSession<'a> {
-    fn new(pageid: &'a PageId, user: Option<&'a User>, stats: Option<&'a Stats>) -> Self {
-        Self { pageid, user, stats }
+impl<'a> PageSession<'a> for UsersPageSession<'a> {
+    fn new(pageid: &'a PageId, _: Option<&'a User>, _: Option<&'a Stats>) -> Self {
+        Self { pageid }
     }
 
     fn create(&self) -> Option<Page> {

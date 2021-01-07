@@ -8,13 +8,55 @@ use super::user::*;
 use super::dispatch::*;
 use super::messaging::*;
 
+pub struct LoginPageSession<'a> {
+    pageid: &'a PageId,
+    user: Option<&'a User>,
+    stats: Option<&'a Stats>,
+}
+
+impl<'a> PageSession<'a> for LoginPageSession<'a> {
+    fn new(pageid: &'a PageId, user: Option<&'a User>, stats: Option<&'a Stats>) -> Self {
+        Self { pageid, user, stats }
+    }
+
+    fn create(&self) -> Option<Page> {
+        if self.pageid.page == "00000" {
+            Some(create_login())
+        } else if self.pageid.page == "000001" {
+            Some(create_start(self.user, self.stats)) // XXX user
+        } else if self.pageid.page == "9" {
+            Some(create_logout())
+        } else {
+             None
+        }
+    }
+
+    fn validate(&self, _: &str, _: &HashMap<String, String>) -> ValidateResult {
+        unreachable!()
+    }
+
+    fn send(&self, input_data: &HashMap<String, String>) -> UserRequest {
+        if self.pageid.page == "00000" {
+            UserRequest::Login(
+                UserId::new(
+                    input_data.get("user_id").unwrap(),
+                    input_data.get("ext").unwrap(),
+                ),
+                input_data.get("password").unwrap().clone(),
+            )
+        } else {
+            unreachable!()
+       }
+    }
+}
+
 pub const FUNCTIONS: UserFns = UserFns { create: super::login::create, validate: None, send: Some(super::login::send) };
 
 fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
     if pageid.page == "00000" {
         Some(create_login())
     } else if pageid.page == "000001" {
-        Some(create_start(private_context)) // XXX user
+        Some(create_start(private_context.user, private_context.stats)) // XXX user
     } else if pageid.page == "9" {
         Some(create_logout())
     } else {
@@ -176,14 +218,14 @@ fn has_new_messages(user: Option<&User>) -> bool {
     }
 }
 
-fn create_start(private_context: PrivateContext) -> Page {
+fn create_start(user: Option<&User>, stats: Option<&Stats>) -> Page {
     let mut links = vec!(Link::new("#", "0"));
 
-    if has_new_messages(private_context.user) {
+    if has_new_messages(user) {
         links.push(Link::new("8", "88"));
     }
 
-    if private_context.user.is_none() {
+    if user.is_none() {
         links.push(Link::new("7", "77"));
     }
 
@@ -203,10 +245,10 @@ fn create_start(private_context: PrivateContext) -> Page {
 
     let now = Local::now();
     let current_date = now.format("%d.%m.%Y  %H:%M").to_string();
-    let (last_date, last_time) = last_use(private_context.stats);
+    let (last_date, last_time) = last_use(stats);
 
     let mut user_name;
-    if let Some(user) = &private_context.user {
+    if let Some(user) = &user {
         user_name = String::new();
         match &user.public {
             UserDataPublic::Person(person) => {
@@ -276,7 +318,7 @@ fn create_start(private_context: PrivateContext) -> Page {
     page.cept.add_str(&user_name);
     page.cept.add_raw(b"\r\n");
     page.cept.set_fg_color_simple(3);
-    page.cept.add_str(&notifications(private_context.user));
+    page.cept.add_str(&notifications(user));
     page.cept.set_fg_color_simple(7);
     page.cept.set_cursor(19, 1);
     page.cept.add_str("Sie benutzten Bildschirmtext zuletzt");
