@@ -12,29 +12,26 @@ pub trait PageSession<'a> {
 
 struct PageSessionNewFn(fn(PageId, User, Stats) -> Box<dyn PageSession<'static>>);
 
-// Mask:
+// mask:
 //   * If a mask does not end in '*' or '-', the page number must match exactly.
 //   * If a mask ends in '*', it only has to be a prefix of the page number.
 //   * If a mask ends in '-', it only has to be a prefix of the page number. The prefix of the
 //     page number will be stripped when passed into the function.
-// Function:
-//   * Only use Anonymous::Yes for BTX-internal pages that need to access the
+// bool:
+//   * Only use 'true' for BTX-internal pages that need to access the
 //     user's info and statistics!
 // N.B.: The table must be in the right order: longer prefixes must come first!
-const DISPATCH_TABLE: &[(&[u8], PageSessionNewFn)] = &[
-    (b"00000*", PageSessionNewFn(super::login::new)),
-    (b"9",      PageSessionNewFn(super::login::new)),
-    (b"8*",     PageSessionNewFn(super::ui_messaging::new)),
-    (b"77",     PageSessionNewFn(super::ui_user::new)),
-    (b"7-",     PageSessionNewFn(super::historic::new)),
-    (b"*",      PageSessionNewFn(super::staticp::new)),
+const DISPATCH_TABLE: &[(&[u8], bool, PageSessionNewFn)] = &[
+    (b"00000*", true, PageSessionNewFn(super::login::new)),
+    (b"9",      true, PageSessionNewFn(super::login::new)),
+    (b"8*",     true, PageSessionNewFn(super::ui_messaging::new)),
+    (b"77",     false, PageSessionNewFn(super::ui_user::new)),
+    (b"7-",     false, PageSessionNewFn(super::historic::new)),
+    (b"*",      false, PageSessionNewFn(super::staticp::new)),
 ];
 
 pub fn dispatch_pageid<'a>(pageid: &PageId, user: &User, stats: &Stats) -> Box<dyn PageSession<'static>> {
-
-    // super::login::new(pageid, user, stats)
-
-    for (mask, new_fn) in DISPATCH_TABLE {
+    for (mask, private_data, new_fn) in DISPATCH_TABLE {
         let matches;
         let reduce;
         let last = *mask.last().unwrap();
@@ -51,8 +48,11 @@ pub fn dispatch_pageid<'a>(pageid: &PageId, user: &User, stats: &Stats) -> Box<d
         };
         if matches {
             let pageid = pageid.reduced_by(reduce).clone();
-            // return new_fn.0(pageid, user, stats);
-            return new_fn.0(pageid, user.clone(), stats.clone());
+            if *private_data {
+                return new_fn.0(pageid, user.clone(), stats.clone());
+            } else {
+                return new_fn.0(pageid, User::default(), Stats::new(&User::default()));
+            }
         }
     }
     unreachable!();
