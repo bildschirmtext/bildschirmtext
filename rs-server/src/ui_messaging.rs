@@ -83,67 +83,6 @@ impl<'a> PageSession<'a> for MessagingPageSession<'a> {
     }
 }
 
-pub const FUNCTIONS: UserFns = UserFns { create, validate: Some(validate), send: Some(send) };
-
-fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
-    let user = private_context.user;
-
-    if let Some(user) = user {
-        if pageid.page == "8" {
-            Some(messaging_create_main_menu())
-        } else if pageid.page == "88" {
-            Some(messaging_create_list(&user.userid, false))
-        } else if pageid.page == "89" {
-            Some(messaging_create_list(&user.userid, true))
-        } else if pageid.page.starts_with("88") {
-            return messaging_create_message_detail(&user.userid, usize::from_str(&pageid.page[2..]).unwrap() - 1, false)
-        } else if pageid.page.starts_with("89") {
-            return messaging_create_message_detail(&user.userid, usize::from_str(&pageid.page[2..]).unwrap() - 1, true)
-        } else if pageid.page == "810" {
-            Some(messaging_create_compose(&user))
-        } else {
-            None
-        }
-    } else {
-        None
-    }
-}
-
-fn validate(pageid: &PageId, name: &str, input_data: &HashMap<String, String>, private_context: PrivateContext) -> ValidateResult {
-    if pageid.page == "810" {
-        match name {
-            "user_id" => {
-                if User::exists(&UserId::new(input_data.get("user_id").unwrap(), "1")) { // XXX
-                    ValidateResult::Ok
-                } else {
-                    ValidateResult::Error(SysMsg::Custom("Teilnehmerkennung ungültig! -> #".to_owned()))
-                }
-            },
-            "ext" => {
-                if User::exists(&UserId::new(input_data.get("user_id").unwrap(), input_data.get("ext").unwrap())) {
-                    ValidateResult::Ok
-                } else {
-                    ValidateResult::Error(SysMsg::Custom("Mitbenutzernummer ungültig! -> #".to_owned()))
-                }
-            }
-            _ => unreachable!()
-        }
-    } else {
-        unreachable!()
-    }
-}
-
-fn send(pageid: &PageId, input_data: &HashMap<String, String>, private_context: PrivateContext) -> UserRequest {
-    if pageid.page == "810" {
-        let from_userid = &private_context.user.unwrap().userid;
-        let to_userid = UserId::new(input_data.get("user_id").unwrap(), input_data.get("ext").unwrap());
-        send_message(&from_userid, &to_userid, input_data.get("body").unwrap());
-        UserRequest::MessageGoto(SysMsg::Code(SysMsgCode::Sent, None), PageId::from_str("8").unwrap(), true)
-    } else {
-        unreachable!()
-   }
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 fn messaging_create_title(title: &str) -> Cept {

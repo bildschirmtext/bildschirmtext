@@ -30,12 +30,9 @@ const DISPATCH_TABLE: &[(&[u8], PageSessionNewFn)] = &[
     // (b"*",      Box::new(super::staticp::StaticPageSession::new)),
 ];
 
-pub fn dispatch_pageid(pageid: &PageId) -> &Anonymous {
+pub fn dispatch_pageid<'a>(pageid: &'a PageId, user: Option<&'a User>, stats: Option<&'a Stats>) -> Box<dyn PageSession<'static>> {
 
-    let x = super::staticp::StaticPageSession::new;
-
-
-    for (mask, functions) in DISPATCH_TABLE {
+    for (mask, new_fn) in DISPATCH_TABLE {
         let matches;
         let reduce;
         let last = *mask.last().unwrap();
@@ -52,7 +49,8 @@ pub fn dispatch_pageid(pageid: &PageId) -> &Anonymous {
         };
         if matches {
             let pageid = &pageid.reduced_by(reduce);
-            return functions;
+            // return new_fn.0(pageid, user, stats);
+            return new_fn.0(pageid, None, None);
         }
     }
     unreachable!();

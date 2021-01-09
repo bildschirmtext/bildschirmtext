@@ -14,11 +14,11 @@ pub struct LoginPageSession<'a> {
     stats: Option<&'a Stats>,
 }
 
-impl<'a> PageSession<'a> for LoginPageSession<'a> {
-    fn new(pageid: &'a PageId, user: Option<&'a User>, stats: Option<&'a Stats>) -> Self {
-        Self { pageid, user, stats }
-    }
+pub fn new<'a>(pageid: &'a PageId, user: Option<&'a User>, stats: Option<&'a Stats>) -> Box<dyn PageSession<'a> + 'a> {
+    Box::new(LoginPageSession { pageid, user, stats })
+}
 
+impl<'a> PageSession<'a> for LoginPageSession<'a> {
     fn create(&self) -> Option<Page> {
         if self.pageid.page == "00000" {
             Some(create_login())
@@ -48,34 +48,6 @@ impl<'a> PageSession<'a> for LoginPageSession<'a> {
             unreachable!()
        }
     }
-}
-
-pub const FUNCTIONS: UserFns = UserFns { create: super::login::create, validate: None, send: Some(super::login::send) };
-
-fn create(pageid: &PageId, private_context: PrivateContext) -> Option<Page> {
-    if pageid.page == "00000" {
-        Some(create_login())
-    } else if pageid.page == "000001" {
-        Some(create_start(private_context.user, private_context.stats)) // XXX user
-    } else if pageid.page == "9" {
-        Some(create_logout())
-    } else {
-         None
-    }
-}
-
-fn send(pageid: &PageId, input_data: &HashMap<String, String>, private_context: PrivateContext) -> UserRequest {
-    if pageid.page == "00000" {
-        UserRequest::Login(
-            UserId::new(
-                input_data.get("user_id").unwrap(),
-                input_data.get("ext").unwrap(),
-            ),
-            input_data.get("password").unwrap().clone(),
-        )
-    } else {
-        unreachable!()
-   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

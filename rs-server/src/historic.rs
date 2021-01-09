@@ -11,11 +11,11 @@ pub struct HistoricPageSession<'a> {
     pageid: &'a PageId,
 }
 
-impl<'a> PageSession<'a> for HistoricPageSession<'a> {
-    fn new(pageid: &'a PageId, _: Option<&'a User>, _: Option<&'a Stats>) -> Self {
-        Self { pageid }
-    }
+pub fn new<'a>(pageid: &'a PageId, user: Option<&'a User>, _: Option<&'a Stats>) -> Box<dyn PageSession<'a> + 'a> {
+    Box::new(HistoricPageSession { pageid })
+}
 
+impl<'a> PageSession<'a> for HistoricPageSession<'a> {
     fn create(&self) -> Option<Page> {
         if self.pageid.page == "8" {
             Some(create_historic_main_page())
@@ -32,18 +32,6 @@ impl<'a> PageSession<'a> for HistoricPageSession<'a> {
 
     fn send(&self, _: &HashMap<String, String>) -> UserRequest {
         unreachable!()
-    }
-}
-
-pub const FUNCTIONS: AnonymousUserFns = AnonymousUserFns { create, validate: None, send: None };
-
-pub fn create(pageid: &PageId) -> Option<Page> {
-    if pageid.page == "8" {
-        Some(create_historic_main_page())
-    } else if pageid.page == "10" || pageid.page == "11" || pageid.page == "12" {
-        Some(create_historic_overview(pageid.page[0..2].parse().unwrap(), 0).unwrap())
-    } else {
-        None
     }
 }
 
