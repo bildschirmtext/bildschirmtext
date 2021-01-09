@@ -26,7 +26,7 @@ impl<'a> PageSession<'a> for MessagingPageSession {
     fn create(&self) -> Option<Page> {
         let user = &self.user;
 
-        if user.is_someone() {
+        if user.is_anonymous() {
             if self.pageid.page == "8" {
                 Some(messaging_create_main_menu())
             } else if self.pageid.page == "88" {

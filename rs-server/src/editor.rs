@@ -34,12 +34,10 @@
 // passed the list of links as legal inputs. "*" will create a command mode
 // editor on top of the main editor in line 24.
 
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use super::cept::*;
 use super::sysmsg::*;
-use super::session::*;
 
 pub const CEPT_INI: u8 = 0x13;
 pub const CEPT_TER: u8 = 0x1c;

@@ -85,7 +85,8 @@ pub struct ClientState {
 }
 
 pub struct Session {
-    user: User,
+    user: User,           // the actual logged-in user
+    anonymous_user: User, // the user's anonymous alter ego
     client_state: ClientState,
     current_pageid: PageId,
     history: Vec<PageId>,
@@ -95,7 +96,8 @@ pub struct Session {
 impl Session {
     pub fn new() -> Self {
         Self {
-            user: User::default(),
+            user: User::anonymous(),
+            anonymous_user: User::anonymous(),
             client_state:ClientState {
                 palette: None,
                 include: None,
@@ -118,7 +120,7 @@ impl Session {
 
         'main: loop {
             // dispatch page
-            let page_session = super::dispatch::dispatch_pageid(&target_pageid, &self.user);
+            let page_session = super::dispatch::dispatch_pageid(&target_pageid, &self.user, &self.anonymous_user);
 
             // *** show page
             println!("showing page: {}", target_pageid.to_string());
@@ -147,7 +149,7 @@ impl Session {
 
             'input: loop {
                 // *** get user input
-                let input_event = self.get_inputs(&self.current_pageid, inputs.as_mut(), links.as_ref(), &page_session, stream);
+                let input_event = self.get_inputs(inputs.as_mut(), links.as_ref(), &page_session, stream);
 
                 // *** handle input
                 let req = match input_event {
@@ -203,7 +205,7 @@ impl Session {
     // * for pages with text fields, draw them and allow editing them
     // * for pages with without text fields, allow entering a link
     // In both cases, it is possible to escape into command mode.
-    fn get_inputs(&self, pageid: &PageId, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, page_session: &Box<dyn PageSession<'static>>, stream: &mut (impl Write + Read)) -> InputEvent {
+    fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, page_session: &Box<dyn PageSession<'static>>, stream: &mut (impl Write + Read)) -> InputEvent {
         if self.autoplay {
             println!("autoplay!");
             InputEvent::Navigation("".to_owned()) // inject "#"

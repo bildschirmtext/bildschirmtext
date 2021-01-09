@@ -191,7 +191,7 @@ fn create_start(user: &User) -> Page {
         links.push(Link::new("8", "88"));
     }
 
-    if user.is_someone() {
+    if !user.is_anonymous() {
         links.push(Link::new("7", "77"));
     }
 
@@ -299,19 +299,19 @@ fn create_start(user: &User) -> Page {
 }
 
 fn notifications(user: &User) -> String {
-    if user.is_someone() {
-        if has_new_messages(user) {
-            "Neue Mitteilungen mit 8".to_owned()
-        } else {
-            "".to_owned()
-        }
-    } else {
+    if user.is_anonymous() {
         "Als Gastbenutzer können Sie beliebige\n\
         Bildschirmtext-Inhalte abrufen.\n\
         Um Ihren eigenen Zugang einzurichten,\n\
         mit dem Sie auch Mitteilungen versenden\n\
         und empfangen können, drücken Sie jetzt\n\
         bitte die 7.".to_owned()
+    } else {
+        if has_new_messages(user) {
+            "Neue Mitteilungen mit 8".to_owned()
+        } else {
+            "".to_owned()
+        }
     }
 }
 

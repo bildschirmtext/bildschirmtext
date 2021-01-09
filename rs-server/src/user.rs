@@ -81,14 +81,14 @@ pub struct User {
 	pub private: UserDataPrivate,
     #[serde(skip_serializing, skip_deserializing)]
     pub stats: Stats,
+    #[serde(skip_serializing, skip_deserializing)]
+    is_anonymous: bool,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Secrets {
     password: String,
 }
-
-//XXX global_user = None
 
 #[derive(Serialize, Deserialize)]
 #[derive(Default)]
@@ -123,8 +123,8 @@ impl Stats {
     }
 }
 
-impl Default for User {
-    fn default() -> Self {
+impl User {
+    pub fn anonymous() -> Self {
         Self {
             userid: UserId::new("0", "0"),
             public: UserDataPublic::Person(
@@ -141,11 +141,10 @@ impl Default for User {
                 country: None,
             },
             stats: Stats::default(),
+            is_anonymous: true,
         }
     }
-}
 
-impl User {
     fn user_filename(userid: &UserId) -> String {
         filename(userid, PATH_USERS, "user")
     }
@@ -187,7 +186,7 @@ impl User {
         }
         let stats = Stats::for_userid(&userid);
 		let user = User {
-            userid: userid,
+            userid,
             public: UserDataPublic::Person(UserDataPublicPerson {
                 salutation: Some(salutation.to_owned()),
                 first_name: Some(first_name.to_owned()),
@@ -199,7 +198,8 @@ impl User {
                 city: Some(city.to_owned()),
                 country: Some(country.to_owned()),
             },
-            stats: stats
+            stats,
+            is_anonymous: false,
 		};
         let json_data = serde_json::to_string(&user).unwrap();
         if let Ok(mut file) = File::create(user_filename) {
@@ -258,8 +258,8 @@ impl User {
         }
     }
 
-    pub fn is_someone(&self) -> bool {
-        self.userid.id != "0"
+    pub fn is_anonymous(&self) -> bool {
+        self.is_anonymous
     }
 
 	pub fn update_stats(&mut self) {

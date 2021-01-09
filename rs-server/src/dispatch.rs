@@ -30,7 +30,7 @@ const DISPATCH_TABLE: &[(&[u8], bool, PageSessionNewFn)] = &[
     (b"*",      false, PageSessionNewFn(super::staticp::new)),
 ];
 
-pub fn dispatch_pageid<'a>(pageid: &PageId, user: &User) -> Box<dyn PageSession<'static>> {
+pub fn dispatch_pageid<'a>(pageid: &PageId, user: &User, anonymous_user: &User) -> Box<dyn PageSession<'static>> {
     for (mask, private_data, new_fn) in DISPATCH_TABLE {
         let matches;
         let reduce;
@@ -48,11 +48,8 @@ pub fn dispatch_pageid<'a>(pageid: &PageId, user: &User) -> Box<dyn PageSession<
         };
         if matches {
             let pageid = pageid.reduced_by(reduce).clone();
-            if *private_data {
-                return new_fn.0(pageid, user.clone());
-            } else {
-                return new_fn.0(pageid, User::default());
-            }
+            let user = if *private_data { user } else { anonymous_user };
+            return new_fn.0(pageid, user.clone());
         }
     }
     unreachable!();
