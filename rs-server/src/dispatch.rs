@@ -10,7 +10,7 @@ pub trait PageSession<'a> {
     fn send(&self, input_data: &HashMap<String, String>) -> UserRequest;
 }
 
-struct PageSessionNewFn<'a>(fn(&'a PageId, Option<&'a User>, Option<&'a Stats>) -> Box<dyn PageSession<'a>>);
+struct PageSessionNewFn<'a>(fn(&'a PageId, &'a User, &'a Stats) -> Box<dyn PageSession<'a>>);
 
 // Mask:
 //   * If a mask does not end in '*' or '-', the page number must match exactly.
@@ -30,7 +30,7 @@ const DISPATCH_TABLE: &[(&[u8], PageSessionNewFn)] = &[
     (b"*",      PageSessionNewFn(super::staticp::new)),
 ];
 
-pub fn dispatch_pageid<'a>(pageid: &'a PageId, user: Option<&'static User>, stats: Option<&'static Stats>) -> Box<dyn PageSession<'static>> {
+pub fn dispatch_pageid<'a>(pageid: &'a PageId, user: &'static User, stats: &'static Stats) -> Box<dyn PageSession<'static>> {
 
     for (mask, new_fn) in DISPATCH_TABLE {
         let matches;

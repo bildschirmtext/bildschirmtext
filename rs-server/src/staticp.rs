@@ -12,7 +12,7 @@ pub struct StaticPageSession<'a> {
     pageid: &'a PageId,
 }
 
-pub fn new<'a>(pageid: &'a PageId, _: Option<&'a User>, _: Option<&'a Stats>) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(pageid: &'a PageId, _: &'a User, _: &'a Stats) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(StaticPageSession { pageid })
 }
 

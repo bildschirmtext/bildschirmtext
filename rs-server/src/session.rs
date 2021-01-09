@@ -85,8 +85,8 @@ pub struct ClientState {
 }
 
 pub struct Session {
-    user: Option<User>,
-    stats: Option<Stats>,
+    user: User,
+    stats: Stats,
     client_state: ClientState,
     current_pageid: PageId,
     history: Vec<PageId>,
@@ -95,9 +95,10 @@ pub struct Session {
 
 impl Session {
     pub fn new() -> Self {
+        let user = User::default();
         Self {
-            user: None,
-            stats: None,
+            user,
+            stats: Stats::new(&user),
             client_state:ClientState {
                 palette: None,
                 include: None,
@@ -120,7 +121,7 @@ impl Session {
 
         'main: loop {
             // dispatch page
-            let page_session = super::dispatch::dispatch_pageid(&target_pageid, self.user.as_ref(), self.stats.as_ref());
+            let page_session = super::dispatch::dispatch_pageid(&target_pageid, &self.user, &self.stats);
 
             // *** show page
             println!("showing page: {}", target_pageid.to_string());
@@ -145,9 +146,7 @@ impl Session {
                 show_sysmsg(&SysMsg::new(error), stream);
             }
 
-            if let Some(stats) = &mut self.stats {
-                stats.update();
-            }
+            self.stats.update();
 
             'input: loop {
                 // *** get user input
@@ -169,8 +168,8 @@ impl Session {
                     UserRequest::Login(userid, password) => {
                         if let Some(user) = User::login(&userid, &password) {
                             println!("login ok");
-                            self.stats = Some(Stats::new(&user));
-                            self.user = Some(user);
+                            self.stats = Stats::new(&user);
+                            self.user = user;
                             target_pageid = PageId::from_str("000001").unwrap();
                             add_to_history = false;
                             continue 'main;

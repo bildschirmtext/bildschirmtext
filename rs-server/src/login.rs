@@ -10,11 +10,11 @@ use super::messaging::*;
 
 pub struct LoginPageSession<'a> {
     pageid: &'a PageId,
-    user: Option<&'a User>,
-    stats: Option<&'a Stats>,
+    user: &'a User,
+    stats: &'a Stats,
 }
 
-pub fn new<'a>(pageid: &'a PageId, user: Option<&'a User>, stats: Option<&'a Stats>) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(pageid: &'a PageId, user: &'a User, stats: &'a Stats) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(LoginPageSession { pageid, user, stats })
 }
 
@@ -173,31 +173,26 @@ fn create_logout() -> Page {
     page
 }
 
-fn last_use(stats: Option<&Stats>) -> (String, String) {
-    if let Some(stats) = &stats {
-        if let Some(t) = stats.last_use() {
-            return (t.format("%d.%m.%Y").to_string(), t.format("%H:%M").to_string());
-        }
-    }
-    ("--.--.----".to_owned(), "--:--".to_owned())
-}
-
-fn has_new_messages(user: Option<&User>) -> bool {
-     if let Some(user) = user {
-        MessageBox::for_userid(&user.userid).has_new_messages()
+fn last_use(stats: &Stats) -> (String, String) {
+    if let Some(t) = stats.last_use() {
+        return (t.format("%d.%m.%Y").to_string(), t.format("%H:%M").to_string());
     } else {
-        false
+        ("--.--.----".to_owned(), "--:--".to_owned())
     }
 }
 
-fn create_start(user: Option<&User>, stats: Option<&Stats>) -> Page {
+fn has_new_messages(user: &User) -> bool {
+    MessageBox::for_userid(&user.userid).has_new_messages()
+}
+
+fn create_start(user: &User, stats: &Stats) -> Page {
     let mut links = vec!(Link::new("#", "0"));
 
     if has_new_messages(user) {
         links.push(Link::new("8", "88"));
     }
 
-    if user.is_none() {
+    if user.is_someone() {
         links.push(Link::new("7", "77"));
     }
 
@@ -219,30 +214,25 @@ fn create_start(user: Option<&User>, stats: Option<&Stats>) -> Page {
     let current_date = now.format("%d.%m.%Y  %H:%M").to_string();
     let (last_date, last_time) = last_use(stats);
 
-    let mut user_name;
-    if let Some(user) = &user {
-        user_name = String::new();
-        match &user.public {
-            UserDataPublic::Person(person) => {
-                if let Some(salutation) = &person.salutation {
-                    user_name += &salutation;
-                    user_name.push('\n');
-                }
-                if let Some(first_name) = &person.first_name {
-                    user_name += &first_name;
-                    user_name.push('\n');
-                }
-                if let Some(last_name) = &person.last_name {
-                    user_name += &last_name;
-                    user_name.push('\n');
-                }
-            },
-            UserDataPublic::Organization(organization) => {
-
+    let mut user_name = String::new();
+    match &user.public {
+        UserDataPublic::Person(person) => {
+            if let Some(salutation) = &person.salutation {
+                user_name += &salutation;
+                user_name.push('\n');
             }
+            if let Some(first_name) = &person.first_name {
+                user_name += &first_name;
+                user_name.push('\n');
+            }
+            if let Some(last_name) = &person.last_name {
+                user_name += &last_name;
+                user_name.push('\n');
+            }
+        },
+        UserDataPublic::Organization(organization) => {
+
         }
-    } else {
-        user_name = "".to_owned();
     }
 
     let mut page = Page::new(meta);
@@ -309,9 +299,9 @@ fn create_start(user: Option<&User>, stats: Option<&Stats>) -> Page {
     page
 }
 
-fn notifications(user: Option<&User>) -> String {
-    if let Some(user) = user {
-        if has_new_messages(Some(user)) {
+fn notifications(user: &User) -> String {
+    if user.is_someone() {
+        if has_new_messages(user) {
             "Neue Mitteilungen mit 8".to_owned()
         } else {
             "".to_owned()

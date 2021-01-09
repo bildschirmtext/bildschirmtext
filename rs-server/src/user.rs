@@ -145,6 +145,27 @@ impl Stats {
     }
 }
 
+impl Default for User {
+    fn default() -> Self {
+        Self {
+            userid: UserId::new("0", "0"),
+            public: UserDataPublic::Person(
+                UserDataPublicPerson {
+                    salutation: None,
+                    first_name: None,
+                    last_name: Some("Gastbenutzer".to_owned()),
+                }
+            ),
+            private: UserDataPrivate {
+                street: None,
+                zip: None,
+                city: None,
+                country: None,
+            },
+        }
+    }
+}
+
 impl User {
     fn user_filename(userid: &UserId) -> String {
         filename(userid, PATH_USERS, "user")
@@ -254,5 +275,9 @@ impl User {
                 }
             },
         }
+    }
+
+    pub fn is_someone(&self) -> bool {
+        self.userid.id != "0"
     }
 }

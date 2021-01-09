@@ -11,7 +11,7 @@ pub struct HistoricPageSession<'a> {
     pageid: &'a PageId,
 }
 
-pub fn new<'a>(pageid: &'a PageId, user: Option<&'a User>, _: Option<&'a Stats>) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(pageid: &'a PageId, user: &'a User, _: &'a Stats) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(HistoricPageSession { pageid })
 }
 

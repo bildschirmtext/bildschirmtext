@@ -14,10 +14,10 @@ use super::editor::*;
 
 pub struct MessagingPageSession<'a> {
     pageid: &'a PageId,
-    user: Option<&'a User>,
+    user: &'a User,
 }
 
-pub fn new<'a>(pageid: &'a PageId, user: Option<&'a User>, _: Option<&'a Stats>) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(pageid: &'a PageId, user: &'a User, _: &'a Stats) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(MessagingPageSession { pageid, user })
 }
 
@@ -26,7 +26,7 @@ impl<'a> PageSession<'a> for MessagingPageSession<'a> {
     fn create(&self) -> Option<Page> {
         let user = self.user;
 
-        if let Some(user) = user {
+        if user.is_someone() {
             if self.pageid.page == "8" {
                 Some(messaging_create_main_menu())
             } else if self.pageid.page == "88" {
@@ -73,7 +73,7 @@ impl<'a> PageSession<'a> for MessagingPageSession<'a> {
 
     fn send(&self, input_data: &HashMap<String, String>) -> UserRequest {
         if self.pageid.page == "810" {
-            let from_userid = &self.user.unwrap().userid;
+            let from_userid = &self.user.userid;
             let to_userid = UserId::new(input_data.get("user_id").unwrap(), input_data.get("ext").unwrap());
             send_message(&from_userid, &to_userid, input_data.get("body").unwrap());
             UserRequest::MessageGoto(SysMsg::Code(SysMsgCode::Sent, None), PageId::from_str("8").unwrap(), true)
