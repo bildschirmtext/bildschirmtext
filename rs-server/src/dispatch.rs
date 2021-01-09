@@ -22,15 +22,15 @@ struct PageSessionNewFn<'a>(fn(&'a PageId, Option<&'a User>, Option<&'a Stats>) 
 //     user's info and statistics!
 // N.B.: The table must be in the right order: longer prefixes must come first!
 const DISPATCH_TABLE: &[(&[u8], PageSessionNewFn)] = &[
-    // (b"00000*", super::login::new),
-    // (b"9",      super::login::new),
+    (b"00000*", PageSessionNewFn(super::login::new)),
+    (b"9",      PageSessionNewFn(super::login::new)),
     (b"8*",     PageSessionNewFn(super::ui_messaging::new)),
-    // (b"77",     Box::new(super::ui_user::UsersPageSession::new)),
-    // (b"7-",     Box::new(super::historic::HistoricPageSession::new)),
-    // (b"*",      Box::new(super::staticp::StaticPageSession::new)),
+    (b"77",     PageSessionNewFn(super::ui_user::new)),
+    (b"7-",     PageSessionNewFn(super::historic::new)),
+    (b"*",      PageSessionNewFn(super::staticp::new)),
 ];
 
-pub fn dispatch_pageid<'a>(pageid: &'a PageId, user: Option<&'a User>, stats: Option<&'a Stats>) -> Box<dyn PageSession<'static>> {
+pub fn dispatch_pageid<'a>(pageid: &'a PageId, user: Option<&'static User>, stats: Option<&'static Stats>) -> Box<dyn PageSession<'static>> {
 
     for (mask, new_fn) in DISPATCH_TABLE {
         let matches;
@@ -50,7 +50,7 @@ pub fn dispatch_pageid<'a>(pageid: &'a PageId, user: Option<&'a User>, stats: Op
         if matches {
             let pageid = &pageid.reduced_by(reduce);
             // return new_fn.0(pageid, user, stats);
-            return new_fn.0(pageid, None, None);
+            return new_fn.0(pageid, user, stats);
         }
     }
     unreachable!();
