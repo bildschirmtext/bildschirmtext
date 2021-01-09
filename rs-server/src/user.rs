@@ -79,8 +79,8 @@ pub struct User {
     pub userid: UserId,
 	pub public: UserDataPublic,
 	pub private: UserDataPrivate,
-
-	// messaging: None
+    #[serde(skip_serializing, skip_deserializing)]
+    pub stats: Stats,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -93,14 +93,8 @@ pub struct Secrets {
 #[derive(Serialize, Deserialize)]
 #[derive(Default)]
 #[derive(Clone)]
-struct StatsData {
-    last_use: Option<i64>,
-}
-
-#[derive(Clone)]
 pub struct Stats {
-    filename: String,
-    stats_data: StatsData,
+    last_use: Option<i64>,
 }
 
 fn filename(userid: &UserId, path: &str, file_extension: &str) -> String {
@@ -112,43 +106,20 @@ fn filename(userid: &UserId, path: &str, file_extension: &str) -> String {
     s
 }
 
+fn stats_filename(userid: &UserId) -> String {
+    filename(userid, PATH_STATS, &"stats")
+}
+
 impl Stats {
-	pub fn new(user: &User) -> Self {
-		let filename = filename(&user.userid, PATH_STATS, &"stats");
+	pub fn for_userid(userid: &UserId) -> Self {
+		let filename = stats_filename(userid);
         if let Ok(f) = File::open(&filename) {
-            let stats_data: Result<StatsData, _> = serde_json::from_reader(f);
+            let stats_data: Result<Stats, _> = serde_json::from_reader(f);
             if let Ok(stats_data) = stats_data {
-                return Stats {
-                    filename,
-                    stats_data,
-                }
+                return stats_data;
             }
         }
-        Self {
-            filename,
-            stats_data: StatsData::default()
-        }
-    }
-
-	pub fn update(&mut self) {
-		// update the last use field with the current time
-		self.stats_data.last_use = Some(Local::now().timestamp());
-        let json_data = serde_json::to_string(&self.stats_data).unwrap();
-        if let Ok(mut file) = File::create(&self.filename) {
-            if let Ok(_) = file.write_all(&json_data.as_bytes()) {
-                return;
-            }
-            println!("ERROR updating stats! [1]");
-        }
-        println!("ERROR updating stats! [2]");
-    }
-
-    pub fn last_use(&self) -> Option<DateTime<Local>> {
-        if let Some(last_use) = self.stats_data.last_use {
-            Some(Local.timestamp(last_use, 0))
-        } else {
-            None
-        }
+        Stats::default()
     }
 }
 
@@ -169,6 +140,7 @@ impl Default for User {
                 city: None,
                 country: None,
             },
+            stats: Stats::default(),
         }
     }
 }
@@ -213,6 +185,7 @@ impl User {
 			println!("user already exists!");
             return false;
         }
+        let stats = Stats::for_userid(&userid);
 		let user = User {
             userid: userid,
             public: UserDataPublic::Person(UserDataPublicPerson {
@@ -226,6 +199,7 @@ impl User {
                 city: Some(city.to_owned()),
                 country: Some(country.to_owned()),
             },
+            stats: stats
 		};
         let json_data = serde_json::to_string(&user).unwrap();
         if let Ok(mut file) = File::create(user_filename) {
@@ -286,5 +260,26 @@ impl User {
 
     pub fn is_someone(&self) -> bool {
         self.userid.id != "0"
+    }
+
+	pub fn update_stats(&mut self) {
+		// update the last use field with the current time
+		self.stats.last_use = Some(Local::now().timestamp());
+        let json_data = serde_json::to_string(&self.stats).unwrap();
+        if let Ok(mut file) = File::create(stats_filename(&self.userid)) {
+            if let Ok(_) = file.write_all(&json_data.as_bytes()) {
+                return;
+            }
+            println!("ERROR updating stats! [1]");
+        }
+        println!("ERROR updating stats! [2]");
+    }
+
+    pub fn last_use(&self) -> Option<DateTime<Local>> {
+        if let Some(last_use) = self.stats.last_use {
+            Some(Local.timestamp(last_use, 0))
+        } else {
+            None
+        }
     }
 }

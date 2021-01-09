@@ -11,11 +11,10 @@ use super::messaging::*;
 pub struct LoginPageSession {
     pageid: PageId,
     user: User,
-    stats: Stats,
 }
 
-pub fn new<'a>(pageid: PageId, user: User, stats: Stats) -> Box<dyn PageSession<'a> + 'a> {
-    Box::new(LoginPageSession { pageid, user, stats })
+pub fn new<'a>(pageid: PageId, user: User) -> Box<dyn PageSession<'a> + 'a> {
+    Box::new(LoginPageSession { pageid, user })
 }
 
 impl<'a> PageSession<'a> for LoginPageSession {
@@ -23,7 +22,7 @@ impl<'a> PageSession<'a> for LoginPageSession {
         if self.pageid.page == "00000" {
             Some(create_login())
         } else if self.pageid.page == "000001" {
-            Some(create_start(&self.user, &self.stats)) // XXX user
+            Some(create_start(&self.user)) // XXX user
         } else if self.pageid.page == "9" {
             Some(create_logout())
         } else {
@@ -173,8 +172,8 @@ fn create_logout() -> Page {
     page
 }
 
-fn last_use(stats: &Stats) -> (String, String) {
-    if let Some(t) = stats.last_use() {
+fn last_use(user: &User) -> (String, String) {
+    if let Some(t) = user.last_use() {
         return (t.format("%d.%m.%Y").to_string(), t.format("%H:%M").to_string());
     } else {
         ("--.--.----".to_owned(), "--:--".to_owned())
@@ -185,7 +184,7 @@ fn has_new_messages(user: &User) -> bool {
     MessageBox::for_userid(&user.userid).has_new_messages()
 }
 
-fn create_start(user: &User, stats: &Stats) -> Page {
+fn create_start(user: &User) -> Page {
     let mut links = vec!(Link::new("#", "0"));
 
     if has_new_messages(user) {
@@ -212,7 +211,7 @@ fn create_start(user: &User, stats: &Stats) -> Page {
 
     let now = Local::now();
     let current_date = now.format("%d.%m.%Y  %H:%M").to_string();
-    let (last_date, last_time) = last_use(stats);
+    let (last_date, last_time) = last_use(user);
 
     let mut user_name = String::new();
     match &user.public {
