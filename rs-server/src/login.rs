@@ -112,7 +112,7 @@ fn create_login() -> Page {
     btx_logo(&mut page);
     page.cept.set_left_g3();
     page.cept.set_fg_color(15);
-    page.cept.add_raw(&std::iter::repeat(b'Q').take(40).collect::<Vec<u8>>());
+    page.cept.repeat(b'Q', 40);
     page.cept.set_fg_color(7);
     page.cept.set_left_g0();
     page.cept.set_cursor(18, 8);
@@ -128,7 +128,7 @@ fn create_login() -> Page {
     page.cept.add_raw(b"\r\n");
     page.cept.set_left_g3();
     page.cept.set_fg_color(15);
-    page.cept.add_raw(&std::iter::repeat(b'Q').take(40).collect::<Vec<u8>>());
+    page.cept.repeat(b'Q', 40);
 
     page
 }
@@ -159,7 +159,7 @@ fn create_logout() -> Page {
     btx_logo(&mut page);
     page.cept.set_left_g3();
     page.cept.set_fg_color(15);
-    page.cept.add_raw(&std::iter::repeat(b'Q').take(40).collect::<Vec<u8>>());
+    page.cept.repeat(b'Q', 40);
     page.cept.set_fg_color(7);
     page.cept.set_left_g0();
     page.cept.set_cursor(19, 8);
@@ -168,7 +168,7 @@ fn create_logout() -> Page {
     page.cept.add_raw(b"\r\n");
     page.cept.set_left_g3();
     page.cept.set_fg_color(15);
-    page.cept.add_raw(&std::iter::repeat(b'Q').take(40).collect::<Vec<u8>>());
+    page.cept.repeat(b'Q', 40);
     page
 }
 
