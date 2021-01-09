@@ -12,19 +12,19 @@ use super::sysmsg::*;
 use super::user::*;
 use super::editor::*;
 
-pub struct MessagingPageSession<'a> {
-    pageid: &'a PageId,
-    user: &'a User,
+pub struct MessagingPageSession {
+    pageid: PageId,
+    user: User,
 }
 
-pub fn new<'a>(pageid: &'a PageId, user: &'a User, _: &'a Stats) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(pageid: PageId, user: User, _: Stats) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(MessagingPageSession { pageid, user })
 }
 
-impl<'a> PageSession<'a> for MessagingPageSession<'a> {
+impl<'a> PageSession<'a> for MessagingPageSession {
 
     fn create(&self) -> Option<Page> {
-        let user = self.user;
+        let user = &self.user;
 
         if user.is_someone() {
             if self.pageid.page == "8" {

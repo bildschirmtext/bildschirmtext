@@ -10,7 +10,7 @@ pub trait PageSession<'a> {
     fn send(&self, input_data: &HashMap<String, String>) -> UserRequest;
 }
 
-struct PageSessionNewFn<'a>(fn(&'a PageId, &'a User, &'a Stats) -> Box<dyn PageSession<'a>>);
+struct PageSessionNewFn(fn(PageId, User, Stats) -> Box<dyn PageSession<'static>>);
 
 // Mask:
 //   * If a mask does not end in '*' or '-', the page number must match exactly.
@@ -30,7 +30,9 @@ const DISPATCH_TABLE: &[(&[u8], PageSessionNewFn)] = &[
     (b"*",      PageSessionNewFn(super::staticp::new)),
 ];
 
-pub fn dispatch_pageid<'a>(pageid: &'a PageId, user: &'static User, stats: &'static Stats) -> Box<dyn PageSession<'static>> {
+pub fn dispatch_pageid<'a>(pageid: &PageId, user: &User, stats: &Stats) -> Box<dyn PageSession<'static>> {
+
+    // super::login::new(pageid, user, stats)
 
     for (mask, new_fn) in DISPATCH_TABLE {
         let matches;
@@ -48,9 +50,9 @@ pub fn dispatch_pageid<'a>(pageid: &'a PageId, user: &'static User, stats: &'sta
             reduce = 0;
         };
         if matches {
-            let pageid = &pageid.reduced_by(reduce);
+            let pageid = pageid.reduced_by(reduce).clone();
             // return new_fn.0(pageid, user, stats);
-            return new_fn.0(pageid, user, stats);
+            return new_fn.0(pageid, user.clone(), stats.clone());
         }
     }
     unreachable!();

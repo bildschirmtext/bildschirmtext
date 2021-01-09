@@ -8,22 +8,22 @@ use super::user::*;
 use super::dispatch::*;
 use super::messaging::*;
 
-pub struct LoginPageSession<'a> {
-    pageid: &'a PageId,
-    user: &'a User,
-    stats: &'a Stats,
+pub struct LoginPageSession {
+    pageid: PageId,
+    user: User,
+    stats: Stats,
 }
 
-pub fn new<'a>(pageid: &'a PageId, user: &'a User, stats: &'a Stats) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(pageid: PageId, user: User, stats: Stats) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(LoginPageSession { pageid, user, stats })
 }
 
-impl<'a> PageSession<'a> for LoginPageSession<'a> {
+impl<'a> PageSession<'a> for LoginPageSession {
     fn create(&self) -> Option<Page> {
         if self.pageid.page == "00000" {
             Some(create_login())
         } else if self.pageid.page == "000001" {
-            Some(create_start(self.user, self.stats)) // XXX user
+            Some(create_start(&self.user, &self.stats)) // XXX user
         } else if self.pageid.page == "9" {
             Some(create_logout())
         } else {

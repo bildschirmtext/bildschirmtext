@@ -43,12 +43,14 @@ impl fmt::Display for UserId {
 }
 
 #[derive(Serialize, Deserialize)]
+#[derive(Clone)]
 pub enum UserDataPublic {
     Person(UserDataPublicPerson),
     Organization(UserDataPublicOrganization),
 }
 
 #[derive(Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct UserDataPublicPerson {
     pub salutation: Option<String>,
     pub first_name: Option<String>,
@@ -56,12 +58,14 @@ pub struct UserDataPublicPerson {
 }
 
 #[derive(Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct UserDataPublicOrganization {
     pub name1: Option<String>,
     pub name2: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct UserDataPrivate {
 	pub street: Option<String>,
 	pub zip: Option<String>,
@@ -70,6 +74,7 @@ pub struct UserDataPrivate {
 }
 
 #[derive(Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct User {
     pub userid: UserId,
 	pub public: UserDataPublic,
@@ -87,10 +92,12 @@ pub struct Secrets {
 
 #[derive(Serialize, Deserialize)]
 #[derive(Default)]
+#[derive(Clone)]
 struct StatsData {
     last_use: Option<i64>,
 }
 
+#[derive(Clone)]
 pub struct Stats {
     filename: String,
     stats_data: StatsData,

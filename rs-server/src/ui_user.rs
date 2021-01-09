@@ -7,15 +7,15 @@ use super::page::*;
 use super::sysmsg::*;
 use super::dispatch::*;
 
-pub struct UsersPageSession<'a> {
-    pageid: &'a PageId,
+pub struct UsersPageSession {
+    pageid: PageId,
 }
 
-pub fn new<'a>(pageid: &'a PageId, user: &'a User, stats: &'a Stats) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(pageid: PageId, user: User, stats: Stats) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(UsersPageSession { pageid })
 }
 
-impl<'a> PageSession<'a> for UsersPageSession<'a> {
+impl<'a> PageSession<'a> for UsersPageSession {
     fn create(&self) -> Option<Page> {
         if self.pageid.page == "77" {
             Some(create_add_user())
@@ -26,9 +26,9 @@ impl<'a> PageSession<'a> for UsersPageSession<'a> {
 
     fn validate(&self, name: &str, input_data: &HashMap<String, String>) -> ValidateResult {
         match name {
-            "user_id" => callback_validate_user_id(self.pageid, input_data),
-            "last_name" => callback_validate_last_name(self.pageid, input_data),
-            "password" => callback_validate_password(self.pageid, input_data),
+            "user_id" => callback_validate_user_id(&self.pageid, input_data),
+            "last_name" => callback_validate_last_name(&self.pageid, input_data),
+            "password" => callback_validate_password(&self.pageid, input_data),
             _ => unreachable!()
         }
     }

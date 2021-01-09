@@ -95,10 +95,9 @@ pub struct Session {
 
 impl Session {
     pub fn new() -> Self {
-        let user = User::default();
         Self {
-            user,
-            stats: Stats::new(&user),
+            user: User::default(),
+            stats: Stats::new(&User::default()),
             client_state:ClientState {
                 palette: None,
                 include: None,
@@ -286,7 +285,11 @@ impl Session {
 
                 input_data.insert(input_field.name.to_string(), val.unwrap().to_string());
 
-                let validate_result = page_session.validate(&input_field.name, &input_data);
+                let validate_result = if input_field.validate {
+                    page_session.validate(&input_field.name, &input_data)
+                } else {
+                    ValidateResult::Ok
+                };
                 match validate_result {
                     ValidateResult::Ok => {
                         i += 1;

@@ -8,19 +8,19 @@ use super::session::*;
 use super::paths::*;
 use super::dispatch::*;
 
-pub struct StaticPageSession<'a> {
-    pageid: &'a PageId,
+pub struct StaticPageSession {
+    pageid: PageId,
 }
 
-pub fn new<'a>(pageid: &'a PageId, _: &'a User, _: &'a Stats) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(pageid: PageId, _: User, _: Stats) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(StaticPageSession { pageid })
 }
 
-impl<'a> PageSession<'a> for StaticPageSession<'a> {
+impl<'a> PageSession<'a> for StaticPageSession {
     fn create(&self) -> Option<Page> {
         let mut cept = None;
 
-        if let Some((basedir, filename)) = find_basedir(self.pageid) {
+        if let Some((basedir, filename)) = find_basedir(&self.pageid) {
             let mut basename = basedir.clone();
             basename += &filename;
 

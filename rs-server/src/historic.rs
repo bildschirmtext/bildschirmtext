@@ -7,15 +7,15 @@ use super::page::*;
 use super::session::*;
 use super::dispatch::*;
 
-pub struct HistoricPageSession<'a> {
-    pageid: &'a PageId,
+pub struct HistoricPageSession {
+    pageid: PageId,
 }
 
-pub fn new<'a>(pageid: &'a PageId, user: &'a User, _: &'a Stats) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(pageid: PageId, user: User, _: Stats) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(HistoricPageSession { pageid })
 }
 
-impl<'a> PageSession<'a> for HistoricPageSession<'a> {
+impl<'a> PageSession<'a> for HistoricPageSession {
     fn create(&self) -> Option<Page> {
         if self.pageid.page == "8" {
             Some(create_historic_main_page())
