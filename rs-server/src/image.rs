@@ -1,3 +1,11 @@
+use std::collections::HashMap;
+
+use super::dispatch::*;
+use super::session::*;
+use super::page::*;
+use super::user::*;
+use super::cept::*;
+
 const PIXEL_ASPECT_RATIO: f32 = 0.92;
 
 pub struct ImagePageSession {
@@ -11,7 +19,7 @@ pub fn new<'a>(pageid: PageId, _: User) -> Box<dyn PageSession<'a> + 'a> {
 impl<'a> PageSession<'a> for ImagePageSession {
     fn create(&self) -> Option<Page> {
         if self.pageid.page == "666" {
-            Some(create_image_page())
+            Some(self.create_image_page())
         } else {
             None
         }
@@ -26,29 +34,32 @@ impl<'a> PageSession<'a> for ImagePageSession {
     }
 }
 
-impl ImagePageSession {
-	// palette = None
-	// drcs = None
-	// chars = None
+struct Image {
+    palette: String,
+    drcs: Cept,
+    chars: Cept,
+}
 
-	fn compress(drcs_block: &[u8]) {
+impl Image {
+	fn compress(drcs_block: &[u8]) -> String {
+        let mut drcs_block = drcs_block.to_owned();
 		if drcs_block == b"@@@@@@@@@@" {
-            drcs_block = b"\x20";
+            drcs_block = vec!(0x20);
         } else if drcs_block == b"\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f" {
-			drcs_block = b"\x2f";
+			drcs_block = vec!(0x2f);
         } else {
-			y1 = 0;
-			max = 10;
+			let y1 = 0;
+			let max = 10;
 			loop {
-				l = 0;
-				for y2 in range(y1 + 1, max) {
+				let l = 0;
+				for y2 in y1 + 1 .. max {
 					if drcs_block[y2] != drcs_block[y1] {
                         break;
                     }
                     l += 1;
                 }
-				if l {
-					drcs_block = drcs_block[..y1 + 1] + bytes([0x20 + l]) + drcs_block[y1 + l + 1..];
+				if l != 0 {
+					drcs_block = drcs_block[..y1 + 1] + [0x20u8 + l] + drcs_block[y1 + l + 1..];
 					y1 += 1;
                     max -= l - 1;
                 }
@@ -58,27 +69,27 @@ impl ImagePageSession {
                 }
             }
         }
-        return drcs_block;
+        drcs_block
     }
 
-	fn new(url: &str, colors: u8, drcs_start: u8) {
+	fn new(url: &str, colors: u8, drcs_start: u8) -> Option(Self) {
         // default: colors = 16
         // default: drcs_start = 0x21
 
 		if url == "" {
             return None;
         }
-		prinln!("URL: " + pprint.pformat(url));
-		if url.startswith("http://") || url.startswith("https://") {
-            image = Image.open(urllib.request.urlopen(url))
+        println!("URL: {}", url);
+        let image = if url.starts_with("http://") || url.starts_with("https://") {
+            ImageLib.open(urllib.request.urlopen(url))
         } else {
-            image = Image.open(url)
-        }
+            ImageLib.open(url)
+        };
 		image.load();
-		(width, height) = image.size;
-		prinln!("mode: " + image.mode + ", resolution: " + str(width) + "*" + str(height));
+		let (width, height) = image.size;
+		println!("mode: {}, resolution: {}*{}", , image.mode, str(width), str(height));
 
-		is_grayscale = image.mode == "L" || image.mode == "LA";
+		let is_grayscale = image.mode == "L" || image.mode == "LA";
 
 		// 4 shades of gray instead of 16, but double resolution
 		// disabled, PIL doesn't select good base colors
@@ -87,41 +98,41 @@ impl ImagePageSession {
 		// TODO: calling ImageMagick might give better results:
 		// e.g. $ convert in.jpg -resize 54x80\! -dither FloydSteinberg -colors 16 out.png
 
-		prinln!("target colors: " + str(colors));
+		println!("target colors: {}", str(colors));
 
-		num_drcs = 0x7f - drcs_start;
+		let mut num_drcs = 0x7f - drcs_start;
 		if colors == 16 {
-            num_drcs = int(num_drcs / 2)
+            num_drcs = num_drcs / 2;
         }
 
 		// calculate character resolution
-		exact_res_x = math.sqrt(num_drcs * width / height);
-		exact_res_y = math.sqrt(num_drcs * height / width);
-		aspect_ratio = width / height / PIXEL_ASPECT_RATIO;
+		let exact_res_x = (num_drcs * width / height).sqrt();
+		let exact_res_y = (num_drcs * height / width).sqrt();
+		let aspect_ratio = width / height / PIXEL_ASPECT_RATIO;
 
-//		prinln!("exact char resolution: " + str(exact_res_x) + "*" + str(exact_res_y))
+//		println!("exact char resolution: {}", str(exact_res_x) + "*{}", str(exact_res_y))
 
-		res_x_1 = math.floor(exact_res_x);
-		res_y_1 = math.floor(num_drcs / res_x_1);
-		error_1 = abs(1 - (aspect_ratio / (res_x_1 / res_y_1)));
-		res_x_2 = math.ceil(exact_res_x);
-		res_y_2 = math.floor(num_drcs / res_x_2);
-		error_2 = abs(1 - (aspect_ratio / (res_x_2 / res_y_2)));
-		res_y_3 = math.floor(exact_res_y);
-		res_x_3 = math.floor(num_drcs / res_y_3);
-		error_3 = abs(1 - (aspect_ratio / (res_x_3 / res_y_3)));
-		res_y_4 = math.ceil(exact_res_y);
-		res_x_4 = math.floor(num_drcs / res_y_4);
-		error_4 = abs(1 - (aspect_ratio / (res_x_4 / res_y_4)));
+		let res_x_1 = (exact_res_x).floor();
+		let res_y_1 = (num_drcs / res_x_1).floor();
+		let error_1 = (1 - (aspect_ratio / (res_x_1 / res_y_1))).abs();
+		let res_x_2 = (exact_res_x).ceil();
+		let res_y_2 = (num_drcs / res_x_2).floor();
+		let error_2 = (1 - (aspect_ratio / (res_x_2 / res_y_2))).abs();
+		let res_y_3 = (exact_res_y).floor();
+		let res_x_3 = (num_drcs / res_y_3).floor();
+		let error_3 = (1 - (aspect_ratio / (res_x_3 / res_y_3))).abs();
+		let res_y_4 = (exact_res_y).ceil();
+		let res_x_4 = (num_drcs / res_y_4).floor();
+		let error_4 = (1 - (aspect_ratio / (res_x_4 / res_y_4))).abs();
 
-//		prinln!("char resolution 1: " + str(res_x_1) + "*" + str(res_y_1) + ", error: " + str(error_1))
-//		prinln!("char resolution 2: " + str(res_x_2) + "*" + str(res_y_2) + ", error: " + str(error_2))
-//		prinln!("char resolution 3: " + str(res_x_3) + "*" + str(res_y_3) + ", error: " + str(error_3))
-//		prinln!("char resolution 4: " + str(res_x_4) + "*" + str(res_y_4) + ", error: " + str(error_4))
+//		println!("char resolution 1: {}", str(res_x_1) + "*{}", str(res_y_1) + ", error: {}", str(error_1))
+//		println!("char resolution 2: {}", str(res_x_2) + "*{}", str(res_y_2) + ", error: {}", str(error_2))
+//		println!("char resolution 3: {}", str(res_x_3) + "*{}", str(res_y_3) + ", error: {}", str(error_3))
+//		println!("char resolution 4: {}", str(res_x_4) + "*{}", str(res_y_4) + ", error: {}", str(error_4))
 
-		res_x = res_x_1;
-		res_y = res_y_1;
-		error = error_1;
+		let mut res_x = res_x_1;
+		let mut res_y = res_y_1;
+		let mut error = error_1;
 		if error_2 < error {
 			res_x = res_x_2;
 			res_y = res_y_2;
@@ -138,12 +149,12 @@ impl ImagePageSession {
             error = error_4;
         }
 
-		prinln!("char resolution:   " + str(res_x) + "*" + str(res_y) + ", error: " + str(error));
+		println!("char resolution:   {}*{}, error: {}", str(res_x), str(res_y), str(error));
 
 		// remove alpha
 		if image.mode == "RGBA" || image.mode == "LA" {
-			background = Image.new("RGB", image.size, (255, 255, 255));
-			index = if image.mode == "RGBA" { 3 } else { 1 };
+			let background = Image.new("RGB", image.size, (255, 255, 255));
+			let index = if image.mode == "RGBA" { 3 } else { 1 };
 			background.paste(image, mask=image.split()[index]);
             image = background;
         }
@@ -158,51 +169,51 @@ impl ImagePageSession {
 		image.save("/tmp/x.png");
 
 		// create array with palette
-		p = image.getpalette();
+		let p = image.getpalette();
 		self.palette = [];
-		for i in range(0, colors) {
+		for i in 0..colors {
 			r = p[i * 3];
 			g = p[i * 3 + 1];
 			b = p[i * 3 + 2];
             self.palette.append("#{:02x}{:02x}{:02x}".format(r,g,b));
         }
 
-//		prinln!("self.palette: " + pprint.pformat(self.palette))
+//		println!("self.palette: {}", pprint.pformat(self.palette))
 
 		// create drcs
 		self.drcs = bytearray();
 
-		if colors == 4 {
-			num_bits = 2
+		let num_bits = if colors == 4 {
+			2
         } else if colors == 16 {
-            num_bits = 4
-        }
+            4
+        };
 
-		for base_y in range(0, res_y * 10, 10) {
-			for base_x in range(0, res_x * 6, 6) {
-				for bitno in range(0, num_bits) {
-					self.drcs.extend([0x30 + bitno]);
-					drcs_block = bytearray();
-					for y in range(0, 10) {
-						byte = 0;
-						for x in range(0, 6) {
+		for base_y in (0 .. res_y * 10).step_by(10) {
+			for base_x in (0 .. res_x * 6).step_by( 6) {
+				for bitno in 0..num_bits {
+					self.drcs.add_raw([0x30 + bitno]);
+					let drcs_block = vec!();
+					for y in 0..10 {
+						let byte: u8 = 0;
+						for x in 0..6 {
 							byte <<= 1;
                             byte |= (image.getpixel((base_x + x, base_y + y)) >> bitno) & 1;
                         }
 						byte |= 0x40;
-                        drcs_block.append(byte);
+                        drcs_block.push(byte);
                     }
 
 					// compression
-					drcs_block = Image_UI.compress(drcs_block);
+					drcs_block = Image::compress(drcs_block);
 
-//					prinln!("drcs_block: " + pprint.pformat(drcs_block))
-                    self.drcs.extend(drcs_block)
+//					println!("drcs_block: {}", pprint.pformat(drcs_block))
+                    self.drcs.add_raw(drcs_block)
                 }
             }
         }
 
-		prinln!("DRCs compressed " + str(40 * res_x * res_y) + " down to " + str(len(self.drcs)));
+		println!("DRCs compressed {} down to {}", (40 * res_x * res_y).to_string(), (self.drcs.len()).to_string());
 
 		let drcs_header = Cept::new();
 		if colors == 4 {
@@ -212,7 +223,7 @@ impl ImagePageSession {
         } else {
             error()
         }
-		drcs_header.extend([0x1f, 0x23, drcs_start]);
+		drcs_header.add_raw([0x1f, 0x23, drcs_start]);
 
 		// prepend
 		self.drcs[0..0] = drcs_header;
@@ -220,46 +231,50 @@ impl ImagePageSession {
 		// append
 		if colors == 4 {
 			// set colors to 16, 17, 18, 19
-			self.drcs.extend(b"\x1f\x26\x20\x22\x20\x35\x40");
-			self.drcs.extend(b"\x1f\x26\x30\x50");
-			self.drcs.extend(b"\x1f\x26\x31\x51");
-			self.drcs.extend(b"\x1f\x26\x32\x52");
-            self.drcs.extend(b"\x1f\x26\x33\x53");
+			self.drcs.add_raw(b"\x1f\x26\x20\x22\x20\x35\x40");
+			self.drcs.add_raw(b"\x1f\x26\x30\x50");
+			self.drcs.add_raw(b"\x1f\x26\x31\x51");
+			self.drcs.add_raw(b"\x1f\x26\x32\x52");
+            self.drcs.add_raw(b"\x1f\x26\x33\x53");
         }
 
 		// create characters to print
-		if colors == 16 {
-			step = 2
+		let step = if colors == 16 {
+			2
         } else {
-            step = 1
-        }
+            1
+        };
 		self.chars = [];
-		for y in range(0, res_y) {
+		for y in 0..res_y {
 			l = bytearray();
-			for x in range(0, res_x) {
+			for x in 0..res_x {
                 l.append(drcs_start + (y * res_x + x) * step)
             }
             self.chars.append(l);
         }
+
+        Self {
+
+        }
     }
 
-	fn create_image_page() -> Page {
+	fn create_image_page(&self) -> Page {
 //		filename = "/Users/mist/Desktop/RGB_24bits_palette_sample_image.jpg"
 //		filename = "/Users/mist/Desktop/Lenna_(test_image).png"
 //		filename = "/Users/mist/Desktop/Wikipedia_logo_593.jpg"
-		filename = "/Users/mist/Desktop/220px-C64c_system.jpg";
+		let filename = "/Users/mist/Desktop/220px-C64c_system.jpg";
 
 		(palette, drcs, chars) = Image_UI.cept_from_image(filename);
 
-		data_cept = bytearray();
-		data_cept.extend(Cept.define_palette(palette));
-		data_cept.extend(drcs);
+		let data_cept = Cept::new();
+		data_cept.define_palette(palette);
+		data_cept.add_raw(drcs);
 
-		data_cept.extend(Cept.set_cursor(3, 1));
-		data_cept.extend(Cept.load_g0_drcs());
+		data_cept.set_cursor(3, 1);
+		data_cept.load_g0_drcs());
 		for l in chars {
-			data_cept.extend(l);
-            data_cept.extend(b"\r\n");
+			data_cept.add_raw(l);
+            data_cept.add_raw(b"\r\n");
         }
 
 		let meta = Meta {

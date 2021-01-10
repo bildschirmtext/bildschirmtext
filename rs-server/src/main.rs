@@ -3,6 +3,7 @@ mod cept_page;
 mod dispatch;
 mod editor;
 mod historic;
+mod image;
 mod login;
 mod messaging;
 mod page;
