@@ -27,6 +27,7 @@ const DISPATCH_TABLE: &[(&[u8], bool, PageSessionNewFn)] = &[
     (b"8*",     true, PageSessionNewFn(super::ui_messaging::new)),
     (b"77",     false, PageSessionNewFn(super::ui_user::new)),
     (b"7-",     false, PageSessionNewFn(super::historic::new)),
+    (b"666",    false, PageSessionNewFn(super::image::new)),
     (b"*",      false, PageSessionNewFn(super::staticp::new)),
 ];
 

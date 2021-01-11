@@ -340,17 +340,17 @@ impl Cept {
 
     // CEPT codes
 
-	pub fn ini(&mut self) {
-        self.data.push(0x13);
-    }
+	// pub fn ini(&mut self) {
+    //     self.data.push(0x13);
+    // }
 
-	pub fn ter(&mut self) {
-		self.data.push(0x1c);
-    }
+	// pub fn ter(&mut self) {
+	// 	self.data.push(0x1c);
+    // }
 
-	pub fn dct(&mut self) {
-		self.data.push(0x1a);
-    }
+	// pub fn dct(&mut self) {
+	// 	self.data.push(0x1a);
+    // }
 
 	pub fn set_res_40_24(&mut self) {
 		self.data.extend(&[0x1f, 0x2d]);
