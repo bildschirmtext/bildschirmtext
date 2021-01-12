@@ -267,22 +267,22 @@ fn create_add_user() -> Page {
     let mut cept = Cept::new();
     create_title(&mut cept, "Neuen Benutzer einrichten");
     cept.add_ceptml(
-        "<r><n>\
-        Teilnehmernummer:<csr:6,29>-1<r><n>\
-        Anrede:<r><n>\
-        Name:<r><n>\
-        Vorname:<r><n>\
-        Straße:<r><n>\
-        PLZ: <rep:7>Ort: <rep:15>Land:<r><n>\
+        "<rn>\
+        Teilnehmernummer:<csr:6,29>-1<rn>\
+        Anrede:<rn>\
+        Name:<rn>\
+        Vorname:<rn>\
+        Straße:<rn>\
+        PLZ: <rep:7>Ort: <rep:15>Land:<rn>\
         <left:g3><fg:15>Q<rep:40><fg:7><left:g0>\
-        Vergütungssperre aktiv:<r><n>\
-        Gebührensperre   aktiv:<r><n>\
+        Vergütungssperre aktiv:<rn>\
+        Gebührensperre   aktiv:<rn>\
         Taschengeldkonto      :<csr:15,35>,   DM\
         Max. Vergütung/Seite  :<csr:16,35>,   DM\
         <left:g3><fg:15>Q<rep:40><fg:7><left:g0>\
-        <r><n>\
+        <rn>\
         Kennwort:\
-        <r><n><r><n>\
+        <rn><rn>\
         <left:g3><fg:15>Q<rep:40><fg:7><left:g0>"
     );
     hexdump::hexdump(cept.data());

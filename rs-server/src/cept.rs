@@ -636,8 +636,9 @@ impl Cept {
                 let tag = &tag[..];
                 println!("{:?}", tag);
                 match &tag {
-                    ["r"]		    => self.add_raw(&['\r' as u8]),
-                    ["n"]	    	=> self.add_raw(&['\n' as u8]),
+                    ["r"]		    => self.add_raw(b"\r"),
+                    ["n"]	    	=> self.add_raw(b"\n"),
+                    ["rn"]	    	=> self.add_raw(b"\r\n"),
                     ["home"]		=> self.cursor_home(),
                     ["left"]		=> self.cursor_left(),
                     ["right"]		=> self.cursor_right(),
