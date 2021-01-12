@@ -28,16 +28,7 @@ impl<'a> PageSession<'a> for StaticPageSession {
         let filename_meta = resource_filename(&self.basedir, &filename, "meta");
         println!("filename_meta: {}", filename_meta);
         let f = File::open(&filename_meta).ok()?;
-        let mut meta: Meta = serde_json::from_reader(f).ok()?;
-
-        // read glob
-        let filename_glob = resource_filename(&self.basedir, "a", "glob");
-        println!("filename_glob: {}", filename_glob);
-        let f = File::open(&filename_glob).ok()?;
-        let glob_meta: Meta = serde_json::from_reader(f).ok()?;
-
-        // global overrides local
-        meta.merge(glob_meta);
+        let meta: Meta = serde_json::from_reader(f).ok()?;
 
         // read text
         let filename_cept = resource_filename(&self.basedir, &filename, "cept");

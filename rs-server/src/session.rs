@@ -120,12 +120,13 @@ impl Session {
 
         'main: loop {
             // dispatch page
-            let page_session = super::dispatch::dispatch_pageid(&target_pageid, &self.user, &self.anonymous_user);
+            let (publisher_name, page_session) = super::dispatch::dispatch_pageid(&target_pageid, &self.user, &self.anonymous_user);
 
             // *** show page
             println!("showing page: {}", target_pageid.to_string());
             let page = page_session.create();
-            if let Some(page) = page {
+            if let Some(mut page) = page {
+                page.meta.publisher_name = Some(publisher_name.to_owned());
                 current_page_cept = page.construct_page_cept(&mut self.client_state, &target_pageid);
                 write_stream(stream, current_page_cept.data());
                 links = page.meta.links;

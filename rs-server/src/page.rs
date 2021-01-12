@@ -33,7 +33,6 @@ impl Link {
 #[derive(Default)]
 #[derive(Serialize, Deserialize)]
 pub struct Meta {
-    pub publisher_name: Option<String>,
     pub clear_screen: Option<bool>,
     pub cls2: Option<bool>,
     pub parallel_mode: Option<bool>,
@@ -45,32 +44,9 @@ pub struct Meta {
     // these are only uses by static pages
     pub palette: Option<String>,
     pub include: Option<String>,
-}
 
-impl Meta {
-    pub fn merge(&mut self, other: Meta) {
-        if other.publisher_name.is_some() {
-            self.publisher_name = other.publisher_name;
-        }
-        if other.clear_screen.is_some() {
-            self.clear_screen = other.clear_screen;
-        }
-        if other.cls2.is_some() {
-            self.cls2 = other.cls2;
-        }
-        if other.parallel_mode.is_some() {
-            self.parallel_mode = other.parallel_mode;
-        }
-        if other.links.is_some() {
-            self.links = other.links;
-        }
-        if other.publisher_color.is_some() {
-            self.publisher_color = other.publisher_color;
-        }
-        if other.inputs.is_some() {
-            self.inputs = other.inputs;
-        }
-    }
+    // will be filled by dispatch logic
+    pub publisher_name: Option<String>,
 }
 
 pub struct Page {
