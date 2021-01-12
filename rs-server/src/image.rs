@@ -173,7 +173,7 @@ impl Image {
 		let image = image.resize(res_x * 6, res_y * 10, imageops::FilterType::Lanczos3);
 
         // convert to custom colors
-        // https://github.com/myfreeweb/imgroll
+        // image to exoquant conversion by https://github.com/myfreeweb/imgroll
         let pixels = image
             .pixels()
             .map(|(_, _, p)| {
@@ -181,9 +181,10 @@ impl Image {
                 Color::new(cols[0], cols[1], cols[2], cols[3])
             })
             .collect::<Vec<_>>();
+        let width = image.width() as usize;
         let (palette, indexed_pixels) = convert_to_indexed(
             &pixels,
-            image.width() as usize,
+            width,
             num_colors as usize,
             &optimizer::KMeans,
             &ditherer::FloydSteinberg::checkered(),
