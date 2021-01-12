@@ -80,8 +80,8 @@ pub enum UserRequest {
 }
 
 pub struct ClientState {
-    pub palette: Option<String>,
-    pub include: Option<String>,
+    pub cept_palette: Option<Cept>,
+    pub cept_include: Option<Cept>,
 }
 
 pub struct Session {
@@ -99,8 +99,8 @@ impl Session {
             user: User::anonymous(),
             anonymous_user: User::anonymous(),
             client_state:ClientState {
-                palette: None,
-                include: None,
+                cept_palette: None,
+                cept_include: None,
             },
             current_pageid: PageId::empty(),
             history: vec!(),
@@ -395,8 +395,8 @@ impl Session {
             // hard reload
             println!("command: hard reload");
             // invalidate palette and include
-            self.client_state.palette = None;
-            self.client_state.include = None;
+            self.client_state.cept_palette = None;
+            self.client_state.cept_include = None;
             UserRequest::Goto(self.current_pageid.clone(), false)
         } else if command_input == "00" {
             // re-send CEPT data of current page

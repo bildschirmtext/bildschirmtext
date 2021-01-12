@@ -19,48 +19,39 @@ pub fn new<'a>(pageid: PageId, _: User) -> Box<dyn PageSession<'a> + 'a> {
 impl<'a> PageSession<'a> for StaticPageSession {
     fn create(&self) -> Option<Page> {
         if let Some((basedir, filename)) = find_basedir(&self.pageid) {
-            let mut basename = basedir.clone();
-            basename += &filename;
+            // read meta
+            let filename_meta = resource_filename(&basedir, &filename, "meta");
+            println!("filename_meta: {}", filename_meta);
+            let f = File::open(&filename_meta).ok()?;
+            let mut meta: Meta = serde_json::from_reader(f).ok()?;
 
-            let mut filename_meta = basename.clone();
-            filename_meta += ".meta";
-            let mut filename_cept = basename.clone();
-            filename_cept += ".cept";
-            let mut filename_glob = basedir.clone();
-            filename_glob += "a.glob";
+            // read glob
+            let filename_glob = resource_filename(&basedir, "a", "glob");
+            println!("filename_glob: {}", filename_glob);
+            let f = File::open(&filename_glob).ok()?;
+            let glob_meta: Meta = serde_json::from_reader(f).ok()?;
 
-            if is_file(&filename_meta) {
-                // read meta
-                println!("filename_meta: {}", filename_meta);
-                let f = File::open(&filename_meta).ok()?;
-                let mut meta: Meta = serde_json::from_reader(f).ok()?;
+            // global overrides local
+            meta.merge(glob_meta);
 
-                // read glob
-                println!("filename_glob: {}", filename_glob);
-                let f = File::open(&filename_glob).ok()?;
-                let glob_meta: Meta = serde_json::from_reader(f).ok()?;
+            // read text
+            let filename_cept = resource_filename(&basedir, &filename, "cept");
+            println!("filename_cept: {}", filename_cept);
+            let mut buf : Vec<u8> = vec!();
+            let mut f = File::open(&filename_cept).ok()?;
+            f.read_to_end(&mut buf).ok()?;
+            let mut cept = Cept::new();
+            cept.add_raw(&buf);
 
-                // global overrides local
-                meta.merge(glob_meta);
+            let cept_palette = load_palette(meta.palette.as_ref(), &basedir);
+            let cept_include = load_include(meta.include.as_ref(), &basedir);
 
-                // read text
-                println!("filename_cept: {}", filename_cept);
-                let mut buf : Vec<u8> = vec!();
-                let mut f = File::open(&filename_cept).ok()?;
-                f.read_to_end(&mut buf);
-                let mut cept = Cept::new();
-                cept.add_raw(&buf);
-
-                let cept_palette = load_palette(meta.palette.as_ref(), &basedir);
-                let cept_include = load_include(meta.include.as_ref(), &basedir);
-
-                return Some(Page {
-                    meta,
-                    cept_palette,
-                    cept_include,
-                    cept,
-                });
-            }
+            return Some(Page {
+                meta,
+                cept_palette,
+                cept_include,
+                cept,
+            });
         }
 
         None

@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use super::cept::*;
 use super::editor::*;
 use super::session::*;
-use super::staticp::*;
 use super::sysmsg::*;
 
 // how many seconds does pal/char transmission have to take
@@ -107,14 +106,20 @@ impl Page {
         if clear_screen == Some(true) {
             cept.serial_limited_mode();
             cept.clear_screen();
-            client_state.include = None;
+            client_state.cept_include = None;
         }
 
         if let Some(cept_palette) = &self.cept_palette {
-            cept.add_raw(cept_palette.data());
+            if Some(cept_palette) != client_state.cept_palette.as_ref() {
+                cept.add_raw(cept_palette.data());
+            }
+            client_state.cept_palette = Some(cept_palette.clone());
         }
         if let Some(cept_include) = &self.cept_include {
-            cept.add_raw(cept_include.data());
+            if Some(cept_include) != client_state.cept_include.as_ref() {
+                cept.add_raw(cept_include.data());
+            }
+            client_state.cept_include = Some(cept_include.clone());
         }
 
         // If the include data is large and the connection is slow, the system may
@@ -132,7 +137,7 @@ impl Page {
         if self.meta.cls2 == Some(true) {
             cept.serial_limited_mode();
             cept.clear_screen();
-            client_state.include = None;
+            client_state.cept_include = None;
         }
 
         Self::headerfooter(&mut cept, pageid, self.meta.publisher_name.as_deref(), self.meta.publisher_color.unwrap());

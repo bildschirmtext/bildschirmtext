@@ -617,3 +617,9 @@ impl ops::AddAssign for Cept {
         self.add_raw(&other.data);
     }
 }
+
+impl PartialEq for Cept {
+    fn eq(&self, other: &Self) -> bool {
+        return &self.data() == &other.data();
+    }
+}
