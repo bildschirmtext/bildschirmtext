@@ -1,5 +1,7 @@
 use std::{fs::File, io::Read};
 use serde::{Deserialize, Serialize};
+use crate::cept_page;
+
 use super::cept::*;
 use super::editor::*;
 use super::session::*;
@@ -106,12 +108,21 @@ impl Page {
             client_state.include = None;
         }
 
+        let mut cept_palette = None;
+        let mut cept_include = None;
         if let Some(basedir) = find_basedir(pageid) {
             let basedir = basedir.0;
-            load_palette(&mut cept, self.meta.palette.as_ref(), &basedir, client_state);
-            load_include(&mut cept, self.meta.include.as_ref(), clear_screen, &basedir, client_state);
+            cept_palette = load_palette(self.meta.palette.as_ref(), &basedir, client_state);
+            cept_include = load_include(self.meta.include.as_ref(), clear_screen, &basedir, client_state);
         } else {
             println!("ERROR: basedir not found!");
+        }
+
+        if let Some(cept_palette) = cept_palette {
+            cept.add_raw(cept_palette.data());
+        }
+        if let Some(cept_include) = cept_include {
+            cept.add_raw(cept_include.data());
         }
 
         // If the include data is large and the connection is slow, the system may
@@ -229,7 +240,7 @@ fn resource_filename(basedir: &str, resource_name: &str, extention: &str) -> Str
     filename
 }
 
-fn load_palette(cept: &mut Cept, palette_name: Option<&String>, basedir: &str, client_state: &mut ClientState) {
+fn load_palette(palette_name: Option<&String>, basedir: &str, client_state: &mut ClientState) -> Option<Cept> {
     if let Some(palette_name) = palette_name {
         let filename = resource_filename(basedir, palette_name, "pal");
         if Some(filename.clone()) != client_state.palette {
@@ -238,22 +249,28 @@ fn load_palette(cept: &mut Cept, palette_name: Option<&String>, basedir: &str, c
             if let Ok(f) = File::open(&filename) {
                 let palette: Result<Palette, _> = serde_json::from_reader(f);
                 if let Ok(palette) = palette {
+                    let mut cept = Cept::new();
                     cept.define_palette(&palette.palette, palette.start_color);
+                    return Some(cept);
                 } else {
                     println!("ERROR reading palette file! [1]");
+                    return None;
                 }
             } else {
                 println!("ERROR reading palette file! [2]");
+                return None;
             }
         } else {
             println!("skipping palette");
+            return None;
         }
     } else {
-        client_state.palette = None;
+        None
+        // client_state.palette = None;
     }
 }
 
-fn load_include(cept: &mut Cept, include_name: Option<&String>, clear_screen: Option<bool>, basedir: &str, client_state: &mut ClientState) {
+fn load_include(include_name: Option<&String>, clear_screen: Option<bool>, basedir: &str, client_state: &mut ClientState) -> Option<Cept> {
     if let Some(include_name) = include_name {
         let filename = resource_filename(basedir, include_name, "inc");
         if Some(filename.clone()) != client_state.include || clear_screen == Some(true) {
@@ -269,14 +286,17 @@ fn load_include(cept: &mut Cept, include_name: Option<&String>, clear_screen: Op
             } else {
                 println!("ERROR creating user! [1]");
             }
+            let mut cept = Cept::new();
             // palette definition has to end with 0x1f; add one if
             // the include data doesn't start with one
             if cept_include[0] != 0x1f {
                 cept.set_cursor(1, 1)
             }
             cept.add_raw(&cept_include);
+            return Some(cept);
         } else {
             client_state.include = None;
         }
     }
+    None
 }
