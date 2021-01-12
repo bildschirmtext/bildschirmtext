@@ -6,6 +6,7 @@ use super::cept::*;
 use super::page::*;
 use super::sysmsg::*;
 use super::dispatch::*;
+use super::ui::*;
 
 pub struct UsersPageSession {
     pageid: PageId,
@@ -263,11 +264,10 @@ fn create_add_user() -> Page {
     }
     "#;
     let meta: Meta = serde_json::from_str(meta_str).unwrap();
-    let cept = Cept::from_ceptml(
-        "<csr:2,1><pal:1><sbgs:4><g0:g0><left:g0><mode:p><pal:0><9e><n><r><lbgs:4><n><lbgs:4><pal:1><height:2><r>\
-        Neuen Benutzer einrichten<n><r>\
-        <pal:0><size:1><9e><fgs:7><r><n>\
-
+    let mut cept = Cept::new();
+    create_title(&mut cept, "Neuen Benutzer einrichten");
+    cept.add_ceptml(
+        "<r><n>\
         Teilnehmernummer:<csr:6,29>-1<r><n>\
         Anrede:<r><n>\
         Name:<r><n>\
@@ -285,6 +285,7 @@ fn create_add_user() -> Page {
         <r><n><r><n>\
         <left:g3><fg:15>Q<rep:40><fg:7><left:g0>"
     );
+    hexdump::hexdump(cept.data());
     Page {
         meta,
         cept_palette: None,

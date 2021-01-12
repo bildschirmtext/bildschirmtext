@@ -12,6 +12,7 @@ mod session;
 mod staticp;
 mod sysmsg;
 mod user;
+mod ui;
 mod ui_messaging;
 mod ui_user;
 

@@ -607,9 +607,7 @@ impl Cept {
         self.data.extend(&other.data);
     }
 
-    pub fn from_ceptml(ceptml: &str) -> Cept {
-        let mut cept = Cept::new();
-
+    pub fn add_ceptml(&mut self, ceptml: &str) {
         let ceptml: Vec<char> = ceptml.chars().collect();
         let mut ceptml = &ceptml[..];
 
@@ -638,43 +636,43 @@ impl Cept {
                 let tag = &tag[..];
                 println!("{:?}", tag);
                 match &tag {
-                    ["r"]		    => cept.add_raw(&['\r' as u8]),
-                    ["n"]	    	=> cept.add_raw(&['\n' as u8]),
-                    ["home"]		=> cept.cursor_home(),
-                    ["left"]		=> cept.cursor_left(),
-                    ["right"]		=> cept.cursor_right(),
-                    ["down"]		=> cept.cursor_down(),
-                    ["up"]	    	=> cept.cursor_up(),
-                    ["csr", y, x]	=> cept.set_cursor(u8::from_str(y).unwrap(), u8::from_str(x).unwrap()),
-                    ["cls"]		    => cept.clear_screen(),
-                    ["cll"]	    	=> cept.clear_line(),
-                    ["mode","p"]		=> cept.parallel_mode(),
-                    ["mode","sl"]  	=> cept.serial_limited_mode(),
-                    ["mode","pl"]  	=> cept.parallel_limited_mode(),
-                    ["rep", n] 	=> cept.repeat_last(u8::from_str(n).unwrap()),
-                    ["pal", n]		=> cept.set_palette(u8::from_str(n).unwrap()),
-                    ["fg", c]		=> cept.set_fg_color(u8::from_str(c).unwrap()),
-                    ["bg", c]		=> cept.set_bg_color(u8::from_str(c).unwrap()),
-                    ["lbg", c]		=> cept.set_line_bg_color(u8::from_str(c).unwrap()),
-                    ["sbg", c]		=> cept.set_screen_bg_color(u8::from_str(c).unwrap()),
-                    ["left","g0"]	=> cept.set_left_g0(),
-                    ["left","g3"]	=> cept.set_left_g3(),
-                    ["g0","drcs"]	=> cept.load_g0_drcs(),
-                    ["g0","g0"]		=> cept.load_g0_g0(),
-                    ["size","1"]	=> cept.normal_size(),
-                    ["height","2"]	=> cept.double_height(),
-                    ["width","2"]	=> cept.double_width(),
-                    ["size","2"]	=> cept.double_size(),
-                    ["u","1"]		=> cept.underline_off(),
-                    ["u","0"]		=> cept.underline_on(),
-                    ["hide"]		=> cept.hide_text(),
-                    ["9d"]		=> cept.code_9d(),
-                    ["9e"]		=> cept.code_9e(),
-                    ["fgs", c]		=> cept.set_fg_color_simple(u8::from_str(c).unwrap()),
-                    ["bgs", c]		=> cept.set_bg_color_simple(u8::from_str(c).unwrap()),
-                    ["lbgs", c]	=> cept.set_line_bg_color_simple(u8::from_str(c).unwrap()),
-                    ["sbgs", c]	=> cept.set_screen_bg_color_simple(u8::from_str(c).unwrap()),
-                    ["lfgs", c]	=> cept.set_line_fg_color_simple(u8::from_str(c).unwrap()),
+                    ["r"]		    => self.add_raw(&['\r' as u8]),
+                    ["n"]	    	=> self.add_raw(&['\n' as u8]),
+                    ["home"]		=> self.cursor_home(),
+                    ["left"]		=> self.cursor_left(),
+                    ["right"]		=> self.cursor_right(),
+                    ["down"]		=> self.cursor_down(),
+                    ["up"]	    	=> self.cursor_up(),
+                    ["csr", y, x]	=> self.set_cursor(u8::from_str(y).unwrap(), u8::from_str(x).unwrap()),
+                    ["cls"]		    => self.clear_screen(),
+                    ["cll"]	    	=> self.clear_line(),
+                    ["mode","p"]		=> self.parallel_mode(),
+                    ["mode","sl"]  	=> self.serial_limited_mode(),
+                    ["mode","pl"]  	=> self.parallel_limited_mode(),
+                    ["rep", n] 	=> self.repeat_last(u8::from_str(n).unwrap()),
+                    ["pal", n]		=> self.set_palette(u8::from_str(n).unwrap()),
+                    ["fg", c]		=> self.set_fg_color(u8::from_str(c).unwrap()),
+                    ["bg", c]		=> self.set_bg_color(u8::from_str(c).unwrap()),
+                    ["lbg", c]		=> self.set_line_bg_color(u8::from_str(c).unwrap()),
+                    ["sbg", c]		=> self.set_screen_bg_color(u8::from_str(c).unwrap()),
+                    ["left","g0"]	=> self.set_left_g0(),
+                    ["left","g3"]	=> self.set_left_g3(),
+                    ["g0","drcs"]	=> self.load_g0_drcs(),
+                    ["g0","g0"]		=> self.load_g0_g0(),
+                    ["size","1"]	=> self.normal_size(),
+                    ["height","2"]	=> self.double_height(),
+                    ["width","2"]	=> self.double_width(),
+                    ["size","2"]	=> self.double_size(),
+                    ["u","1"]		=> self.underline_off(),
+                    ["u","0"]		=> self.underline_on(),
+                    ["hide"]		=> self.hide_text(),
+                    ["9d"]		=> self.code_9d(),
+                    ["9e"]		=> self.code_9e(),
+                    ["fgs", c]		=> self.set_fg_color_simple(u8::from_str(c).unwrap()),
+                    ["bgs", c]		=> self.set_bg_color_simple(u8::from_str(c).unwrap()),
+                    ["lbgs", c]	=> self.set_line_bg_color_simple(u8::from_str(c).unwrap()),
+                    ["sbgs", c]	=> self.set_screen_bg_color_simple(u8::from_str(c).unwrap()),
+                    ["lfgs", c]	=> self.set_line_fg_color_simple(u8::from_str(c).unwrap()),
                     _ => {
                         // warn, ignore
                         println!("unsupported tag: {:?}", tag)
@@ -682,12 +680,10 @@ impl Cept {
                 }
             } else {
                 if *c != '\r' && *c != '\n' {
-                    cept.add_str(&c.to_string());
+                    self.add_str(&c.to_string());
                 }
             }
         }
-
-        cept
     }
 }
 

@@ -6,6 +6,7 @@ use super::cept::*;
 use super::page::*;
 use super::session::*;
 use super::dispatch::*;
+use super::ui::*;
 
 pub struct HistoricPageSession {
     pageid: PageId,
@@ -36,29 +37,6 @@ impl<'a> PageSession<'a> for HistoricPageSession {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-fn create_title(page: &mut Page, title: &str) {
-    page.cept.set_cursor(2, 1);
-    page.cept.set_palette(1);
-    page.cept.set_screen_bg_color_simple(4);
-    page.cept.load_g0_g0();
-    page.cept.set_left_g0();
-    page.cept.parallel_mode();
-    page.cept.set_palette(0);
-    page.cept.code_9e();
-    page.cept.set_line_bg_color_simple(4);
-    page.cept.add_raw(b"\n");
-    page.cept.set_line_bg_color_simple(4);
-    page.cept.set_palette(1);
-    page.cept.double_height();
-    page.cept.add_raw(b"\r");
-    page.cept.add_str(title);
-    page.cept.add_raw(b"\n\r");
-    page.cept.set_palette(0);
-    page.cept.normal_size();
-    page.cept.code_9e();
-    page.cept.set_fg_color_simple(7);
-}
 
 fn footer(page: &mut Page, left: &str, right: Option<&str>) {
     page.cept.set_cursor(23, 1);
@@ -101,7 +79,7 @@ pub fn create_historic_main_page() -> Page {
     };
 
     let mut page = Page::new(meta);
-    create_title(&mut page, "Historische Seiten");
+    create_title(&mut page.cept, "Historische Seiten");
     page.cept.add_raw(b"\r\n");
     page.cept.add_str(
         "Nur wenige hundert der mehreren hundert-\
@@ -257,18 +235,17 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
 
     // sys.stderr.write("meta: " + pprint.pformat(meta) + "\n")
 
-    let mut cept = Cept::new();
     let mut t = "Historische Seiten: ".to_owned();
     t += name;
-    create_title(&mut page, &t);
-    cept.add_str("\r\n");
+    create_title(&mut page.cept, &t);
+    page.cept.add_raw(b"\r\n");
 
     if index == 0 {
-        cept.add_str(description);
-        cept.add_str("\r\n\n");
+        page.cept.add_str(description);
+        page.cept.add_raw(b"\r\n\n");
         if let Some(start_page) = start_page {
             historic_line(&mut page, start_page, 10);
-            cept.add_str("\n")
+            page.cept.add_str("\n")
         }
     }
 
@@ -283,7 +260,7 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
 
     let right = if (index as usize) < distribution.len() { Some("Weiter #") } else { None };
     footer(&mut page, "0 Zurück", right);
-    // cept.compress();
+    // page.cept.compress();
 
     Some(page)
 }
