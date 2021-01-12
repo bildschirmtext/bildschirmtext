@@ -32,7 +32,7 @@ const DISPATCH_TABLE: &[(&[u8], bool, PageSessionNewFn, &str)] = &[
     // static pages
     (b"0-",     false, PageSessionNewFn(super::staticp::new),      "../data/0/"),
 
-    // historic pages
+    // historic pages #1
     (b"1050-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/1050/"),
     (b"1188-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/1188/"),
     (b"1690-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/1690/"),
@@ -71,9 +71,23 @@ const DISPATCH_TABLE: &[(&[u8], bool, PageSessionNewFn, &str)] = &[
     (b"920492040092-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/920492040092/"),
     (b"1180040000004-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/1180040000004/"),
     (b"1200833401083-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/1200833401083/"),
+    // historic pages #2
+    (b"00000-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/00000/"),
+    (b"20111-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/20111/"),
+    (b"21199-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/21199/"),
+    (b"25800-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/25800/"),
+    (b"28000-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/28000/"),
+    (b"34561-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/34561/"),
+    (b"37107-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/37107/"),
+    (b"46801-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/46801/"),
+    (b"49498-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/49498/"),
+    (b"50000-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/50000/"),
+    (b"52800-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/52800/"),
+    (b"58587-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/58587/"),
+    (b"69010-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/69010/"),
+    (b"353535-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/353535/"),
 
     (b"*",  false, PageSessionNewFn(super::staticp::new),      ""), // will return None
-
 ];
 
 pub fn dispatch_pageid<'a>(pageid: &PageId, user: &User, anonymous_user: &User) -> Box<dyn PageSession<'static>> {
