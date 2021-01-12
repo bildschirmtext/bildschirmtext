@@ -22,17 +22,25 @@ struct PageSessionNewFn(fn(&str, PageId, User) -> Box<dyn PageSession<'static>>)
 //     user's info and statistics!
 // N.B.: The table must be in the right order: longer prefixes must come first!
 const DISPATCH_TABLE: &[(&[u8], bool, PageSessionNewFn, &str, &str)] = &[
+    // Login/Logout
     (b"00000*", true,  PageSessionNewFn(super::login::new),        "", ""),
     (b"9",      true,  PageSessionNewFn(super::login::new),        "", ""),
-    (b"8*",     true,  PageSessionNewFn(super::ui_messaging::new), "", ""),
-    (b"77",     false, PageSessionNewFn(super::ui_user::new),      "", ""),
-    (b"7-",     false, PageSessionNewFn(super::historic::new),     "", ""),
-    (b"666",    false, PageSessionNewFn(super::image::new),        "", ""),
 
-    // static pages
+    // Main Menu
     (b"0-",     false, PageSessionNewFn(super::staticp::new),      "../data/0/", ""),
 
-    // historic pages #1
+    // Messaging
+    (b"8*",     true,  PageSessionNewFn(super::ui_messaging::new), "", "!BTX"),
+
+    // User Management
+    (b"77",     false, PageSessionNewFn(super::ui_user::new),      "", "!BTX"),
+
+    // Historic Pages - Index
+    (b"7-",     false, PageSessionNewFn(super::historic::new),     "", "!BTX"),
+
+    (b"666",    false, PageSessionNewFn(super::image::new),        "", "Image Test"),
+
+    // Historic Pages #1
     (b"1050-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/1050/", "Btx-Telex"),
     (b"1188-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/1188/", "Postreklame"),
     (b"1690-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/1690/", "Bildschirmtext"),
@@ -71,7 +79,8 @@ const DISPATCH_TABLE: &[(&[u8], bool, PageSessionNewFn, &str, &str)] = &[
     (b"920492040092-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/920492040092/", "Wolfgang Fritsch"),
     (b"1180040000004-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/1180040000004/", "Elektronisches Telefonbuch"),
     (b"1200833401083-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/10/1200833401083/", "Deutsche Bundesbahn"),
-    // historic pages #2
+
+    // Historic Pages #2
     (b"00000-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/00000/", "Telekom Datex-J"),
     (b"20111-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/20111/", "VOBIS MICROCOMPUTER AG"),
     (b"21199-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/21199/", "MICROSOFT GMBH"),
@@ -87,7 +96,7 @@ const DISPATCH_TABLE: &[(&[u8], bool, PageSessionNewFn, &str, &str)] = &[
     (b"69010-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/69010/", "Deutscher Ind. Handelstag DIHT"),
     (b"353535-",  false, PageSessionNewFn(super::staticp::new),     "../data/hist/11/353535/", "START Telematik Tourismus Info"),
 
-    (b"*",  false, PageSessionNewFn(super::staticp::new),      "", ""), // will return None
+    (b"*",  false, PageSessionNewFn(super::staticp::new),      "", ""), // will return None (XXX ugly)
 ];
 
 pub fn dispatch_pageid<'a>(pageid: &PageId, user: &User, anonymous_user: &User) -> (&'static str, Box<dyn PageSession<'static>>) {

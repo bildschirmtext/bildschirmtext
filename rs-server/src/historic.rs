@@ -87,7 +87,6 @@ fn historic_line(page: &mut Page, p: (&str, &str), index: i32) {
 
 pub fn create_historic_main_page() -> Page {
     let meta = Meta {
-        publisher_name: Some("!BTX".to_owned()),
         clear_screen: Some(true),
         cls2: None,
         parallel_mode: None,
@@ -246,7 +245,6 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
     }
 
     let meta = Meta {
-        publisher_name: Some("!BTX".to_owned()),
         clear_screen: Some(true),
         cls2: None,
         parallel_mode: None,

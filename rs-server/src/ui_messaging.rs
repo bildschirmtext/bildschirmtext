@@ -133,7 +133,6 @@ fn messaging_create_menu(title: &str, items: &[&str]) -> Cept {
 
 fn messaging_create_main_menu() -> Page {
     let meta = Meta {
-        publisher_name: Some("!BTX".to_owned()),
         include: Some("a".to_owned()),
         clear_screen: Some(true),
         links: Some(vec!(
@@ -200,7 +199,6 @@ fn messaging_create_list(userid: &UserId, is_read: bool) -> Page {
     }
 
     let meta = Meta {
-        publisher_name: Some("!BTX".to_owned()),
         include: Some("a".to_owned()),
         clear_screen: Some(true),
         links: Some(links),
@@ -226,7 +224,6 @@ fn messaging_create_message_detail(userid: &UserId, index: usize, is_read: bool)
     let message = messages[0];
 
     let meta = Meta {
-        publisher_name: Some("Bildschirmtext".to_owned()),
         include: Some("11a".to_owned()),
         palette: Some("11a".to_owned()),
         clear_screen: Some(true),

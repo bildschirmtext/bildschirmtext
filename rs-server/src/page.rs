@@ -161,7 +161,7 @@ impl Page {
         cept.set_res_40_24();
         cept.set_cursor(23, 1);
         cept.unprotect_line();
-        cept.set_line_fg_color_simple(12);
+        cept.set_line_fg_color(12);
         cept.parallel_limited_mode();
         cept.set_cursor(24, 1);
         cept.unprotect_line();

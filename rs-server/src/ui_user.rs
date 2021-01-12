@@ -296,7 +296,6 @@ fn create_add_user() -> Page {
             { "code": "5", "target": "810" }
         ],
         "publisher_color": 7,
-        "publisher_name": "!BTX"
     }
     "#;
     let meta: Meta = serde_json::from_str(meta_str).unwrap();
