@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::str::FromStr;
+
 pub struct CharacterSet {
 }
 
@@ -420,8 +422,12 @@ impl Cept {
 
 	pub fn repeat(&mut self, c: u8, n: u8) {
         self.data.push(c);
+        self.repeat_last(n - 1);
+    }
+
+	pub fn repeat_last(&mut self, n: u8) {
         self.data.push(0x12);
-        self.data.push(0x40 + n - 1);
+        self.data.push(0x40 + n);
     }
 
     pub fn define_palette<T: AsRef<str>>(&mut self, palette: &[T], start_color: Option<u8>) {
@@ -599,6 +605,96 @@ impl Cept {
 
     pub fn extend(&mut self, other: &Cept) {
         self.data.extend(&other.data);
+    }
+
+    pub fn from_ceptml(ceptml: &str) -> Cept {
+        let mut cept = Cept::new();
+
+        let ceptml: Vec<char> = ceptml.chars().collect();
+        let mut ceptml = &ceptml[..];
+
+        loop {
+            let c = ceptml.get(0);
+            if c.is_none() {
+                break;
+            }
+            let c = c.unwrap();
+            ceptml = &ceptml[1..];
+            if *c == '<' {
+                let mut tag = String::new();
+                loop {
+                    let c = ceptml.get(0);
+                    if c.is_none() {
+                        break;
+                    }
+                    ceptml = &ceptml[1..];
+                    let c = c.unwrap();
+                    if *c == '>' {
+                        break;
+                    }
+                    tag.push(*c);
+                }
+                let tag: Vec<&str> = tag.split(|c| c == ':' || c == ',').collect();
+                let tag = &tag[..];
+                println!("{:?}", tag);
+                match &tag {
+                    ["r"]		    => cept.add_raw(&['\r' as u8]),
+                    ["n"]	    	=> cept.add_raw(&['\n' as u8]),
+                    ["home"]		=> cept.cursor_home(),
+                    ["left"]		=> cept.cursor_left(),
+                    ["right"]		=> cept.cursor_right(),
+                    ["down"]		=> cept.cursor_down(),
+                    ["up"]	    	=> cept.cursor_up(),
+                    ["csr", y, x]	=> cept.set_cursor(u8::from_str(y).unwrap(), u8::from_str(x).unwrap()),
+                    ["cls"]		    => cept.clear_screen(),
+                    ["cll"]	    	=> cept.clear_line(),
+                    ["mode","p"]		=> cept.parallel_mode(),
+                    ["mode","sl"]  	=> cept.serial_limited_mode(),
+                    ["mode","pl"]  	=> cept.parallel_limited_mode(),
+                    ["rep", n] 	=> cept.repeat_last(u8::from_str(n).unwrap()),
+                    ["pal", n]		=> cept.set_palette(u8::from_str(n).unwrap()),
+                    ["fg", c]		=> cept.set_fg_color(u8::from_str(c).unwrap()),
+                    ["bg", c]		=> cept.set_bg_color(u8::from_str(c).unwrap()),
+                    ["lbg", c]		=> cept.set_line_bg_color(u8::from_str(c).unwrap()),
+                    ["sbg", c]		=> cept.set_screen_bg_color(u8::from_str(c).unwrap()),
+                    ["left","g0"]	=> cept.set_left_g0(),
+                    ["left","g3"]	=> cept.set_left_g3(),
+                    ["g0","drcs"]	=> cept.load_g0_drcs(),
+                    ["g0","g0"]		=> cept.load_g0_g0(),
+                    ["size","1"]	=> cept.normal_size(),
+                    ["height","2"]	=> cept.double_height(),
+                    ["width","2"]	=> cept.double_width(),
+                    ["size","2"]	=> cept.double_size(),
+                    ["u","1"]		=> cept.underline_off(),
+                    ["u","0"]		=> cept.underline_on(),
+                    ["hide"]		=> cept.hide_text(),
+                    ["9d"]		=> cept.code_9d(),
+                    ["9e"]		=> cept.code_9e(),
+                    ["fgs", c]		=> cept.set_fg_color_simple(u8::from_str(c).unwrap()),
+                    ["bgs", c]		=> cept.set_bg_color_simple(u8::from_str(c).unwrap()),
+                    ["lbgs", c]	=> cept.set_line_bg_color_simple(u8::from_str(c).unwrap()),
+                    ["sbgs", c]	=> cept.set_screen_bg_color_simple(u8::from_str(c).unwrap()),
+                    ["lfgs", c]	=> cept.set_line_fg_color_simple(u8::from_str(c).unwrap()),
+                    ["line"]        =>     {
+                        cept.set_left_g3();
+                        cept.set_fg_color(15); // should take color argument
+                        cept.repeat(b'Q', 40);
+                        cept.set_fg_color(7); // should use fg color stack
+                        cept.set_left_g0(); // should use charset stack
+                    },
+                    _ => {
+                        // warn, ignore
+                        println!("unsupported tag: {:?}", tag)
+                    }
+                }
+            } else {
+                if *c != '\r' && *c != '\n' {
+                    cept.add_str(&c.to_string());
+                }
+            }
+        }
+
+        cept
     }
 }
 

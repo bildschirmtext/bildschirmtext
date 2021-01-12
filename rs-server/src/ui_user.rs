@@ -287,7 +287,7 @@ fn create_add_user() -> Page {
                     "validate": true,
                     "width": 14
                 }
-            ],
+            ]
         },
         "links": [
             { "code": "0", "target": "0" },
@@ -295,47 +295,35 @@ fn create_add_user() -> Page {
             { "code": "2", "target": "89" },
             { "code": "5", "target": "810" }
         ],
-        "publisher_color": 7,
+        "publisher_color": 7
     }
     "#;
     let meta: Meta = serde_json::from_str(meta_str).unwrap();
-    let mut cept = Cept::new();
-    cept += create_title("Neuen Benutzer einrichten");
-    cept.add_raw(b"\r\n");
-    cept.add_str("Teilnehmernummer:");
-    cept.set_cursor(6, 29);
-    cept.add_str("-1");
-    cept.add_raw(b"\r\n");
-    cept.add_str("Anrede:");
-    cept.add_raw(b"\r\n");
-    cept.add_str("Name:");
-    cept.add_raw(b"\r\n");
-    cept.add_str("Vorname:");
-    cept.add_raw(b"\r\n");
-    cept.add_str("Straße:");
-    cept.add_raw(b"\r\n");
-    cept.add_str("PLZ:");
-    cept.repeat(b' ', 7);
-    cept.add_str("Ort:");
-    cept.set_cursor(11, 31);
-    cept.add_str("Land:");
-    cept.add_raw(b"\r\n");
-    cept += line();
-    cept.add_str("Vergütungssperre aktiv:");
-    cept.add_raw(b"\r\n");
-    cept.add_str("Gebührensperre   aktiv:");
-    cept.add_raw(b"\r\n");
-    cept.add_str("Taschengeldkonto      :");
-    cept.set_cursor(15, 35);
-    cept.add_str(",   DM");
-    cept.add_str("Max. Vergütung/Seite  :");
-    cept.set_cursor(16, 35);
-    cept.add_str(",   DM");
-    cept += line();
-    cept.add_raw(b"\r\n");
-    cept.add_str("Kennwort: ");
-    cept.add_raw(b"\r\n\r\n");
-    cept += line();
+    let cept = Cept::from_ceptml(
+        "<csr:2,1><pal:1><sbgs:4><g0:g0><left:g0><mode:p><pal:0><9e><n><r>\
+        <lbgs:4><n>\
+        <lbgs:4><pal:1><height:2><r>\
+        Neuen Benutzer einrichten<n><r>\
+        <pal:0><size:1><9e><fgs:7><r><n>\
+        Teilnehmernummer:<csr:6,29>-1<r><n>\
+        Anrede:<r><n>\
+        Name:<r><n>\
+        Vorname:<r><n>\
+        Straße:<r><n>\
+        PLZ: <rep:6>Ort: <rep:14>Land:<r><n>\
+        <line>\
+        Vergütungssperre aktiv:<r><n>\
+        Gebührensperre   aktiv:<r><n>\
+        Taschengeldkonto      :<csr:15,35>,   DM\
+        Max. Vergütung/Seite  :<csr:16,35>,   DM\
+        <line>\
+        <r><n>\
+        Kennwort:\
+        <r><n><r><n>\
+        <line>\
+        "
+    );
+    hexdump::hexdump(cept.data());
 
     Page {
         meta,
