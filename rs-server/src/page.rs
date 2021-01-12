@@ -40,9 +40,11 @@ pub struct Meta {
     pub links: Option<Vec<Link>>,
     pub publisher_color: Option<u8>,
     pub inputs: Option<Inputs>,
+    pub autoplay: Option<bool>,
+
+    // these are only uses by static pages
     pub palette: Option<String>,
     pub include: Option<String>,
-    pub autoplay: Option<bool>,
 }
 
 impl Meta {
@@ -90,13 +92,13 @@ impl Page {
 
     pub fn construct_page_cept(&self, client_state: &mut ClientState, pageid: &PageId) -> Cept {
         let mut cept;
-        cept = self.cept_preamble_from_meta(client_state, pageid);
+        cept = self.cept_preamble_from_meta(client_state);
         cept += self.cept_main_from_page(client_state, pageid);
         cept
     }
 
     //
-    fn cept_preamble_from_meta(&self, client_state: &mut ClientState, pageid: &PageId) -> Cept {
+    fn cept_preamble_from_meta(&self, client_state: &mut ClientState) -> Cept {
         let mut cept = Cept::new();
 
         cept.hide_cursor();

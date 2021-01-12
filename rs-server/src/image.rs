@@ -15,7 +15,7 @@ pub struct ImagePageSession {
     pageid: PageId,
 }
 
-pub fn new<'a>(pageid: PageId, _: User) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(arg: &str, pageid: PageId, _: User) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(ImagePageSession { pageid })
 }
 

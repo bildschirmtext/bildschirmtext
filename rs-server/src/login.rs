@@ -13,7 +13,7 @@ pub struct LoginPageSession {
     user: User,
 }
 
-pub fn new<'a>(pageid: PageId, user: User) -> Box<dyn PageSession<'a> + 'a> {
+pub fn new<'a>(arg: &str, pageid: PageId, user: User) -> Box<dyn PageSession<'a> + 'a> {
     Box::new(LoginPageSession { pageid, user })
 }
 

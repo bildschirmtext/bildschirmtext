@@ -10,51 +10,53 @@ use super::dispatch::*;
 
 pub struct StaticPageSession {
     pageid: PageId,
+    basedir: String,
 }
 
-pub fn new<'a>(pageid: PageId, _: User) -> Box<dyn PageSession<'a> + 'a> {
-    Box::new(StaticPageSession { pageid })
+pub fn new<'a>(arg: &str, pageid: PageId, _: User) -> Box<dyn PageSession<'a> + 'a> {
+    Box::new(StaticPageSession {
+        pageid,
+        basedir: arg.to_owned(),
+    })
 }
 
 impl<'a> PageSession<'a> for StaticPageSession {
     fn create(&self) -> Option<Page> {
-        if let Some((basedir, filename)) = find_basedir(&self.pageid) {
-            // read meta
-            let filename_meta = resource_filename(&basedir, &filename, "meta");
-            println!("filename_meta: {}", filename_meta);
-            let f = File::open(&filename_meta).ok()?;
-            let mut meta: Meta = serde_json::from_reader(f).ok()?;
+        let filename = self.pageid.to_string();
 
-            // read glob
-            let filename_glob = resource_filename(&basedir, "a", "glob");
-            println!("filename_glob: {}", filename_glob);
-            let f = File::open(&filename_glob).ok()?;
-            let glob_meta: Meta = serde_json::from_reader(f).ok()?;
+        // read meta
+        let filename_meta = resource_filename(&self.basedir, &filename, "meta");
+        println!("filename_meta: {}", filename_meta);
+        let f = File::open(&filename_meta).ok()?;
+        let mut meta: Meta = serde_json::from_reader(f).ok()?;
 
-            // global overrides local
-            meta.merge(glob_meta);
+        // read glob
+        let filename_glob = resource_filename(&self.basedir, "a", "glob");
+        println!("filename_glob: {}", filename_glob);
+        let f = File::open(&filename_glob).ok()?;
+        let glob_meta: Meta = serde_json::from_reader(f).ok()?;
 
-            // read text
-            let filename_cept = resource_filename(&basedir, &filename, "cept");
-            println!("filename_cept: {}", filename_cept);
-            let mut buf : Vec<u8> = vec!();
-            let mut f = File::open(&filename_cept).ok()?;
-            f.read_to_end(&mut buf).ok()?;
-            let mut cept = Cept::new();
-            cept.add_raw(&buf);
+        // global overrides local
+        meta.merge(glob_meta);
 
-            let cept_palette = load_palette(meta.palette.as_ref(), &basedir);
-            let cept_include = load_include(meta.include.as_ref(), &basedir);
+        // read text
+        let filename_cept = resource_filename(&self.basedir, &filename, "cept");
+        println!("filename_cept: {}", filename_cept);
+        let mut buf : Vec<u8> = vec!();
+        let mut f = File::open(&filename_cept).ok()?;
+        f.read_to_end(&mut buf).ok()?;
+        let mut cept = Cept::new();
+        cept.add_raw(&buf);
 
-            return Some(Page {
-                meta,
-                cept_palette,
-                cept_include,
-                cept,
-            });
-        }
+        let cept_palette = load_palette(meta.palette.as_ref(), &self.basedir);
+        let cept_include = load_include(meta.include.as_ref(), &self.basedir);
 
-        None
+        return Some(Page {
+            meta,
+            cept_palette,
+            cept_include,
+            cept,
+        });
     }
 
     fn validate(&self, _: &str, _: &HashMap<String, String>) -> ValidateResult {
@@ -68,41 +70,12 @@ impl<'a> PageSession<'a> for StaticPageSession {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-fn is_dir(path: &str) -> bool {
-    if let Ok(md) = metadata(path) {
-        md.is_dir()
-    } else {
-        false
-    }
-}
-
 pub fn is_file(path: &str) -> bool {
     if let Ok(md) = metadata(path) {
         md.is_file()
     } else {
         false
     }
-}
-
-pub fn find_basedir(pageid: &PageId) -> Option<(String, String)> {
-    let pageid_str = pageid.to_string();
-    let pageid = pageid_str.as_bytes();
-    for dir in [ "", "hist/10/", "hist/11/" ].iter() {
-        for i in (0..pageid.len()).rev() {
-            let mut testdir = String::new();
-            testdir += PATH_DATA;
-            testdir += dir;
-            testdir += std::str::from_utf8(&pageid[..i+1]).unwrap();
-            if is_dir(&testdir) {
-                let filename = std::str::from_utf8(&pageid[i+1..]).unwrap().to_owned();
-                println!("filename: {}", filename);
-                let mut basedir = testdir.clone();
-                basedir.push('/');
-                return Some((basedir, filename));
-            }
-        }
-    }
-    return None
 }
 
 fn resource_filename(basedir: &str, resource_name: &str, extention: &str) -> String {
