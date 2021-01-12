@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fs::File};
 use std::io::Read;
 use std::fs::metadata;
-use crate::user::*;
+use crate::{cept::Cept, user::*};
 
 use super::page::*;
 use super::session::*;
@@ -18,8 +18,6 @@ pub fn new<'a>(pageid: PageId, _: User) -> Box<dyn PageSession<'a> + 'a> {
 
 impl<'a> PageSession<'a> for StaticPageSession {
     fn create(&self) -> Option<Page> {
-        let mut cept = None;
-
         if let Some((basedir, filename)) = find_basedir(&self.pageid) {
             let mut basename = basedir.clone();
             basename += &filename;
@@ -34,26 +32,34 @@ impl<'a> PageSession<'a> for StaticPageSession {
             if is_file(&filename_meta) {
                 // read meta
                 println!("filename_meta: {}", filename_meta);
-                let f = File::open(&filename_meta).unwrap();
-                let mut meta: Meta = serde_json::from_reader(f).unwrap();
+                let f = File::open(&filename_meta).ok()?;
+                let mut meta: Meta = serde_json::from_reader(f).ok()?;
 
                 // read glob
                 println!("filename_glob: {}", filename_glob);
-                let f = File::open(&filename_glob).unwrap();
-                let glob_meta: Meta = serde_json::from_reader(f).unwrap();
+                let f = File::open(&filename_glob).ok()?;
+                let glob_meta: Meta = serde_json::from_reader(f).ok()?;
 
+                // global overrides local
                 meta.merge(glob_meta);
 
+                // read text
                 println!("filename_cept: {}", filename_cept);
-                if is_file(&filename_cept) {
-                    let mut buf : Vec<u8> = vec!();
-                    let mut f = File::open(&filename_cept).unwrap();
-                    f.read_to_end(&mut buf);
-                    cept = Some(buf);
-                }
-                let mut page = Page::new(meta);
-                page.cept.add_raw(&cept.unwrap());
-                return Some(page);
+                let mut buf : Vec<u8> = vec!();
+                let mut f = File::open(&filename_cept).ok()?;
+                f.read_to_end(&mut buf);
+                let mut cept = Cept::new();
+                cept.add_raw(&buf);
+
+                let cept_palette = load_palette(meta.palette.as_ref(), &basedir);
+                let cept_include = load_include(meta.include.as_ref(), &basedir);
+
+                return Some(Page {
+                    meta,
+                    cept_palette,
+                    cept_include,
+                    cept,
+                });
             }
         }
 
@@ -106,4 +112,61 @@ pub fn find_basedir(pageid: &PageId) -> Option<(String, String)> {
         }
     }
     return None
+}
+
+fn resource_filename(basedir: &str, resource_name: &str, extention: &str) -> String {
+    let mut filename = basedir.to_owned();
+    filename += resource_name;
+    filename.push('.');
+    filename += extention;
+    filename
+}
+
+fn load_palette(palette_name: Option<&String>, basedir: &str) -> Option<Cept> {
+    if let Some(palette_name) = palette_name {
+        let filename = resource_filename(basedir, palette_name, "pal");
+        println!("loading: {}", filename);
+        if let Ok(f) = File::open(&filename) {
+            let palette: Result<Palette, _> = serde_json::from_reader(f);
+            if let Ok(palette) = palette {
+                let mut cept = Cept::new();
+                cept.define_palette(&palette.palette, palette.start_color);
+                return Some(cept);
+            } else {
+                println!("ERROR reading palette file! [1]");
+                return None;
+            }
+        } else {
+            println!("ERROR reading palette file! [2]");
+            return None;
+        }
+    } else {
+        None
+    }
+}
+
+fn load_include(include_name: Option<&String>, basedir: &str) -> Option<Cept> {
+    if let Some(include_name) = include_name {
+        let filename = resource_filename(basedir, include_name, "inc");
+        let mut cept_include : Vec<u8> = vec!();
+        println!("loading: {}", filename);
+        if let Ok(mut f) = File::open(&filename) {
+            if let Ok(_) = f.read_to_end(&mut cept_include) {
+                // ok
+            } else {
+                println!("ERROR reading include file! [1]");
+            }
+        } else {
+            println!("ERROR creating user! [1]");
+        }
+        let mut cept = Cept::new();
+        // palette definition has to end with 0x1f; add one if
+        // the include data doesn't start with one
+        if cept_include[0] != 0x1f {
+            cept.set_cursor(1, 1)
+        }
+        cept.add_raw(&cept_include);
+        return Some(cept);
+    }
+    None
 }

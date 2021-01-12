@@ -140,14 +140,7 @@ fn create_logout() -> Page {
             Link::new("#", "00000"),
         )),
         publisher_color: Some(7),
-
-        publisher_name: None,
-        cls2: None,
-        parallel_mode: None,
-        inputs: None,
-        palette: None,
-        include: None,
-        autoplay: None,
+        ..Default::default()
     };
 
     let mut page = Page::new(meta);
@@ -200,13 +193,7 @@ fn create_start(user: &User) -> Page {
         clear_screen: Some(true),
         links: Some(links),
         publisher_color: Some(7),
-
-        publisher_name: None,
-        cls2: None,
-        parallel_mode: None,
-        inputs: None,
-        palette: None,
-        autoplay: None,
+        ..Default::default()
     };
 
     let now = Local::now();

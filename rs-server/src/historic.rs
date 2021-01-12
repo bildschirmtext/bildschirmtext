@@ -98,10 +98,7 @@ pub fn create_historic_main_page() -> Page {
             Link::new("#", "711"),
         ]),
         publisher_color: Some(7),
-        inputs: None,
-        palette: None,
-        include: None,
-        autoplay: None,
+        ..Default::default()
     };
 
     let mut page = Page::new(meta);
@@ -255,10 +252,7 @@ pub fn create_historic_overview(collection: i32, index: i32) -> Option<Page> {
         parallel_mode: None,
         links: Some(links),
         publisher_color: Some(7),
-        inputs: None,
-        palette: None,
-        include: None,
-        autoplay: None,
+        ..Default::default()
     };
 
     let mut page = Page::new(meta);

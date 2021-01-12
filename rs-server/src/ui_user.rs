@@ -338,7 +338,12 @@ fn create_add_user() -> Page {
     cept.add_raw(b"\r\n\r\n");
     cept += line();
 
-    Page { cept, meta }
+    Page {
+        meta,
+        cept_palette: None,
+        cept_include: None,
+        cept
+    }
 }
 
 fn callback_validate_user_id(_: &PageId, input_data: &HashMap<String, String>) -> ValidateResult {

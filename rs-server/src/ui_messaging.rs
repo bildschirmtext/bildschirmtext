@@ -143,12 +143,7 @@ fn messaging_create_main_menu() -> Page {
             Link::new("5", "810"),
         )),
         publisher_color: Some(7),
-
-        cls2: None,
-        parallel_mode: None,
-        inputs: None,
-        palette: None,
-        autoplay: None,
+        ..Default::default()
     };
 
     let cept = messaging_create_menu(
@@ -161,7 +156,12 @@ fn messaging_create_main_menu() -> Page {
             "Mitteilungen mit Alphatastatur"
         ]
     );
-    Page { meta, cept }
+    Page {
+        meta,
+        cept_palette: None,
+        cept_include: None,
+        cept
+    }
 }
 
 fn messaging_create_list(userid: &UserId, is_read: bool) -> Page {
@@ -207,7 +207,12 @@ fn messaging_create_list(userid: &UserId, is_read: bool) -> Page {
         publisher_color: Some(7),
         ..Default::default()
     };
-    Page { meta, cept }
+    Page {
+        meta,
+        cept_palette: None,
+        cept_include: None,
+        cept
+    }
 }
 
 fn messaging_create_message_detail(userid: &UserId, index: usize, is_read: bool) -> Option<Page> {
@@ -279,7 +284,12 @@ fn messaging_create_message_detail(userid: &UserId, index: usize, is_read: bool)
 
     messaging.mark_as_read(uuid);
 
-    Some(Page { meta, cept })
+    Some(Page {
+        meta,
+        cept_palette: None,
+        cept_include: None,
+        cept
+    })
 }
 
 fn messaging_create_compose(user: &User) -> Page {
@@ -386,5 +396,10 @@ fn messaging_create_compose(user: &User) -> Page {
         0x19,             // switch to G2 for one character
         0x2b, 0xfe, 0x7f, // "+."
     ]);
-    Page { meta, cept }
+    Page {
+        meta,
+        cept_palette: None,
+        cept_include: None,
+        cept
+    }
 }

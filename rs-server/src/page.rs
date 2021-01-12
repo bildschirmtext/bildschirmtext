@@ -1,6 +1,4 @@
-use std::{fs::File, io::Read};
 use serde::{Deserialize, Serialize};
-use crate::cept_page;
 
 use super::cept::*;
 use super::editor::*;
@@ -75,15 +73,19 @@ impl Meta {
 }
 
 pub struct Page {
-    pub cept: Cept,
     pub meta: Meta,
+    pub cept_palette: Option<Cept>,
+    pub cept_include: Option<Cept>,
+    pub cept: Cept,
 }
 
 impl Page {
     pub fn new(meta: Meta) -> Self {
         Self {
-            cept: Cept::new(),
             meta: meta,
+            cept_palette: None,
+            cept_include: None,
+            cept: Cept::new(),
         }
     }
 
@@ -108,20 +110,10 @@ impl Page {
             client_state.include = None;
         }
 
-        let mut cept_palette = None;
-        let mut cept_include = None;
-        if let Some(basedir) = find_basedir(pageid) {
-            let basedir = basedir.0;
-            cept_palette = load_palette(self.meta.palette.as_ref(), &basedir, client_state);
-            cept_include = load_include(self.meta.include.as_ref(), clear_screen, &basedir, client_state);
-        } else {
-            println!("ERROR: basedir not found!");
-        }
-
-        if let Some(cept_palette) = cept_palette {
+        if let Some(cept_palette) = &self.cept_palette {
             cept.add_raw(cept_palette.data());
         }
-        if let Some(cept_include) = cept_include {
+        if let Some(cept_include) = &self.cept_include {
             cept.add_raw(cept_include.data());
         }
 
@@ -232,71 +224,3 @@ pub fn format_currency(price: u32) -> String {
     format!("DM  {},{:02}", price / 100, price % 100)
 }
 
-fn resource_filename(basedir: &str, resource_name: &str, extention: &str) -> String {
-    let mut filename = basedir.to_owned();
-    filename += resource_name;
-    filename.push('.');
-    filename += extention;
-    filename
-}
-
-fn load_palette(palette_name: Option<&String>, basedir: &str, client_state: &mut ClientState) -> Option<Cept> {
-    if let Some(palette_name) = palette_name {
-        let filename = resource_filename(basedir, palette_name, "pal");
-        if Some(filename.clone()) != client_state.palette {
-            client_state.palette = Some(filename.clone());
-            println!("loading: {}", filename);
-            if let Ok(f) = File::open(&filename) {
-                let palette: Result<Palette, _> = serde_json::from_reader(f);
-                if let Ok(palette) = palette {
-                    let mut cept = Cept::new();
-                    cept.define_palette(&palette.palette, palette.start_color);
-                    return Some(cept);
-                } else {
-                    println!("ERROR reading palette file! [1]");
-                    return None;
-                }
-            } else {
-                println!("ERROR reading palette file! [2]");
-                return None;
-            }
-        } else {
-            println!("skipping palette");
-            return None;
-        }
-    } else {
-        None
-        // client_state.palette = None;
-    }
-}
-
-fn load_include(include_name: Option<&String>, clear_screen: Option<bool>, basedir: &str, client_state: &mut ClientState) -> Option<Cept> {
-    if let Some(include_name) = include_name {
-        let filename = resource_filename(basedir, include_name, "inc");
-        if Some(filename.clone()) != client_state.include || clear_screen == Some(true) {
-            client_state.include = Some(filename.clone());
-            let mut cept_include : Vec<u8> = vec!();
-            println!("loading: {}", filename);
-            if let Ok(mut f) = File::open(&filename) {
-                if let Ok(_) = f.read_to_end(&mut cept_include) {
-                    // ok
-                } else {
-                    println!("ERROR reading include file! [1]");
-                }
-            } else {
-                println!("ERROR creating user! [1]");
-            }
-            let mut cept = Cept::new();
-            // palette definition has to end with 0x1f; add one if
-            // the include data doesn't start with one
-            if cept_include[0] != 0x1f {
-                cept.set_cursor(1, 1)
-            }
-            cept.add_raw(&cept_include);
-            return Some(cept);
-        } else {
-            client_state.include = None;
-        }
-    }
-    None
-}

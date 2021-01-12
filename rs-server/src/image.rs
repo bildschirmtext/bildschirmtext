@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::TryInto};
+use std::{collections::HashMap};
 use image::{Pixel, imageops};
 use image::GenericImageView;
 use exoquant::*;
@@ -321,6 +321,11 @@ impl ImagePageSession {
             ..Default::default()
 		};
 
-        return Page { meta, cept };
+        return Page {
+            meta,
+            cept_palette: None,
+            cept_include: None,
+            cept
+         };
     }
 }
