@@ -96,6 +96,10 @@ const DISPATCH_TABLE: &[(&[u8], bool, PageSessionNewFn, &str, &str)] = &[
     (b"69010-",  false, PageSessionNewFn(super::staticp::new),      "../data/hist/11/69010/", "Deutscher Ind. Handelstag DIHT"),
     (b"353535-",  false, PageSessionNewFn(super::staticp::new),     "../data/hist/11/353535/", "START Telematik Tourismus Info"),
 
+    // Historic Pages (CCC)
+    (b"65532-",  false, PageSessionNewFn(super::staticp::new),     "../data/hist/ccc/65532/", "Chaos Computer Club"),
+    (b"65533-",  false, PageSessionNewFn(super::staticp::new),     "../data/hist/ccc/65533/", "Chaos Computer Club"),
+
     (b"*",  false, PageSessionNewFn(super::staticp::new),      "", ""), // will return None (XXX ugly)
 ];
 

@@ -118,7 +118,7 @@ impl Page {
             client_state.cept_include = None;
         }
 
-        Self::headerfooter(&mut cept, pageid, self.meta.publisher_name.as_deref(), self.meta.publisher_color.unwrap());
+        Self::headerfooter(&mut cept, pageid, self.meta.publisher_name.as_deref(), self.meta.publisher_color);
 
         if self.meta.parallel_mode == Some(true) {
             cept.parallel_mode();
@@ -127,7 +127,7 @@ impl Page {
         cept.add_raw(self.cept.data());
         cept.serial_limited_mode();
 
-        Self::headerfooter(&mut cept, pageid, self.meta.publisher_name.as_deref(), self.meta.publisher_color.unwrap());
+        Self::headerfooter(&mut cept, pageid, self.meta.publisher_name.as_deref(), self.meta.publisher_color);
 
         cept.sequence_end_of_page();
 
@@ -135,9 +135,10 @@ impl Page {
     }
 
 
-    pub fn headerfooter(cept: &mut Cept, pageid: &PageId, publisher_name: Option<&str>, publisher_color: u8) {
+    pub fn headerfooter(cept: &mut Cept, pageid: &PageId, publisher_name: Option<&str>, publisher_color: Option<u8>) {
         let mut hide_price = false;
         let mut publisher_name = publisher_name;
+        let publisher_color = publisher_color.unwrap_or(7);
 
         let hide_header_footer = if let Some(p) = publisher_name {
             // Early screenshots had a two-line publisher name with
@@ -161,7 +162,7 @@ impl Page {
         cept.set_res_40_24();
         cept.set_cursor(23, 1);
         cept.unprotect_line();
-        cept.set_line_fg_color(12);
+        cept.set_line_fg_color_simple(12);
         cept.parallel_limited_mode();
         cept.set_cursor(24, 1);
         cept.unprotect_line();

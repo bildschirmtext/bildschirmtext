@@ -5,7 +5,6 @@ use crate::{cept::Cept, user::*};
 
 use super::page::*;
 use super::session::*;
-use super::paths::*;
 use super::dispatch::*;
 
 pub struct StaticPageSession {

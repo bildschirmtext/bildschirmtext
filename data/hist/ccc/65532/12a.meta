@@ -1,0 +1,46 @@
+{
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "02",
+            "target": "655321211a"
+        },
+        {
+            "code": "03",
+            "target": "655321212a"
+        },
+        {
+            "code": "#",
+            "target": "655320000000004a"
+        },
+        {
+            "code": "06",
+            "target": "655321215a"
+        },
+        {
+            "code": "07",
+            "target": "655321216a"
+        },
+        {
+            "code": "04",
+            "target": "655321213a"
+        },
+        {
+            "code": "05",
+            "target": "655321214a"
+        },
+        {
+            "code": "08",
+            "target": "655321217a"
+        },
+        {
+            "code": "00",
+            "target": "655321a"
+        },
+        {
+            "code": "90",
+            "target": "6553219a"
+        }
+    ],
+    "publisher_name": "Chaos Computer Club"
+}

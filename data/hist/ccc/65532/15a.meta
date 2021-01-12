@@ -1,0 +1,34 @@
+{
+    "clear_screen": false,
+    "links": [
+        {
+            "code": "#",
+            "target": "6553214a"
+        },
+        {
+            "code": "1",
+            "target": "6553212001a"
+        },
+        {
+            "code": "0",
+            "target": "655321a"
+        },
+        {
+            "code": "3",
+            "target": "655322a"
+        },
+        {
+            "code": "2",
+            "target": "6553212006a"
+        },
+        {
+            "code": "4",
+            "target": "655329a"
+        },
+        {
+            "code": "9",
+            "target": "6553219a"
+        }
+    ],
+    "publisher_name": "Chaos Computer Club"
+}
