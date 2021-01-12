@@ -422,12 +422,12 @@ impl Cept {
 
 	pub fn repeat(&mut self, c: u8, n: u8) {
         self.data.push(c);
-        self.repeat_last(n - 1);
+        self.repeat_last(n);
     }
 
 	pub fn repeat_last(&mut self, n: u8) {
         self.data.push(0x12);
-        self.data.push(0x40 + n);
+        self.data.push(0x40 + n - 1);
     }
 
     pub fn define_palette<T: AsRef<str>>(&mut self, palette: &[T], start_color: Option<u8>) {
@@ -675,13 +675,6 @@ impl Cept {
                     ["lbgs", c]	=> cept.set_line_bg_color_simple(u8::from_str(c).unwrap()),
                     ["sbgs", c]	=> cept.set_screen_bg_color_simple(u8::from_str(c).unwrap()),
                     ["lfgs", c]	=> cept.set_line_fg_color_simple(u8::from_str(c).unwrap()),
-                    ["line"]        =>     {
-                        cept.set_left_g3();
-                        cept.set_fg_color(15); // should take color argument
-                        cept.repeat(b'Q', 40);
-                        cept.set_fg_color(7); // should use fg color stack
-                        cept.set_left_g0(); // should use charset stack
-                    },
                     _ => {
                         // warn, ignore
                         println!("unsupported tag: {:?}", tag)

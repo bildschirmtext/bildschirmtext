@@ -55,42 +55,6 @@ impl<'a> PageSession<'a> for UsersPageSession {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-fn line() -> Cept {
-    let mut cept = Cept::new();
-    cept.set_left_g3();
-    cept.set_fg_color(15);
-    cept.repeat(b'Q', 40);
-    cept.set_fg_color(7);
-    cept.set_left_g0();
-    cept
-}
-
-fn create_title(title: &str) -> Cept {
-    let mut cept = Cept::new();
-    cept.set_cursor(2, 1);
-    cept.set_palette(1);
-    cept.set_screen_bg_color_simple(4);
-    cept.load_g0_g0();
-    cept.set_left_g0();
-    cept.parallel_mode();
-    cept.set_palette(0);
-    cept.code_9e();
-    cept.add_raw(b"\n\r");
-    cept.set_line_bg_color_simple(4);
-    cept.add_raw(b"\n");
-    cept.set_line_bg_color_simple(4);
-    cept.set_palette(1);
-    cept.double_height();
-    cept.add_raw(b"\r");
-    cept.add_str(title);
-    cept.add_raw(b"\n\r");
-    cept.set_palette(0);
-    cept.normal_size();
-    cept.code_9e();
-    cept.set_fg_color_simple(7);
-    cept
-}
-
 fn create_add_user() -> Page {
     let meta_str = r#"
     {
@@ -300,31 +264,27 @@ fn create_add_user() -> Page {
     "#;
     let meta: Meta = serde_json::from_str(meta_str).unwrap();
     let cept = Cept::from_ceptml(
-        "<csr:2,1><pal:1><sbgs:4><g0:g0><left:g0><mode:p><pal:0><9e><n><r>\
-        <lbgs:4><n>\
-        <lbgs:4><pal:1><height:2><r>\
+        "<csr:2,1><pal:1><sbgs:4><g0:g0><left:g0><mode:p><pal:0><9e><n><r><lbgs:4><n><lbgs:4><pal:1><height:2><r>\
         Neuen Benutzer einrichten<n><r>\
         <pal:0><size:1><9e><fgs:7><r><n>\
+
         Teilnehmernummer:<csr:6,29>-1<r><n>\
         Anrede:<r><n>\
         Name:<r><n>\
         Vorname:<r><n>\
         Straße:<r><n>\
-        PLZ: <rep:6>Ort: <rep:14>Land:<r><n>\
-        <line>\
+        PLZ: <rep:7>Ort: <rep:15>Land:<r><n>\
+        <left:g3><fg:15>Q<rep:40><fg:7><left:g0>\
         Vergütungssperre aktiv:<r><n>\
         Gebührensperre   aktiv:<r><n>\
         Taschengeldkonto      :<csr:15,35>,   DM\
         Max. Vergütung/Seite  :<csr:16,35>,   DM\
-        <line>\
+        <left:g3><fg:15>Q<rep:40><fg:7><left:g0>\
         <r><n>\
         Kennwort:\
         <r><n><r><n>\
-        <line>\
-        "
+        <left:g3><fg:15>Q<rep:40><fg:7><left:g0>"
     );
-    hexdump::hexdump(cept.data());
-
     Page {
         meta,
         cept_palette: None,
