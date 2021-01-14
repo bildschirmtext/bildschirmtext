@@ -170,7 +170,7 @@ impl Image {
         // }
 
 		// resample
-		let image = image.resize(res_x * 6, res_y * 10, imageops::FilterType::Lanczos3);
+        let image = image.resize_exact(res_x * 6, res_y * 10, imageops::FilterType::Lanczos3);
 
         // convert to custom colors
         // image to exoquant conversion by https://github.com/myfreeweb/imgroll
@@ -206,7 +206,7 @@ impl Image {
             si.palette.push(format!("#{:02x}{:02x}{:02x}", r, g, b));
         }
 
-//		println!("si.palette: {}", pprint.pformat(si.palette))
+		// println!("si.palette: {:?}", si.palette);
 
 		// create drcs
 		si.drcs = Cept::new();
@@ -228,7 +228,7 @@ impl Image {
 						let mut byte: u8 = 0;
 						for x in 0..6 {
 							byte <<= 1;
-                            byte |= (indexed_pixels[((base_x + x) + res_y * (base_y + y)) as usize] >> bitno) & 1;
+                            byte |= (indexed_pixels[((base_x + x) + (res_x * 6) * (base_y + y)) as usize] >> bitno) & 1;
                         }
 						byte |= 0x40;
                         drcs_block.push(byte);
@@ -295,7 +295,7 @@ impl ImagePageSession {
 //		filename = "/Users/mist/Desktop/RGB_24bits_palette_sample_image.jpg"
 //		filename = "/Users/mist/Desktop/Lenna_(test_image).png"
 //		filename = "/Users/mist/Desktop/Wikipedia_logo_593.jpg"
-		let filename = "/Users/mist/Desktop/test.jpg";
+		let filename = "/Users/mist/Desktop/test.png";
 
         let image = Image::new(filename, None, None).unwrap();
 		// let (palette, drcs, chars) = Image_UI.cept_from_image(filename);
