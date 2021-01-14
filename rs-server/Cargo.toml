@@ -10,8 +10,8 @@ codegen-units = 1
 opt-level = 'z'  # Optimize for size.
 panic = 'abort'
 
-[profile.dev.package."*"] # all dependencies
-opt-level = 3
+#[profile.dev.package."*"] # all dependencies
+#opt-level = 3
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
