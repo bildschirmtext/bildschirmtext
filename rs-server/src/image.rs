@@ -79,7 +79,7 @@ impl Image {
     }
 
 	fn new(url: &str, num_colors: Option<u8>, drcs_start: Option<u8>) -> Option<Self> {
-        let num_colors = num_colors.unwrap_or(16);
+        let mut num_colors = num_colors.unwrap_or(16);
         let drcs_start = drcs_start.unwrap_or(0x21);
 
 		if url == "" {
@@ -95,14 +95,10 @@ impl Image {
 		let (width, height) = image.dimensions();
 		println!("color: {:?}, resolution: {}*{}", image.color(), width, height);
 
-		let is_grayscale = !image.color().has_color();
-
 		// 4 shades of gray instead of 16, but double resolution
-		// disabled, PIL doesn't select good base colors
-//		if is_grayscale:
-//			num_colors = 4
-		// TODO: calling ImageMagick might give better results:
-		// e.g. $ convert in.jpg -resize 54x80\! -dither FloydSteinberg -colors 16 out.png
+		if !image.color().has_color() {
+            num_colors = 4;
+        }
 
 		println!("target colors: {}", num_colors);
 
@@ -112,7 +108,8 @@ impl Image {
         }
         let num_drcs_f32 = num_drcs as f32;
 
-		// calculate character resolution
+        // calculate character resolution
+        // TODO: if source image is small enough, don't resize!
 		let exact_res_x = (num_drcs_f32 * width as f32 / height as f32).sqrt();
 		let exact_res_y = (num_drcs_f32 * height as f32 / width as f32).sqrt();
 		let aspect_ratio = width as f32 / height as f32 / PIXEL_ASPECT_RATIO;
@@ -161,14 +158,6 @@ impl Image {
 
 		println!("char resolution:   {}*{}, error: {}", res_x, res_y, error);
 
-		// // remove alpha
-		// if image.color().has_alpha() {
-		// 	let background = Image.new("RGB", image.size, (255, 255, 255));
-		// 	let index = if image.mode == "RGBA" { 3 } else { 1 };
-		// 	background.paste(image, mask=image.split()[index]);
-        //     image = background;
-        // }
-
 		// resample
         let image = image.resize_exact(res_x * 6, res_y * 10, imageops::FilterType::Lanczos3);
 
@@ -189,8 +178,6 @@ impl Image {
             &optimizer::KMeans,
             &ditherer::FloydSteinberg::checkered(),
         );
-
-		// image.save("/tmp/x.png");
 
         let mut si = Image {
             palette: vec!(),
@@ -234,8 +221,9 @@ impl Image {
                         drcs_block.push(byte);
                     }
 
-					// compression
-					// drcs_block = Image::compress(drcs_block);
+                    // compression
+                    // TODO buggy
+					// drcs_block = Image::compress(&drcs_block);
 
 //					println!("drcs_block: {}", pprint.pformat(drcs_block))
                     si.drcs.add_raw(&drcs_block)
@@ -292,13 +280,9 @@ impl Image {
 
 impl ImagePageSession {
 	fn create_image_page(&self) -> Page {
-//		filename = "/Users/mist/Desktop/RGB_24bits_palette_sample_image.jpg"
-//		filename = "/Users/mist/Desktop/Lenna_(test_image).png"
-//		filename = "/Users/mist/Desktop/Wikipedia_logo_593.jpg"
-		let filename = "/Users/mist/Desktop/test.png";
+		let filename = "../data/55/wikipedia.png";
 
-        let image = Image::new(filename, None, None).unwrap();
-		// let (palette, drcs, chars) = Image_UI.cept_from_image(filename);
+        let image = Image::new(filename, Some(4), None).unwrap();
 
 		let mut cept = Cept::new();
 		cept.define_palette(&image.palette, None);
