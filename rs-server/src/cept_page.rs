@@ -1,4 +1,6 @@
-use scraper::{ElementRef, Html, Selector};
+use select::document::Document;
+use select::node::Node;
+use select::predicate::{Class, Name, Predicate};
 use std::str::FromStr;
 use super::cept::*;
 
@@ -393,11 +395,11 @@ impl CeptPage {
 
 struct CeptFromHtmlGenerator {
     cept_page: CeptPage,
-	link_index: Option<u32>,
+	link_index: usize,
 	wiki_link_targets: Vec<String>,
-	page_and_link_index_for_link: Vec<String>,
+	page_and_link_index_for_link: Vec<(usize, usize)>,
 	first_paragraph: bool,
-	link_count: u32,
+	link_count: usize,
 	links_for_page: Vec<String>,
 	pageid_base: Option<String>,
 	ignore_lf: bool,
@@ -405,28 +407,30 @@ struct CeptFromHtmlGenerator {
 }
 
 impl CeptFromHtmlGenerator {
-	// fn insert_toc(&mut self, html: &ElementRef) {
-    //     self.page_and_link_index_for_link = vec!();
-	// 	for t1 in html.children() {
-	// 		if t1.value().is_element() && ["h2", "h3", "h4", "h5", "h6"].contains(&t1.value().as_element().unwrap().name()) {
-	// 			if self.cept_page.current_sheet() != self.cept_page.prev_sheet {
-	// 				self.link_index = Some(10);
-	// 			}
-	// 			let xx = t1.value().as_element().unwrap().name();
-	// 			let mut xx = xx.to_owned();
-	// 			xx.remove(0);
-	// 			let level = usize::from_str(&xx).unwrap();
-	// 			// non-breaking space, otherwise it will be filtered at the beginning of lines
-	// 			let indent = b"\xa0\xa0".repeat(level - 2);
-	// 			let entry = indent + t1.get_text().replace("\n", "");
-	// 			padded = entry + ("." * 36);
-	// 			padded = padded[..36];
-	// 			self.print(padded + "[" + str(self.link_index) + "]");
-	// 			self.page_and_link_index_for_link.append((self.current_sheet(), self.link_index));
-    //             self.link_index += 1;
-    //         }
-    //     }
-    // }
+	fn insert_toc(&mut self, node: &Node) {
+        self.page_and_link_index_for_link = vec!();
+		for t1 in node.children() {
+			if ["h2", "h3", "h4", "h5", "h6"].contains(&t1.name().unwrap()) {
+				if self.cept_page.current_sheet() != self.cept_page.prev_sheet {
+					self.link_index = 10;
+				}
+				let mut xx = t1.name().unwrap().to_owned();
+				xx.remove(0);
+				let level = usize::from_str(&xx).unwrap();
+				// non-breaking space, otherwise it will be filtered at the beginning of lines
+				let mut text = "\u{00a0}\u{00a0}".repeat(level - 2);
+				text.push_str(&t1.text().replace("\n", ""));
+				text.push_str(&(".".repeat(36)));
+				let mut text = text[..36].to_owned();
+				text.push('[');
+				text.push_str(&self.link_index.to_string());
+				text.push(']');
+				self.cept_page.print(&text, false);
+				self.page_and_link_index_for_link.push((self.cept_page.current_sheet(), self.link_index));
+                self.link_index += 1;
+            }
+        }
+    }
 
 // 	fn insert_html_tags(&mut self, tags: Vec<String>) {
 // 		for t1 in tags {
