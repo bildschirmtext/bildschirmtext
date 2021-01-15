@@ -1,4 +1,62 @@
-// use std::collections::HashMap;
+use std::{collections::HashMap, fs::File};
+use select::{document::Document, predicate::Name};
+use serde_json::Value;
+
+use crate::{dispatch::PageSession, page::{Meta, Page}, session::{PageId, UserRequest, ValidateResult}, user::User};
+use crate::cept_page::*;
+
+pub struct MediaWikiPageSession {
+    pageid: PageId,
+    basedir: String,
+}
+
+pub fn new<'a>(arg: &str, pageid: PageId, _: User) -> Box<dyn PageSession<'a> + 'a> {
+    Box::new(MediaWikiPageSession {
+        pageid,
+        basedir: arg.to_owned(),
+    })
+}
+
+impl<'a> PageSession<'a> for MediaWikiPageSession {
+    fn create(&self) -> Option<Page> {
+        let f = File::open("/Users/mist/Desktop/bee.json").unwrap();
+        let json: Value = serde_json::from_reader(f).unwrap();
+        let parse = json.get("parse").unwrap();
+        let pageid = parse.get("pageid").unwrap().to_string();
+        let text = parse.get("text").unwrap().get("*").unwrap().to_string();
+        let title = parse.get("title").unwrap().to_string();
+        println!("{}", title);
+        println!("{}", pageid);
+        // println!("{}", text);
+        let document = Document::from_read(text.as_bytes()).unwrap();
+
+        let mut generator = CeptFromHtmlGenerator::new();
+        generator.insert_html_tags(document.find(Name("div")).next().unwrap().children());
+
+        Some(Page {
+            meta: Meta {
+                clear_screen: Some(true),
+                parallel_mode: Some(true),
+                publisher_color: Some(7),
+                ..Default::default()
+            },
+            cept_palette: None,
+            cept_include: None,
+            cept: generator.cept_page.data_cept,
+        })
+
+    }
+
+    fn validate(&self, _: &str, _: &HashMap<String, String>) -> ValidateResult {
+        unreachable!()
+    }
+
+    fn send(&self, _: &HashMap<String, String>) -> UserRequest {
+        unreachable!()
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 // struct MediaWiki {
 // 	wiki_url: String,

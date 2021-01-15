@@ -5,6 +5,7 @@ mod editor;
 mod historic;
 mod image;
 mod login;
+mod mediawiki;
 mod messaging;
 mod page;
 mod paths;

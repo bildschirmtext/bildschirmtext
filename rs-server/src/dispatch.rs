@@ -104,6 +104,9 @@ const DISPATCH_TABLE: &[(&[u8], bool, PageSessionNewFn, &str, &str)] = &[
     (b"1049-",  false, PageSessionNewFn(super::staticp::new),     "../data/test1/", "Test"),
     (b"1909-",  false, PageSessionNewFn(super::staticp::new),     "../data/test2/", "Test"),
 
+    // MediaWiki
+    (b"555-",  false, PageSessionNewFn(super::mediawiki::new), "", "Wikipedia"),
+
     (b"*",  false, PageSessionNewFn(super::staticp::new),      "", ""), // will return None (XXX ugly)
 ];
 

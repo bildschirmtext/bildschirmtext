@@ -10,12 +10,12 @@ struct Image {
     drcs: Cept,
 }
 
-struct CeptPage {
+pub struct CeptPage {
     title: String,
 	x: usize,
 	y: usize,
 	lines_cept: Vec<Cept>,
-	data_cept: Cept,
+	pub data_cept: Cept,
 	italics: bool,
 	bold: bool,
 	link: bool,
@@ -393,8 +393,8 @@ impl CeptPage {
     }
 }
 
-struct CeptFromHtmlGenerator {
-    cept_page: CeptPage,
+pub struct CeptFromHtmlGenerator {
+    pub cept_page: CeptPage,
 	link_index: usize,
 	wiki_link_targets: HashMap<usize, HashMap<usize, String>>,
 	page_and_link_index_for_link: Vec<(usize, usize)>,
@@ -407,6 +407,22 @@ struct CeptFromHtmlGenerator {
 }
 
 impl CeptFromHtmlGenerator {
+	pub fn new() -> Self {
+		Self {
+			cept_page: CeptPage::new(),
+			link_index: 0,
+			wiki_link_targets: HashMap::new(),
+			page_and_link_index_for_link: vec!(),
+			first_paragraph: false,
+			link_count: 0,
+			links_for_page: HashMap::new(),
+			pageid_base: None,
+			ignore_lf: false,
+			article_prefix: None,
+		}
+	}
+
+
 	fn insert_toc(&mut self, node: &Node) {
         self.page_and_link_index_for_link = vec!();
 		for t1 in node.children() {
@@ -436,7 +452,7 @@ impl CeptFromHtmlGenerator {
 	// where
 	// 	I: Iterator<Item = &'a Node<'a>>
 	// {
-	fn insert_html_tags(&mut self, tags: Children) {
+	pub fn insert_html_tags(&mut self, tags: Children) {
 		for t1 in tags {
 			match t1.name() {
 				Some("p") => {
