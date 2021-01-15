@@ -1,7 +1,7 @@
-use select::document::Document;
+use select::{document::Document, node::Children};
 use select::node::Node;
 use select::predicate::{Class, Name, Predicate};
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 use super::cept::*;
 
 struct Image {
@@ -396,11 +396,11 @@ impl CeptPage {
 struct CeptFromHtmlGenerator {
     cept_page: CeptPage,
 	link_index: usize,
-	wiki_link_targets: Vec<String>,
+	wiki_link_targets: HashMap<usize, HashMap<usize, String>>,
 	page_and_link_index_for_link: Vec<(usize, usize)>,
 	first_paragraph: bool,
 	link_count: usize,
-	links_for_page: Vec<String>,
+	links_for_page: HashMap<usize, HashMap<String, String>>,
 	pageid_base: Option<String>,
 	ignore_lf: bool,
 	article_prefix: Option<String>,
@@ -432,82 +432,96 @@ impl CeptFromHtmlGenerator {
         }
     }
 
-// 	fn insert_html_tags(&mut self, tags: Vec<String>) {
-// 		for t1 in tags {
-// 			if t1.name == "p" {
-// 				self.insert_html_tags(t1.children);
-// 				self.print("\n");
+	// fn insert_html_tags<'a, I>(&mut self, tags: I)
+	// where
+	// 	I: Iterator<Item = &'a Node<'a>>
+	// {
+	fn insert_html_tags(&mut self, tags: Children) {
+		for t1 in tags {
+			match t1.name() {
+				Some("p") => {
+					self.insert_html_tags(t1.children());
+					self.cept_page.print("\n", false);
 
-// 				if self.first_paragraph {
-// 					self.first_paragraph = false;
-// 					self.insert_toc(self.html);
-// //					sys.stderr.write("self.page_and_link_index_for_link: " + pprint.pformat(self.page_and_link_index_for_link) + "\n")
-//                     self.print("\n");
-//                 }
-//             } else if ["h2", "h3", "h4", "h5", "h6"].contains(t1.name) {
-// 				level = int(t1.name[1]);
-// 				self.print_heading(level, t1.contents[0].get_text().replace("\n", ""));
-// 				if self.page_and_link_index_for_link { // only if there is a TOC
-// 					(link_page, link_name) = self.page_and_link_index_for_link[self.link_count];
-// 					self.link_count += 1;
-// 					while len(self.links_for_page) < link_page + 1 {
-//                         self.links_for_page.append({})
-//                     }
-//                     self.links_for_page[link_page][str(link_name)] = self.pageid_base + chr(0x61 + self.current_sheet())
-//                 }
-//             } else if t1.name.is_none() {
-// 				self.print(t1, self.ignore_lf)
-// 			} else if t1.name == "span" {
-// 				self.print(t1.get_text(), self.ignore_lf)
-// 			} else if t1.name == "i" {
-// 				self.set_italics_on();
-// 				self.print(t1.get_text(), self.ignore_lf);
-// 				self.set_italics_off();
-// 			} else if t1.name == "b" {
-// 				self.set_bold_on();
-// 				self.print(t1.get_text(), self.ignore_lf);
-// 				self.set_bold_off();
-// 			} else if t1.name == "a" {
-// 				if t1["href"].startswith(self.article_prefix) { // links to different article
-// 					if self.current_sheet() != self.prev_sheet {
-// 						self.link_index = 10;
-// 						// TODO: this breaks if the link
-//                         // goes across two sheets!
-//                     }
+					// if self.first_paragraph {
+					// 	self.first_paragraph = false;
+					// 	self.insert_toc(self.html);
+					// 	self.cept_page.print("\n", false);
+					// }
+				},
+				Some("h2") | Some("h3") | Some("h4") | Some("h5") | Some("h6") => {
+					let mut xx = t1.name().unwrap().to_owned();
+					xx.remove(0);
+					let level = i32::from_str(&xx).unwrap();
+					self.cept_page.print_heading(level, &t1.text().replace("\n", ""));
+					// if !self.page_and_link_index_for_link.is_empty() { // only if there is a TOC
+					// 	let (link_page, link_name) = self.page_and_link_index_for_link[self.link_count];
+					// 	self.link_count += 1;
+					// 	self.links_for_page[&link_page][&link_name.to_string()] = self.pageid_base.unwrap() + &((b'a' + self.cept_page.current_sheet() as u8) as char).to_string();
+					// }
+				},
+				None => {
+					self.cept_page.print(&t1.text(), self.ignore_lf)
+				},
+				Some("span") => {
+					self.cept_page.print(&t1.text(), self.ignore_lf)
+				},
+				Some("i") => {
+					self.cept_page.set_italics_on();
+					self.cept_page.print(&t1.text(), self.ignore_lf);
+					self.cept_page.set_italics_off();
+				},
+				Some("b") => {
+					self.cept_page.set_bold_on();
+					self.cept_page.print(&t1.text(), self.ignore_lf);
+					self.cept_page.set_bold_off();
+				},
+				// Some("a") => {
+				// 	if t1.attr("href").unwrap().starts_with(&self.article_prefix.unwrap()) { // links to different article
+				// 		if self.cept_page.current_sheet() != self.cept_page.prev_sheet {
+				// 			self.link_index = 10;
+				// 			// TODO: this breaks if the link
+				// 			// goes across two sheets!
+				// 		}
 
-// 					while len(self.wiki_link_targets) < self.current_sheet() + 1 {
-//                         self.wiki_link_targets.append({});
-//                     }
-// 					self.wiki_link_targets[self.current_sheet()][self.link_index] = t1["href"][len(self.article_prefix)..];
+				// 		self.wiki_link_targets[&self.cept_page.current_sheet()][&self.link_index] = t1.attr("href").unwrap().to_owned();
+				// 		//XXX[self.article_prefix.len()..];
 
-// 					link_text = t1.get_text().replace("\n", "") + " [" + str(self.link_index) + "]";
-// 					self.set_link_on();
-// 					self.print(link_text);
-// 					self.link_index += 1;
-//                     self.set_link_off();
-//                 } else { // link to section or external link, just print the text
-//                     self.print(t1.get_text(), self.ignore_lf);
-//             }
-//             } else if t1.name == "ul" {
-//             self.insert_html_tags(t1.children)
-//             } else if t1.name == "ol" {
-//                 self.insert_html_tags(t1.children)
-//             } else if t1.name == "code" {
-//                 self.set_code_on();
-//                 self.insert_html_tags(t1.children);
-//                 self.set_code_off();
-//             } else if t1.name == "li" {
-//                 // TODO indentation
-//                 self.print("* "); // TODO: ordered list
-//                 self.insert_html_tags(t1.children);
-//                 self.print("\n");
-//             } else if t1.name == "pre" {
-//                 self.ignore_lf = false;
-//                 self.insert_html_tags(t1.children);
-//                 self.ignore_lf = true;
-//             } else {
-//                 sys.stderr.write("ignoring tag: " + pprint.pformat(t1.name) + "\n")
-//             }
-//         }
-    // }
+				// 		let link_text = t1.text().replace("\n", "") + " [" + &self.link_index.to_string() + "]";
+				// 		self.cept_page.set_link_on();
+				// 		self.cept_page.print(&link_text, false);
+				// 		self.link_index += 1;
+				// 		self.cept_page.set_link_off();
+				// 	} else { // link to section or external link, just print the text
+				// 		self.cept_page.print(&t1.text(), self.ignore_lf);
+				// 	}
+				// },
+				Some("ul") => {
+					self.insert_html_tags(t1.children())
+				},
+				Some("ol") => {
+					self.insert_html_tags(t1.children())
+				},
+				Some("code") => {
+					self.cept_page.set_code_on();
+					self.insert_html_tags(t1.children());
+					self.cept_page.set_code_off();
+				},
+				Some("li") => {
+					// TODO indentation
+					self.cept_page.print("* ", false); // TODO: ordered list
+					self.insert_html_tags(t1.children());
+					self.cept_page.print("\n", false);
+				},
+				Some("pre") => {
+					self.ignore_lf = false;
+					self.insert_html_tags(t1.children());
+					self.ignore_lf = true;
+				},
+				_ => {
+					println!("ignoring tag: {:?}", t1.name());
+				}
+			}
+        }
+    }
 }

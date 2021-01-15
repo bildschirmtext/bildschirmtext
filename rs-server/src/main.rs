@@ -29,23 +29,23 @@ use session::*;
 
 
 fn main() {
-    let f = File::open("/Users/mist/Desktop/bee.json").unwrap();
-    let json: Value = serde_json::from_reader(f).unwrap();
-    let parse = json.get("parse").unwrap();
-    let pageid = parse.get("pageid").unwrap().to_string();
-    let text = parse.get("text").unwrap().get("*").unwrap().to_string();
-    let title = parse.get("title").unwrap().to_string();
-    println!("{}", title);
-    println!("{}", pageid);
-    // println!("{}", text);
-    let document = Document::from_read(text.as_bytes()).unwrap();
+    // let f = File::open("/Users/mist/Desktop/bee.json").unwrap();
+    // let json: Value = serde_json::from_reader(f).unwrap();
+    // let parse = json.get("parse").unwrap();
+    // let pageid = parse.get("pageid").unwrap().to_string();
+    // let text = parse.get("text").unwrap().get("*").unwrap().to_string();
+    // let title = parse.get("title").unwrap().to_string();
+    // println!("{}", title);
+    // println!("{}", pageid);
+    // // println!("{}", text);
+    // let document = Document::from_read(text.as_bytes()).unwrap();
 
-    // println!("{:?}", document.nth(1));
+    // // println!("{:?}", document.nth(1));
 
 
-    for c in document.find(Name("div")).next().unwrap().children() {
-        println!("{:?}", c.name());
-    }
+    // for c in document.find(Name("div")).next().unwrap().children() {
+    //     println!("{:?}", c.name());
+    // }
 
 
 
@@ -88,7 +88,7 @@ fn main() {
     // // for (i, child) in c.enumerate() {
     // //     println!("    {} {:?}", i, child.value());
     // // }
-    exit(0);
+    // exit(0);
 
 
     let listener = TcpListener::bind("127.0.0.1:20000").unwrap();
