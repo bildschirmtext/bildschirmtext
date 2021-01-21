@@ -116,22 +116,17 @@ impl CeptPage {
     }
 
     fn print_internal(&mut self, s: &str) {
-		if s == "" {
-            return
-        }
-
-        let mut s = s;
+		let mut s = s;
 
 		while s.len() != 0 {
-            let index = s.chars().position(|c| c == ' ');
-            let mut ends_in_space = index.is_some();
+			// let split = s.splitn(1, |c: char| c.is_whitespace()).collect();
+
+
+            let index = s.chars().position(char::is_whitespace);
+            let ends_in_space = index.is_some();
             let mut index = index.unwrap_or(s.len());
 
-			let line_width = if self.y < self.title_image_height {
-				40 - self.title_image_width
-            } else {
-                40
-            };
+			let line_width = 40 - if self.y < self.title_image_height { self.title_image_width } else { 0 };
 
             let new_s = if index >= 40 {
 				// it wouldn't ever fit, break it
@@ -140,7 +135,13 @@ impl CeptPage {
 				Some(&s[index..])
             } else {
                 None
-            };
+			};
+
+			let index2 = if index + 1 <= s.len() {
+				index + 1
+			} else {
+				index
+			};
 
 			if index == 0 && self.x == 0 {
 				// starts with space and we're at the start of a line
@@ -150,7 +151,7 @@ impl CeptPage {
 				// word doesn't fit, print it (plus the space)
 				// into a new line
 				self.print_newline();
-				self.add_string(&s[..index + 1]);
+				self.add_string(&s[..index2]);
 				self.x += index;
 				if ends_in_space {
                     self.x += 1
@@ -158,7 +159,7 @@ impl CeptPage {
             } else if ends_in_space && index + self.x as usize + 1 == 40 {
 				// space in last column
 				// -> just print it, cursor will be in new line
-				self.add_string(&s[..index + 1]);
+				self.add_string(&s[..index2]);
 				self.create_new_line()
 			} else if !ends_in_space && index + self.x as usize == 40 {
 				// character in last column, not followed by a space
@@ -171,8 +172,8 @@ impl CeptPage {
 				self.add_string(&s[..index]);
 				self.create_new_line();
             } else {
-				self.add_string(&s[..index + 1]);
-				self.x += s[..index + 1].len();
+				self.add_string(&s[..index2]);
+				self.x += s[..index2].len();
 				if self.x == 40 {
                     self.create_new_line();
                 }
@@ -181,7 +182,7 @@ impl CeptPage {
 			s = if let Some(new_s) = new_s {
 				new_s
             } else {
-                &s[index + 1..]
+				&s[index2..]
             }
         }
     }
@@ -251,6 +252,11 @@ impl CeptPage {
 	pub fn print_heading(&mut self, level: i32, s: &str) {
 		self.prev_sheet = self.current_sheet();
 
+		let s = if s.len() > 39 {
+			&s[..39]
+		} else {
+			s
+		};
 		if level == 2 {
 			if (self.y + 1) % self.lines_per_sheet == 0 || (self.y + 2) % self.lines_per_sheet == 0 {
 				// don't draw double height title into
@@ -264,7 +270,7 @@ impl CeptPage {
 			self.data_cept.clear_line();
 			self.data_cept.set_fg_color(0);
 			self.data_cept.double_height();
-			self.data_cept.add_str(&s[..39]);
+			self.data_cept.add_str(&s);
 			self.data_cept.add_raw(b"\r\n");
 			self.data_cept.normal_size();
 			self.data_cept.set_fg_color(15);
@@ -278,7 +284,7 @@ impl CeptPage {
             }
 			self.data_cept.underline_on();
 			self.data_cept.set_fg_color(0);
-			self.data_cept.add_str(&s[..39]);
+			self.data_cept.add_str(&s);
 			self.data_cept.underline_off();
 			self.data_cept.set_fg_color(15);
 			self.data_cept.add_raw(b"\r\n");

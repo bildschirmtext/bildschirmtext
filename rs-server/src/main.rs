@@ -28,8 +28,39 @@ use std::thread;
 use session::*;
 
 
-
 fn main() {
+
+
+    // use textwrap::Options;
+    // use textwrap::core::{find_words, wrap_first_fit, Word};
+    // use textwrap::core::Fragment;
+    // let text = "supercalifragilisticexpialidocious textwrap: an efficient and powerful library for wrapping text.";
+    // let words = textwrap::core::find_words(text).collect::<Vec<_>>();
+    // let width = 20;
+    // let lines = textwrap::core::wrap_first_fit(&words, |l| if l == 0 { width } else { usize::MAX } );
+    // println!("{:?}", words);
+    // println!("{:?}", lines);
+    // let y = lines.iter().map(|line| {
+    //     line.iter().map(|word| &**word).collect::<Vec<_>>().join(" ")
+    // }).collect::<Vec<_>>();
+    // println!("{:?}", y);
+    // for (i, line) in x.iter().enumerate() {
+    //     // println!("{} {:?}", i, line);
+    //     println!("{:?}", lines_to_strings(line));
+    // }
+
+
+    // let max = 10;
+    // let mut separator = None;
+    // let mut count = 0;
+    // let split: Vec<&str> = s.splitn(2, |c: char| {
+    //     count += 1;
+    //     separator = Some(c);
+    //     c.is_whitespace() || count > max
+    // }).collect();
+    // println!("{:?} {:?}", split, separator);
+    // exit(0);
+
     // let f = File::open("/Users/mist/Desktop/bee.json").unwrap();
     // let json: Value = serde_json::from_reader(f).unwrap();
     // let parse = json.get("parse").unwrap();
