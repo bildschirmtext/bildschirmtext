@@ -195,46 +195,73 @@ impl CeptPage {
     }
 
     pub fn set_italics_on(&mut self) {
+		println!("set_italics_on");
+		return;
+
 		self.italics = true;
 		self.dirty = true;
     }
 
     pub fn set_italics_off(&mut self) {
+		println!("set_italics_off");
+		return;
+
 		self.italics = false;
 		self.dirty = true;
     }
 
     pub fn set_bold_on(&mut self) {
+		println!("set_bold_on");
+		return;
+
 		self.bold = true;
 		self.dirty = true;
     }
 
     pub fn set_bold_off(&mut self) {
+		println!("set_bold_off");
+		return;
+
 		self.bold = false;
 		self.dirty = true;
     }
 
     pub fn set_link_on(&mut self) {
+		println!("set_link_on");
+		return;
+
 		self.link = true;
 		self.dirty = true;
     }
 
     pub fn set_link_off(&mut self) {
+		println!("set_link_off");
+		return;
+
 		self.link = false;
 		self.dirty = true;
     }
 
     pub fn set_code_on(&mut self) {
+		println!("set_code_on");
+		return;
+
 		self.code = true;
 		self.dirty = true;
     }
 
     pub fn set_code_off(&mut self) {
+		println!("set_code_off");
+		return;
+
 		self.code = false;
 		self.dirty = true;
     }
 
 	pub fn print(&mut self, s: &str, ignore_lf: bool) {
+		println!("print: \"{}\"", s);
+		return;
+
 		self.prev_sheet = self.current_sheet();
 
         if s.contains('\n') {
@@ -250,6 +277,9 @@ impl CeptPage {
     }
 
 	pub fn print_heading(&mut self, level: i32, s: &str) {
+		println!("print_heading: {}, \"{}\"", level, s);
+		return;
+
 		self.prev_sheet = self.current_sheet();
 
 		let s = if s.len() > 39 {

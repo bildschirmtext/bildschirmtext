@@ -17,6 +17,8 @@ mod ui;
 mod ui_messaging;
 mod ui_user;
 
+mod top;
+
 use serde_json::{Result, Value};
 use std::{fs::File, process::exit};
 // use scraper::{Html, Selector};
@@ -29,6 +31,26 @@ use session::*;
 
 
 fn main() {
+    let f = File::open("/Users/mist/Desktop/bee.json").unwrap();
+    let json: Value = serde_json::from_reader(f).unwrap();
+    let parse = json.get("parse").unwrap();
+    let pageid = parse.get("pageid").unwrap().to_string();
+    let text = parse.get("text").unwrap().get("*").unwrap().to_string();
+    let title = parse.get("title").unwrap().to_string();
+    println!("{}", title);
+    println!("{}", pageid);
+    // println!("{}", text);
+
+    let text = text.replace("\\n", "\n");
+    let text = text.replace("\\t", "\t");
+    let text = text.replace("\\\"", "\"");
+
+    let mut x = &text.as_bytes().to_owned()[..];
+    top::html2term(&mut x);
+
+
+
+    exit(0);
 
 
     // use textwrap::Options;
@@ -59,7 +81,8 @@ fn main() {
     //     c.is_whitespace() || count > max
     // }).collect();
     // println!("{:?} {:?}", split, separator);
-    // exit(0);
+
+
 
     // let f = File::open("/Users/mist/Desktop/bee.json").unwrap();
     // let json: Value = serde_json::from_reader(f).unwrap();
