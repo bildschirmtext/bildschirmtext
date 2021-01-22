@@ -61,6 +61,11 @@ impl Cept {
         }
     }
 
+    fn g3code(&mut self, c: u8) {
+        self.data.push(0x1d);
+        self.data.push(c);
+    }
+
 	pub fn add_str(&mut self, s_in: &str) {
         self.add_str_characterset(s_in, None);
     }
@@ -199,6 +204,19 @@ impl Cept {
                 // used in phonetic alphabet
                 'ˈ' => self.data.push(b'\''),
                 'ː' => self.data.push(b':'),
+
+                // Unicode box drawing
+                '│' => self.g3code(b'P'),
+                '─' => self.g3code(b'Q'),
+                '┌' => self.g3code(b'R'),
+                '┐' => self.g3code(b'S'),
+                '└' => self.g3code(b'T'),
+                '┘' => self.g3code(b'U'),
+                '├' => self.g3code(b'V'),
+                '┤' => self.g3code(b'W'),
+                '┬' => self.g3code(b'X'),
+                '┴' => self.g3code(b'Y'),
+                '┼' => self.g3code(b'Z'),
 
                 // XXX these change the length!!
                 '€' => self.data.extend(b"EUR"),

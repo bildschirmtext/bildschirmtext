@@ -22,16 +22,21 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
         let f = File::open("/Users/mist/Desktop/bee.json").unwrap();
         let json: Value = serde_json::from_reader(f).unwrap();
         let parse = json.get("parse").unwrap();
-        let pageid = parse.get("pageid").unwrap().to_string();
+        // let title = parse.get("title").unwrap().to_string();
+        // let pageid = parse.get("pageid").unwrap().to_string();
         let text = parse.get("text").unwrap().get("*").unwrap().to_string();
-        let title = parse.get("title").unwrap().to_string();
-        println!("{}", title);
-        println!("{}", pageid);
+        // println!("{}", title);
+        // println!("{}", pageid);
         // println!("{}", text);
-        let document = Document::from_read(text.as_bytes()).unwrap();
 
-        let mut generator = CeptFromHtmlGenerator::new();
-        generator.insert_html_tags(document.find(Name("div")).next().unwrap().children());
+        let text = text.replace("\\n", "\n");
+        let text = text.replace("\\t", "\t");
+        let text = text.replace("\\\"", "\"");
+
+        let mut x = &text.as_bytes().to_owned()[..];
+        let cepts = super::top::html2cept(&mut x);
+
+
 
         Some(Page {
             meta: Meta {
@@ -42,7 +47,7 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
             },
             cept_palette: None,
             cept_include: None,
-            cept: generator.cept_page.data_cept,
+            cept: cepts[self.pageid.sub].clone(),
         })
 
     }
