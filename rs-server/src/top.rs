@@ -103,7 +103,7 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
             cept.add_str("\n");
         }
         lines += 1;
-        if lines == 20 {
+        if lines == 17 {
             cepts.push(cept);
             lines = 0;
             cept = Cept::new();

@@ -57,40 +57,37 @@ pub fn make() -> String {
             <p class='foo'>Hello, world!</p>
             <p class='foo'>I love HTML</p>
             <b class=\"nested\">
-                <div class=\"shortdescription nomobile noexcerpt noprint searchaux\" style=\"display:none\">Clade of insects</div>
+                <a href=\"blah\" style=\"display:none\">Clade of insects</div>
             </b>
             ";
 
 
     let document = kuchiki::parse_html().one(text);
 
-    let selectors = [
-        ".noprint",
-        ".mw-editsection",
-    ];
+    let paragraph = document.select("a").unwrap().collect::<Vec<_>>();
 
-    for selector in &selectors {
-        let paragraph = document.select(selector).unwrap().collect::<Vec<_>>();
+    let mut link_count = 10;
 
-        for element in paragraph {
-            // println!("{:?}", element);
-            // if node.
-            // let par = NodeRef::new_element(
-            //     QualName::new(None, ns!(html), local_name!("p")),
-            //     Some((
-            //         ExpandedName::new("", "class"),
-            //         Attribute {
-            //                 prefix: None,
-            //                 value: "newp".to_owned(),
-            //         },
-            //     )),
-            // );
-            // par.append(NodeRef::new_text("My new text"));
+    for element in paragraph {
+        println!("{:?}", element);
+        // let par = NodeRef::new_element(
+        //     QualName::new(None, ns!(html), local_name!("p")),
+        //     Some((
+        //         ExpandedName::new("", "class"),
+        //         Attribute {
+        //                 prefix: None,
+        //                 value: "newp".to_owned(),
+        //         },
+        //     )),
+        // );
+        // par.append(NodeRef::new_text("My new text"));
 
-            // let par = NodeRef::new_comment("removed");
-            // element.as_node().insert_after(par);
-            element.as_node().detach();
-        }
+        let par = NodeRef::new_text(format!("[{}]", link_count));
+        link_count += 1;
+
+        // let par = NodeRef::new_comment("removed");
+        element.as_node().insert_after(par);
+        // element.as_node().detach();
     }
 
     document.to_string()

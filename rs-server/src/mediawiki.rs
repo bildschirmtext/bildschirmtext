@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs::File};
 use select::{document::Document, predicate::Name};
 use serde_json::Value;
 
-use crate::{dispatch::PageSession, page::{Meta, Page}, session::{PageId, UserRequest, ValidateResult}, user::User};
+use crate::{cept::Cept, dispatch::PageSession, page::{Meta, Page}, session::{PageId, UserRequest, ValidateResult}, user::User};
 use crate::cept_page::*;
 
 pub struct MediaWikiPageSession {
@@ -22,7 +22,7 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
         let f = File::open("/Users/mist/Desktop/bee.json").unwrap();
         let json: Value = serde_json::from_reader(f).unwrap();
         let parse = json.get("parse").unwrap();
-        // let title = parse.get("title").unwrap().to_string();
+        let title = parse.get("title").unwrap().to_string();
         // let pageid = parse.get("pageid").unwrap().to_string();
         let text = parse.get("text").unwrap().get("*").unwrap().to_string();
         // println!("{}", title);
@@ -37,30 +37,76 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
 
         // let text = "Hello <b>bold</b> <i>italics</i>, <u>underline</u> <h2>Heading</h2>";
 
+        // remove some tags we don't want to show
         use kuchiki::traits::*;
-
+        use kuchiki::NodeRef;
         let document = kuchiki::parse_html().one(text);
-
         let selectors = [
             ".noprint",        // things that would not appear on a printout
             ".mw-editsection", // "[edit]" links
             ".reference",      // "[1]" etc. references
             ".infobox",        // categorization boxes, usually at the top
         ];
-
         for selector in &selectors {
             let paragraph = document.select(selector).unwrap().collect::<Vec<_>>();
-
             for element in paragraph {
                 element.as_node().detach();
             }
         }
+        // TODO: remove "a href" that only contains an "img"
+
+        // add numbers after links
+        let paragraph = document.select("a").unwrap().collect::<Vec<_>>();
+        let mut link_count = 10;
+        for element in paragraph {
+            let par = NodeRef::new_text(format!("[{}]", link_count));
+            link_count += 1;
+            element.as_node().insert_after(par);
+        }
+
 
         let text = document.to_string();
 
         let mut x = &text.as_bytes().to_owned()[..];
         let cepts = super::top::html2cept(&mut x);
 
+        let mut cept = Cept::new();
+		let title = if title.len() > 39 {
+			&title[..39]
+		} else {
+			&title
+		};
+        cept.set_screen_bg_color(7);
+        cept.set_cursor(2, 1);
+        cept.set_line_bg_color(0);
+        cept.add_raw(b"\n");
+        cept.set_line_bg_color(0);
+        cept.double_height();
+        cept.set_fg_color(7);
+        cept.add_str(title);
+        cept.add_raw(b"\r\n");
+        cept.normal_size();
+        cept.add_raw(b"\n");
+
+        cept.add_raw(cepts[self.pageid.sub].clone().data());
+
+        // print navigation
+		// * on sheet 0, so we don't have to print it again on later sheets
+		// * on the last sheet, because it doesn't show the "#" text
+		// * on the second last sheet, because navigating back from the last one needs to show "#" again
+		if self.pageid.sub == 0 || self.pageid.sub >= cepts.len() - 2 {
+			cept.set_cursor(23, 1);
+			cept.set_line_bg_color(0);
+			cept.set_fg_color(7);
+			cept.add_str("0 < Back");
+			let s = "# > Next";
+			cept.set_cursor(23, 41 - s.len() as u8);
+			if self.pageid.sub == cepts.len() - 1 {
+				cept.repeat(b' ', s.len() as u8);
+            } else {
+                cept.add_str(s);
+            }
+        }
 
 
         Some(Page {
@@ -72,7 +118,7 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
             },
             cept_palette: None,
             cept_include: None,
-            cept: cepts[self.pageid.sub].clone(),
+            cept,
         })
 
     }
