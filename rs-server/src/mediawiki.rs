@@ -45,7 +45,8 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
             ".noprint",        // things that would not appear on a printout
             ".mw-editsection", // "[edit]" links
             ".reference",      // "[1]" etc. references
-            ".infobox",        // categorization boxes, usually at the top
+            ".infobox",        // categorization boxes, usually at the top (unreadable)
+            ".navbox",         // boxes linking related articles (unreadable)
         ];
         for selector in &selectors {
             let paragraph = document.select(selector).unwrap().collect::<Vec<_>>();
@@ -54,6 +55,8 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
             }
         }
         // TODO: remove "a href" that only contains an "img"
+        // TODO: remove "a href" if it's not a Wiki link
+        // TODO: handle internal links
 
         // add numbers after links
         let paragraph = document.select("a").unwrap().collect::<Vec<_>>();
@@ -94,7 +97,7 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
 		// * on sheet 0, so we don't have to print it again on later sheets
 		// * on the last sheet, because it doesn't show the "#" text
 		// * on the second last sheet, because navigating back from the last one needs to show "#" again
-		if self.pageid.sub == 0 || self.pageid.sub >= cepts.len() - 2 {
+		// if self.pageid.sub == 0 || self.pageid.sub >= cepts.len() - 2 {
 			cept.set_cursor(23, 1);
 			cept.set_line_bg_color(0);
 			cept.set_fg_color(7);
@@ -106,8 +109,7 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
             } else {
                 cept.add_str(s);
             }
-        }
-
+        // }
 
         Some(Page {
             meta: Meta {

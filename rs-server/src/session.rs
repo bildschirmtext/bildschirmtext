@@ -41,7 +41,15 @@ impl PageId {
     // XXX implement Display trait instead!
     pub fn to_string(&self) -> String {
         let mut s = self.page.clone();
-        s.push((b'a' + self.sub as u8) as char);
+        if self.sub < 26 {
+            s.push((b'a' + self.sub as u8) as char);
+        } else if self.sub < 26 + 26 * 26 {
+            let n = self.sub - 26;
+            let lo = n % 26;
+            let hi = n / 26;
+            s.push((b'a' + hi as u8) as char);
+            s.push((b'a' + lo as u8) as char);
+        } // else omit it altogether
         s
     }
 }
