@@ -83,6 +83,7 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
     let mut cepts = vec!();
     let mut cept = Cept::new();
     let mut state = CeptState::default();
+    let mut link = 10;
 
     for (i, line) in annotated.iter().enumerate() {
         use self::TaggedLineElement::Str;
@@ -93,12 +94,19 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
             if let Str(ts) = tli {
                 let cept_style = to_style(&mut state, &ts.tag);
                 cept += cept_style;
-                cept.add_str(&ts.s);
+                let s = if ts.s.contains("[00]") {
+                    let s = str::replace(&ts.s, "[00]", &format!("[{:02}]", link));
+                    link += 1;
+                    s
+                } else {
+                    ts.s.to_owned()
+                };
+                cept.add_str(&s);
                 x += ts.s.chars().count();
                 debug_line += &ts.s;
             }
         }
-        println!("{:02} {}", x, debug_line);
+        // println!("{:02} {}", x, debug_line);
         if x != 40 {
             cept.add_str("\n");
         }
@@ -106,6 +114,7 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
         if lines == 17 {
             cepts.push(cept);
             lines = 0;
+            link = 10;
             cept = Cept::new();
         }
     }

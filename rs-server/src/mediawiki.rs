@@ -39,7 +39,8 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
 
         // remove some tags we don't want to show
         use kuchiki::traits::*;
-        use kuchiki::NodeRef;
+        use kuchiki::{NodeRef, NodeData};
+        use html5ever::local_name;
         let document = kuchiki::parse_html().one(text);
         let selectors = [
             ".noprint",        // things that would not appear on a printout
@@ -54,19 +55,27 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
                 element.as_node().detach();
             }
         }
-        // TODO: remove "a href" that only contains an "img"
-        // TODO: remove "a href" if it's not a Wiki link
         // TODO: handle internal links
+
+        // remove "a href" outside the wiki or to images
+        let paragraph = document.select("a").unwrap().collect::<Vec<_>>();
+        for link in paragraph {
+            let attributes = link.attributes.borrow();
+            if let Some(href) = attributes.get("href") {
+                println!("{}", href);
+                if !href.starts_with("/") || href.starts_with("/wiki/File:") {
+                    link.as_node().detach();
+                }
+            }
+            // println!("{:?} {}", attributes.get("href"), link.text_contents());
+        }
 
         // add numbers after links
         let paragraph = document.select("a").unwrap().collect::<Vec<_>>();
-        let mut link_count = 10;
         for element in paragraph {
-            let par = NodeRef::new_text(format!("[{}]", link_count));
-            link_count += 1;
+            let par = NodeRef::new_text("[00]");
             element.as_node().insert_after(par);
         }
-
 
         let text = document.to_string();
 
