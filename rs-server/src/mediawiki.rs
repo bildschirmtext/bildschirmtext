@@ -29,8 +29,9 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
         // println!("{}", pageid);
         // println!("{}", text);
 
-        let text = text.trim_start_matches('"');
-        let text = text.trim_end_matches('"');
+        let title = title.trim_start_matches('"').trim_end_matches('"');
+
+        let text = text.trim_start_matches('"').trim_end_matches('"');
         let text = text.replace("\\n", "\n");
         let text = text.replace("\\t", "\t");
         let text = text.replace("\\\"", "\"");
@@ -62,9 +63,10 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
         for link in paragraph {
             let attributes = link.attributes.borrow();
             if let Some(href) = attributes.get("href") {
-                println!("{}", href);
-                if !href.starts_with("/") || href.starts_with("/wiki/File:") {
+                if !href.starts_with("/wiki/") || href.starts_with("/wiki/File:") || href.starts_with("/wiki/Special:") {
                     link.as_node().detach();
+                } else {
+                    println!("{}", href);
                 }
             }
             // println!("{:?} {}", attributes.get("href"), link.text_contents());

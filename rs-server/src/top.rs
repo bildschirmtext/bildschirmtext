@@ -12,7 +12,7 @@ struct CeptState {
     code: bool,
 }
 
-fn to_style(state: &mut CeptState, tag: &Vec<RichAnnotation>) -> Cept {
+fn to_style(tag: &Vec<RichAnnotation>) -> Cept {
     let mut cept = Cept::new();
 
     let mut state = CeptState::default();
@@ -82,7 +82,6 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
     let mut lines = 0;
     let mut cepts = vec!();
     let mut cept = Cept::new();
-    let mut state = CeptState::default();
     let mut link = 10;
 
     for (i, line) in annotated.iter().enumerate() {
@@ -92,7 +91,7 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
         let mut debug_line = String::new();
         for tli in line.iter() {
             if let Str(ts) = tli {
-                let cept_style = to_style(&mut state, &ts.tag);
+                let cept_style = to_style(&ts.tag);
                 cept += cept_style;
                 let s = if ts.s.contains("[00]") {
                     let s = str::replace(&ts.s, "[00]", &format!("[{:02}]", link));
