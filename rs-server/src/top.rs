@@ -18,7 +18,7 @@ fn to_style(state: &mut CeptState, tag: &Vec<RichAnnotation>) -> Cept {
     let mut state = CeptState::default();
 
     for annotation in tag {
-        println!("{:?}", annotation);
+        // println!("{:?}", annotation);
         match *annotation {
             RichAnnotation::Default => (),
             RichAnnotation::Link(_) => {
@@ -77,7 +77,7 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
     let width: u16 = 40;
 
     let annotated = html2text::from_read_rich(file, width as usize);
-    println!("{:?}", annotated);
+    // println!("{:?}", annotated);
 
     let mut lines = 0;
     let mut cepts = vec!();
@@ -98,7 +98,7 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
                 debug_line += &ts.s;
             }
         }
-        // println!("{:02} {}", x, debug_line);
+        println!("{:02} {}", x, debug_line);
         if x != 40 {
             cept.add_str("\n");
         }

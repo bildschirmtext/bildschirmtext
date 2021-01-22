@@ -29,11 +29,34 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
         // println!("{}", pageid);
         // println!("{}", text);
 
+        let text = text.trim_start_matches('"');
+        let text = text.trim_end_matches('"');
         let text = text.replace("\\n", "\n");
         let text = text.replace("\\t", "\t");
         let text = text.replace("\\\"", "\"");
 
-        let text = "Hello <b>bold</b> <i>italics</i>, <u>underline</u> <h2>Heading</h2>";
+        // let text = "Hello <b>bold</b> <i>italics</i>, <u>underline</u> <h2>Heading</h2>";
+
+        use kuchiki::traits::*;
+
+        let document = kuchiki::parse_html().one(text);
+
+        let selectors = [
+            ".noprint",        // things that would not appear on a printout
+            ".mw-editsection", // "[edit]" links
+            ".reference",      // "[1]" etc. references
+            ".infobox",        // categorization boxes, usually at the top
+        ];
+
+        for selector in &selectors {
+            let paragraph = document.select(selector).unwrap().collect::<Vec<_>>();
+
+            for element in paragraph {
+                element.as_node().detach();
+            }
+        }
+
+        let text = document.to_string();
 
         let mut x = &text.as_bytes().to_owned()[..];
         let cepts = super::top::html2cept(&mut x);

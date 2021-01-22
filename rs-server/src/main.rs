@@ -31,8 +31,8 @@ use session::*;
 
 
 fn main() {
-    println!("{}", make());
-    exit(0);
+    // println!("{}", make());
+    // exit(0);
 
 
     let listener = TcpListener::bind("127.0.0.1:20000").unwrap();
@@ -56,31 +56,42 @@ pub fn make() -> String {
     let text = "
             <p class='foo'>Hello, world!</p>
             <p class='foo'>I love HTML</p>
-            <div class=\"shortdescription nomobile noexcerpt noprint searchaux\" style=\"display:none\">Clade of insects</div>
+            <b class=\"nested\">
+                <div class=\"shortdescription nomobile noexcerpt noprint searchaux\" style=\"display:none\">Clade of insects</div>
+            </b>
             ";
 
 
     let document = kuchiki::parse_html().one(text);
-    let paragraph = document.select("div").unwrap().collect::<Vec<_>>();
 
-    for element in paragraph {
-        println!("{:?}", element);
-        let par = NodeRef::new_element(
-            QualName::new(None, ns!(html), local_name!("p")),
-            Some((
-                ExpandedName::new("", "class"),
-                Attribute {
-                        prefix: None,
-                        value: "newp".to_owned(),
-                },
-            )),
-        );
+    let selectors = [
+        ".noprint",
+        ".mw-editsection",
+    ];
 
-        par.append(NodeRef::new_text("My new text"));
+    for selector in &selectors {
+        let paragraph = document.select(selector).unwrap().collect::<Vec<_>>();
 
-        element.as_node().insert_after(par);
-        element.as_node().detach();
-    };
+        for element in paragraph {
+            // println!("{:?}", element);
+            // if node.
+            // let par = NodeRef::new_element(
+            //     QualName::new(None, ns!(html), local_name!("p")),
+            //     Some((
+            //         ExpandedName::new("", "class"),
+            //         Attribute {
+            //                 prefix: None,
+            //                 value: "newp".to_owned(),
+            //         },
+            //     )),
+            // );
+            // par.append(NodeRef::new_text("My new text"));
+
+            // let par = NodeRef::new_comment("removed");
+            // element.as_node().insert_after(par);
+            element.as_node().detach();
+        }
+    }
 
     document.to_string()
 }
