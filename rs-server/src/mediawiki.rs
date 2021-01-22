@@ -33,6 +33,8 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
         let text = text.replace("\\t", "\t");
         let text = text.replace("\\\"", "\"");
 
+        let text = "Hello <b>bold</b> <i>italics</i>, <u>underline</u> <h2>Heading</h2>";
+
         let mut x = &text.as_bytes().to_owned()[..];
         let cepts = super::top::html2cept(&mut x);
 
@@ -60,6 +62,7 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
         unreachable!()
     }
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

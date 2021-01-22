@@ -1,6 +1,4 @@
 extern crate html2text;
-extern crate termion;
-extern crate unicode_width;
 
 use super::cept::*;
 
@@ -20,6 +18,7 @@ fn to_style(state: &mut CeptState, tag: &Vec<RichAnnotation>) -> Cept {
     let mut state = CeptState::default();
 
     for annotation in tag {
+        println!("{:?}", annotation);
         match *annotation {
             RichAnnotation::Default => (),
             RichAnnotation::Link(_) => {
@@ -52,22 +51,22 @@ fn to_style(state: &mut CeptState, tag: &Vec<RichAnnotation>) -> Cept {
     }
 
     if state.italics {
-        cept.set_fg_color(6);
+        cept.set_fg_color(CeptColor::Cyan as u8);
     } else if state.bold {
-        cept.set_fg_color(0);
+        cept.set_fg_color(CeptColor::Black as u8);
     }
     if state.code {
-        cept.set_bg_color(6);
+        cept.set_bg_color(CeptColor::Cyan as u8);
     } else {
-        cept.set_bg_color(7);
+        cept.set_bg_color(CeptColor::White as u8);
     }
     if state.link {
         cept.underline_on();
-        cept.set_fg_color(4);
+        cept.set_fg_color(CeptColor::Blue as u8);
     }
     if !state.italics && !state.bold && !state.link && !state.code {
-		cept.set_fg_color(15);
-		cept.set_bg_color(7);
+		cept.set_fg_color(CeptColor::Gray as u8);
+		cept.set_bg_color(CeptColor::White as u8);
         cept.underline_off();
     }
 
@@ -78,6 +77,7 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
     let width: u16 = 40;
 
     let annotated = html2text::from_read_rich(file, width as usize);
+    println!("{:?}", annotated);
 
     let mut lines = 0;
     let mut cepts = vec!();
@@ -98,7 +98,7 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
                 debug_line += &ts.s;
             }
         }
-        println!("{:02} {}", x, debug_line);
+        // println!("{:02} {}", x, debug_line);
         if x != 40 {
             cept.add_str("\n");
         }
@@ -109,6 +109,7 @@ pub fn html2cept(file: &mut impl Read) -> Vec<Cept>{
             cept = Cept::new();
         }
     }
+    cepts.push(cept);
 
     cepts
 }

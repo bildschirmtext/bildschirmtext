@@ -31,6 +31,10 @@ use session::*;
 
 
 fn main() {
+    println!("{}", make());
+    exit(0);
+
+
     let listener = TcpListener::bind("127.0.0.1:20000").unwrap();
     println!("Neu-Ulm running.");
     for stream in listener.incoming() {
@@ -41,4 +45,42 @@ fn main() {
         });
     }
 
+}
+
+use html5ever::{interface::QualName, local_name, namespace_url, ns};
+
+// use html5ever::*;
+use kuchiki::{traits::*, Attribute, ExpandedName, NodeRef};
+
+pub fn make() -> String {
+    let text = "
+            <p class='foo'>Hello, world!</p>
+            <p class='foo'>I love HTML</p>
+            <div class=\"shortdescription nomobile noexcerpt noprint searchaux\" style=\"display:none\">Clade of insects</div>
+            ";
+
+
+    let document = kuchiki::parse_html().one(text);
+    let paragraph = document.select("div").unwrap().collect::<Vec<_>>();
+
+    for element in paragraph {
+        println!("{:?}", element);
+        let par = NodeRef::new_element(
+            QualName::new(None, ns!(html), local_name!("p")),
+            Some((
+                ExpandedName::new("", "class"),
+                Attribute {
+                        prefix: None,
+                        value: "newp".to_owned(),
+                },
+            )),
+        );
+
+        par.append(NodeRef::new_text("My new text"));
+
+        element.as_node().insert_after(par);
+        element.as_node().detach();
+    };
+
+    document.to_string()
 }
