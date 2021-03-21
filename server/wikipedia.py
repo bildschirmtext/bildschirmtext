@@ -129,6 +129,7 @@ class MediaWiki:
 	id = None
 	api_prefix = "/wiki/"
 	article_prefix = "/wiki/index.php/"
+	image = "wikipedia.png"
 
 	# maps urls to json
 	http_cache = {}
@@ -372,8 +373,8 @@ class MediaWiki_UI:
 		# trick: show cursor now so that user knows they can enter text, even though more
 		# data is loading
 		data_cept.extend(Cept.show_cursor())
-
-		image = Image_UI(basedir + "wikipedia.png", colors = 4)
+		image = Image_UI(basedir + mediawiki.image, colors = 4)
+#		image = Image_UI(basedir + "wikipedia.png", colors = 4)
 
 		data_cept.extend(Cept.define_palette(image.palette))
 		data_cept.extend(image.drcs)
@@ -418,10 +419,12 @@ class MediaWiki_UI:
 	def create_page(pageid, basedir):
 		WIKIPEDIA_PAGEID_PREFIX = "55"
 		CONGRESS_PAGEID_PREFIX = "35"
+		C64_PAGEID_PREFIX = "45"
 		if re.search("^" + WIKIPEDIA_PAGEID_PREFIX + "\d", pageid):
 			lang = { 0: "en", 5: "de", 6: "el" }.get(int(pageid[2]))
 			wiki_url = "https://" + lang + ".wikipedia.org/"
 			mediawiki = MediaWiki.get_from_wiki_url(wiki_url)
+			#mediawiki.image = "wikipedia.png"
 			mediawiki.api_prefix = "/w/"
 			mediawiki.article_prefix = "/wiki/"
 			mediawiki.pageid_prefix = WIKIPEDIA_PAGEID_PREFIX + pageid[2]
@@ -431,7 +434,7 @@ class MediaWiki_UI:
 				return MediaWiki_UI.create_search_page(mediawiki, basedir)
 			else:
 				return MediaWiki_UI.create_article_page(mediawiki, int(pageid[3:-1]), ord(pageid[-1]) - ord("a"))
-		if re.search("^" + CONGRESS_PAGEID_PREFIX, pageid):
+		elif re.search("^" + CONGRESS_PAGEID_PREFIX, pageid):
 			sys.stderr.write("pageid: " + pprint.pformat(pageid) + "\n")
 #			wiki_url = "https://events.ccc.de/congress/2018/wiki/index.php"
 			wiki_url = "https://events.ccc.de/congress/2019/"
@@ -439,6 +442,20 @@ class MediaWiki_UI:
 			mediawiki.article_prefix = "/congress/2019/wiki/index.php/"
 			mediawiki.pageid_prefix = CONGRESS_PAGEID_PREFIX
 			mediawiki.title = "36C3 Wiki"
+			mediawiki.search_string = "Search: "
+			if len(pageid) == 3:
+				return MediaWiki_UI.create_search_page(mediawiki, basedir)
+			else:
+				return MediaWiki_UI.create_article_page(mediawiki, int(pageid[2:-1]), ord(pageid[-1]) - ord("a"))
+		elif re.search("^" + C64_PAGEID_PREFIX, pageid):
+			sys.stderr.write("pageid: " + pprint.pformat(pageid) + "\n")
+			wiki_url = "https://www.c64-wiki.de/"
+			mediawiki = MediaWiki.get_from_wiki_url(wiki_url)
+			mediawiki.image = "c64wiki.gif"
+			mediawiki.api_prefix = "/"
+			mediawiki.article_prefix = "/wiki/"
+			mediawiki.pageid_prefix = C64_PAGEID_PREFIX
+			mediawiki.title = "C64 Wiki"
 			mediawiki.search_string = "Search: "
 			if len(pageid) == 3:
 				return MediaWiki_UI.create_search_page(mediawiki, basedir)

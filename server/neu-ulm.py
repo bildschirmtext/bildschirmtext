@@ -258,6 +258,10 @@ def create_page(pageid):
 		# Congress Wiki
 		basedir = PATH_DATA + "55/"
 		ret = MediaWiki_UI.create_page(pageid, basedir)
+	if not ret and pageid.startswith("45"):
+		# c64 wiki
+		basedir = PATH_DATA + "45/"
+		ret = MediaWiki_UI.create_page(pageid, basedir)
 	if not ret and pageid.startswith("666"):
 		# images
 		ret = Image_UI.create_page(pageid)
