@@ -58,9 +58,8 @@ Es stehen 5 fixe Zeichensätze und ein freidefinierbarer Zeichensatz (DRCs) zur 
 	Standard - G1 - Satz:  Mosaikzeichen
 	Standard - G2 - Satz:  Sonderzeichen
 	Standard - G3 - Satz:  Balken, Pfeile, Punkte, Mosaik
-				L - Satz:  Kombination aus G0 und G1
-			 DRCs - Satz:  max. 94 freidefinierbare Zeichen
-						   unterschiedlicher Auflösung
+	L - Satz:  Kombination aus G0 und G1
+	DRCs - Satz:  max. 94 freidefinierbare Zeichen unterschiedlicher Auflösung
 
 Im Grundzustand wird mit den Zeichencodes 20 bis 7F flinker Zeichenbereich) der Standard-G0-Satz benutzt und mit den Codes A0 bis FF (rechter Zeichenbereich) der Standard-G2-Satz angezeigt.
 
@@ -266,8 +265,7 @@ Die Definition eines neuen Farbtons wird eingeleitet durch die Sequenz
 
 Nun folgt die Selektierung der Farbposition:
 
-	1F 26 3t 3u    t = 1 bis 3 (Zehner)
-				   u = 0 bis 9 (Einer)
+	1F 26 3t 3u    t = 1 bis 3 (Zehner)  u = 0 bis 9 (Einer)
 
 "t" und "u" repräsentieren die Zehner- und Einerstelle einer dezimalen Farbnummer, wobei die Farbpositionen aufsteigende Nummern erhalten, beginnend mit der Nummer 16 (dezimal). Die Farbe 0 der Tafel 2 hat also die Nummer 16 und die Farbe 7 der Tafel 3 erhält die Nummer 31.
 
@@ -285,8 +283,9 @@ Ein Beispiel: Die Farbe 3 der Tafel 2 soll folgenden neuen Farbton erhalten:
 	Grünanteil: D      ( 1 1 0 1 )
 	Blauanteil: 0      ( 0 0 0 0 )
 
-	Codierung der beiden Datenbytes: 0 1 1 1 0 1 1 0
-									 0 1 1 0 0 1 1 0
+	Codierung der beiden Datenbytes: 
+		0 1 1 1 0 1 1 0
+		0 1 1 0 0 1 1 0
 
 	gesamter Code: 1F 26 20    1F 26 31 39 76 66
 
@@ -317,10 +316,11 @@ Dieses Attribut hat keinerlei Einfluß auf die Anzeige. Die CEPT-Verantwortliche
 
 Definition des Scrollbereichs:
 
-	9B 3i 3j 3B 3k 3l 55    i = Anfangszeile (Zehner)
-							j = Anfangszeile (Einer)
-							k — Endzeile (Zehner)
-							l = Endzeile (Einer)
+	9B 3i 3j 3B 3k 3l 55    
+	    i = Anfangszeile (Zehner)
+	       j = Anfangszeile (Einer)
+	             k = Endzeile (Zehner)
+	                l = Endzeile (Einer)
 
 Führende Nullen (Zehnerstelle) können weggelassen werden.
 
