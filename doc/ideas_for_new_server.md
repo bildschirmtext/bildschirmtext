@@ -23,6 +23,7 @@ This could look something like this:
 ```
 VTX_AUTH_USER Usernumber of the user
 VTX_AUTH_NAME Name of the user
+VTX_AUTH_CEPT1 Type of the terminal (for example autodetected during login)
 VTX_USER_FIELD_COMMENT Some field from a form
 ```
 
