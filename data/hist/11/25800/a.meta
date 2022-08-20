@@ -1,6 +1,6 @@
 {
 	"include": "a",
-	"palette": "a",
+	"palette": "b",
 	"clear_screen": true,
 	"set_cursor": false,
 	"cls2": true,
