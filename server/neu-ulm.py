@@ -289,7 +289,7 @@ def create_page(pageid):
 				filename_meta = basedir + filename + ".meta"
 				filename_cept = basedir + filename + ".cept"
 				filename_cm = basedir + filename + ".cm"
-
+				sys.stderr.write("Filename_cept '" + filename_cept +"' '"+filename_meta+"'\n")
 				if os.path.isfile(filename_meta):
 					with open(filename_meta) as f:
 						meta = json.load(f)
