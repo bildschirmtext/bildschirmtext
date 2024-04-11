@@ -176,7 +176,7 @@ https://lists.hanse.de/mailman/listinfo/btx
 # Danksagung und verwandte Projekte
 
 * [Bildschirmtrix](http://www.runningserver.com/?page=rs.thelab.bildschirmtrix) von Philipp Maier
-* [Javascript BTX Server](http://members.aon.at/nkehrer/btx_server.html) von Norbert Kehrer
+* [Javascript BTX Server](https://norbertkehrer.github.io/btx_server.html) von Norbert Kehrer
 * [Retrotext](https://www.acn.wtf/retrotext.html) von Anna Christina Naß
 * [btx_modem](https://github.com/Casandro/btx_modem) von Christian Berger
 # Copyright
