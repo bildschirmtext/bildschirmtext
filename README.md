@@ -63,15 +63,13 @@ Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Die Optionen von
 
 ## MS-DOS: "PC online" Decoder (Drews)
 
-	socat -d -d exec:"python3 neu-ulm.py --modem" pty,raw,echo=0
+	socat -d -d tcp:localhost:20001 pty,raw,echo=0
 
-`socat` erzeugt einen virtuellen seriellen Port, der mit der Server-Software verbunden ist. Die Ausgabe beinhaltet den Pfad zu diesem Port.
+`socat` legt einen TCP-Socket auf Port 20001 an, der mit der Server-Software verbunden ist.
 
 Im DOSBox-Emulator muß dann folgende Zeile in die Konfigurationsdatei eingetragen werden:
 
-	serial3=directserial realport:ttys005
-
-Der Pfad zum seriellen Port muß entsprechend angepaßt werden. Wichtig: Auf Unix-Systemen muß der Pfad `/dev/` weggelassen werden!
+	serial3=nullmodem server:localhost port:20001
 
 Der Decoder wird bit `BTX1` gestartet, die Einwahl erfolgt mit F10.
 
