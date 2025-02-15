@@ -1,0 +1,10 @@
+[Unit]
+Description=Bildschirmtext
+
+[Service]
+ExecStart=/usr/bin/python3 neu-ulm.py
+WorkingDirectory=/home/pi/bildschirmtext/server/
+StandardInput=socket
+StandardOutput=socket
+StandardError=null
+
