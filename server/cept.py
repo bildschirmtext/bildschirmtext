@@ -14,11 +14,14 @@ class Sheet:
 		pass
 
 class TextSheet(Sheet):
-	def __init__(self, lines_per_sheet):
+	def __init__(self, lines_per_sheet, attributes = None):
 		self.x = 0
 		self.y = 0
 
-		self.attributes = CeptAttributes()
+		if attributes:
+			self.attributes = attributes
+		else:
+			self.attributes = CeptAttributes()
 		self.dirty = False
 
 		self.lines_per_sheet = lines_per_sheet
@@ -104,15 +107,20 @@ class Cept_page:
 		self.sheets = []
 		self.sheet = TextSheet(self.lines_per_sheet)
 
+	def require_lines(num_lines):
+		if self.sheet.y + num_lines >= self.lines_per_sheet:
+			attributes = self.sheet.attributes
+			self.sheets.append(self.sheet)
+			self.sheet = TextSheet(self.lines_per_sheet, attributes)
+
 	def print_internal(self, s):
 		if s == "":
 			return
 
 		while s:
 			sys.stderr.write("" + pprint.pformat(self.sheet.x) + "/" + pprint.pformat(self.sheet.y) + " s: " + pprint.pformat(s) + "\n")
-			if self.sheet.is_full():
-				self.sheets.append(self.sheet)
-				self.sheet = TextSheet(self.lines_per_sheet)
+
+			self.require_lines(0)
 
 			index = s.find(" ")
 			if index < 0:
@@ -173,46 +181,6 @@ class Cept_page:
 				s = s[index + 1:]
 
 	# API
-	def set_italics_on(self):
-		self.italics = True
-		self.sheet.dirty = True
-
-	# API
-	def set_italics_off(self):
-		self.italics = False
-		self.sheet.dirty = True
-
-	# API
-	def set_bold_on(self):
-		self.bold = True
-		self.sheet.dirty = True
-
-	# API
-	def set_bold_off(self):
-		self.bold = False
-		self.sheet.dirty = True
-
-	# API
-	def set_link_on(self):
-		self.link = True
-		self.sheet.dirty = True
-
-	# API
-	def set_link_off(self):
-		self.link = False
-		self.sheet.dirty = True
-
-	# API
-	def set_code_on(self):
-		self.code = True
-		self.sheet.dirty = True
-
-	# API
-	def set_code_off(self):
-		self.code = False
-		self.sheet.dirty = True
-
-	# API
 	def print(self, s, ignore_lf = False):
 		self.prev_sheet = self.sheet_number
 
@@ -232,10 +200,7 @@ class Cept_page:
 		sys.stderr.write("self.sheet.y: " + pprint.pformat(self.sheet.y) + "\n")
 
 		if level == 2:
-			if self.sheet.y + 3 >= self.lines_per_sheet:
-				self.sheets.append(self.sheet)
-				self.sheet = TextSheet(self.lines_per_sheet)
-
+			self.require_lines(3)
 			self.sheet.print_newline()
 			self.sheet.add_bytes(Cept.clear_line())
 			self.sheet.add_bytes(Cept.set_fg_color(0))
@@ -245,10 +210,7 @@ class Cept_page:
 #			self.sheet.add_bytes(Cept.normal_size())
 #			self.sheet.add_bytes(Cept.set_fg_color(15))
 		else:
-			if self.sheet.y + 2 >= self.lines_per_sheet:
-				self.sheets.append(self.sheet)
-				self.sheet = TextSheet(self.lines_per_sheet)
-
+			self.require_lines(2)
 			self.sheet.print_newline()
 			self.sheet.add_bytes(Cept.underline_on())
 			self.sheet.add_bytes(Cept.set_fg_color(0))
@@ -376,13 +338,13 @@ class Cept_page:
 			elif t1.name == "span":
 				self.print(t1.get_text(), self.ignore_lf)
 			elif t1.name == "i":
-				self.set_italics_on()
+#				self.set_italics_on()
 				self.print(t1.get_text(), self.ignore_lf)
-				self.set_italics_off()
+#				self.set_italics_off()
 			elif t1.name == "b":
-				self.set_bold_on()
+#				self.set_bold_on()
 				self.print(t1.get_text(), self.ignore_lf)
-				self.set_bold_off()
+#				self.set_bold_off()
 			elif t1.name == "a":
 				if t1["href"].startswith(self.article_prefix): # links to different article
 					if self.sheet_number != self.prev_sheet:
@@ -395,10 +357,10 @@ class Cept_page:
 					self.wiki_link_targets[self.sheet_number][self.link_index] = t1["href"][len(self.article_prefix):]
 
 					link_text = t1.get_text().replace("\n", "") + " [" + str(self.link_index) + "]"
-					self.set_link_on()
+#					self.set_link_on()
 					self.print(link_text)
 					self.link_index += 1
-					self.set_link_off()
+#					self.set_link_off()
 				else: # link to section or external link, just print the text
 					self.insert_html_tags(t1.children)
 					#self.print(t1.get_text(), self.ignore_lf)
@@ -408,9 +370,9 @@ class Cept_page:
 			elif t1.name == "ol":
 				self.insert_html_tags(t1.children)
 			elif t1.name == "code":
-				self.set_code_on()
+#				self.set_code_on()
 				self.insert_html_tags(t1.children)
-				self.set_code_off()
+#				self.set_code_off()
 			elif t1.name == "li":
 				# TODO indentation
 				self.print("* ") # TODO: ordered list
