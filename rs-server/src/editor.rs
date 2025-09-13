@@ -518,8 +518,10 @@ impl Editor {
 
 pub fn readchar(stream: &mut impl Read) -> u8 {
     let mut buf = [0];
-    stream.read(&mut buf);
-    buf[0]
+    match stream.read(&mut buf).unwrap() {
+        0 => panic!("Client disconnected"),
+        _ => buf[0]
+    }
 }
 
 pub fn wait_for_ter(stream: &mut (impl Read + Write)) {
