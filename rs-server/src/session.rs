@@ -118,7 +118,7 @@ impl Session {
 
     // Main loop: show page, get user input, loop.
     // This is only called once and loops forever
-    pub fn run(&mut self, stream: &mut (impl Write + Read))
+    pub fn run(&mut self, reader: &mut impl Read, writer: &mut impl Write)
     {
         let mut target_pageid = PageId::from_str("00000").unwrap();
         let mut add_to_history = false;
@@ -136,7 +136,7 @@ impl Session {
             if let Some(mut page) = page {
                 page.meta.publisher_name = Some(publisher_name.to_owned());
                 current_page_cept = page.construct_page_cept(&mut self.client_state, &target_pageid);
-                write_stream(stream, current_page_cept.data());
+                write_stream(writer, current_page_cept.data());
                 links = page.meta.links;
                 inputs = page.meta.inputs;
                 self.autoplay = page.meta.autoplay == Some(true);
@@ -151,14 +151,14 @@ impl Session {
                 } else {
                     SysMsgCode::PageDoesNotExist
                 };
-                show_sysmsg(&SysMsg::new(error), stream);
+                show_sysmsg(&SysMsg::new(error), reader, writer);
             }
 
             self.user.update_stats();
 
             'input: loop {
                 // *** get user input
-                let input_event = self.get_inputs(inputs.as_mut(), links.as_ref(), &page_session, stream);
+                let input_event = self.get_inputs(inputs.as_mut(), links.as_ref(), &page_session, reader, writer);
 
                 // *** handle input
                 let req = match input_event {
@@ -182,7 +182,7 @@ impl Session {
                             continue 'main;
                         } else {
                             println!("login incorrect");
-                            show_sysmsg(&SysMsg::Custom("Ungültiger Teilnehmer/Kennwort -> #".to_owned()), stream);
+                            show_sysmsg(&SysMsg::Custom("Ungültiger Teilnehmer/Kennwort -> #".to_owned()), reader, writer);
                             continue 'input;
                         }
                     },
@@ -192,16 +192,16 @@ impl Session {
                         continue 'main;
                     },
                     UserRequest::MessageGoto(e, t, a) => {
-                        show_sysmsg(&e, stream);
+                        show_sysmsg(&e, reader, writer);
                         target_pageid = t;
                         add_to_history = a;
                         continue 'main;
                     },
                     UserRequest::SendAgain => {
-                        write_stream(stream, current_page_cept.data());
+                        write_stream(writer, current_page_cept.data());
                     },
                     UserRequest::Error(sysmsg) => {
-                        show_sysmsg(&sysmsg, stream);
+                        show_sysmsg(&sysmsg, reader, writer);
                         continue 'input;
                     }
                 }
@@ -214,7 +214,7 @@ impl Session {
     // * for pages with text fields, draw them and allow editing them
     // * for pages with without text fields, allow entering a link
     // In both cases, it is possible to escape into command mode.
-    fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, page_session: &Box<dyn PageSession<'static>>, stream: &mut (impl Write + Read)) -> InputEvent {
+    fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, page_session: &Box<dyn PageSession<'static>>, reader: &mut impl Read, writer: &mut impl Write) -> InputEvent {
         if self.autoplay {
             println!("autoplay!");
             InputEvent::Navigation("".to_owned()) // inject "#"
@@ -268,7 +268,7 @@ impl Session {
             for input_field in &inputs.fields {
                 let mut editor = Editor::new(input_field);
                 editor.prohibit_command_mode = inputs.prohibit_command_mode;
-                editor.draw(stream);
+                editor.draw(writer);
                 editors.push(editor);
             }
 
@@ -279,7 +279,7 @@ impl Session {
             while i < inputs.fields.len() {
                 let input_field = &inputs.fields[i];
 
-                let (val, dct) = editors[i].edit(skip, stream);
+                let (val, dct) = editors[i].edit(skip, reader, writer);
 
                 if dct {
                     skip = true;
@@ -303,7 +303,7 @@ impl Session {
                         i += 1;
                     },
                     ValidateResult::Error(sysmsg) => {
-                        show_sysmsg(&sysmsg, stream);
+                        show_sysmsg(&sysmsg, reader, writer);
                         skip = false;
                         continue;
                     },
@@ -317,11 +317,11 @@ impl Session {
 
             // ask for confirmation
             if inputs.confirm {
-                if Self::confirm(&inputs, stream) {
+                if Self::confirm(&inputs, reader, writer) {
                     // XXX
                 }
             } else if !inputs.no_55 {
-                show_sysmsg(&SysMsg::new(SysMsgCode::Processing), stream);
+                show_sysmsg(&SysMsg::new(SysMsgCode::Processing), reader, writer);
             }
 
             // send "input_data" to "inputs.target"
@@ -343,33 +343,33 @@ impl Session {
         }
     }
 
-    fn confirm(inputs: &Inputs, stream: &mut (impl Write + Read)) -> bool { // "send?" message
+    fn confirm(inputs: &Inputs, reader: &mut impl Read, writer: &mut impl Write) -> bool { // "send?" message
         let price = inputs.price;
         if price.is_some() && price != Some(0) {
-            show_sysmsg(&SysMsg::Code(SysMsgCode::ConfirmSendPay, price), stream);
+            show_sysmsg(&SysMsg::Code(SysMsgCode::ConfirmSendPay, price), reader, writer);
         } else {
-            show_sysmsg(&SysMsg::Code(SysMsgCode::ConfirmSend, None), stream);
+            show_sysmsg(&SysMsg::Code(SysMsgCode::ConfirmSend, None), reader, writer);
         };
         let mut cept = Cept::new();
         cept.set_cursor(24, 1);
         cept.sequence_end_of_page();
-        write_stream(stream, cept.data());
+        write_stream(writer, cept.data());
 
         // TODO: use an editor for this, too!
         let mut seen_a_one = false;
         loop {
-            let c = readchar(stream);
+            let c = readchar(reader);
             if c == b'2' {
-                write_stream(stream, &[c]);
+                write_stream(writer, &[c]);
                 return false;
             } else if c == b'1' && !seen_a_one {
-                write_stream(stream, &[c]);
+                write_stream(writer, &[c]);
                 seen_a_one = true;
             } else if c == b'9' && seen_a_one {
-                write_stream(stream, &[c]);
+                write_stream(writer, &[c]);
                 return true;
             } else if c == 8 && seen_a_one {
-                write_stream(stream, &[c]);
+                write_stream(writer, &[c]);
                 seen_a_one = false;
             }
         }

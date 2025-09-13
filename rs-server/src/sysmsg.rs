@@ -72,15 +72,15 @@ pub fn create_sysmsg(error: &SysMsg) -> Cept {
     cept
 }
 
-pub fn show_sysmsg(error: &SysMsg, stream: &mut (impl Write + Read)) {
+pub fn show_sysmsg(error: &SysMsg, reader: &mut impl Read, writer: &mut impl Write) {
     let mut cept = create_sysmsg(error);
     if *error != SysMsg::new(SysMsgCode::Processing) {
         // XXX test this somewhere else
         cept.sequence_end_of_page();
     }
-    write_stream(stream, cept.data());
+    write_stream(writer, cept.data());
     if let SysMsg::Custom(_) = error {
-        wait_for_ter(stream);
+        wait_for_ter(reader, writer);
     }
 }
 

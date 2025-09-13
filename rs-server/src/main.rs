@@ -25,26 +25,17 @@ use std::{fs::File, process::exit};
 use select::document::Document;
 use select::predicate::{Class, Name, Predicate};
 
-use std::net::TcpListener;
-use std::thread;
 use session::*;
+use std::io::{stdin, stdout};
 
 
 fn main() {
     // println!("{}", make());
     // exit(0);
 
-
-    let listener = TcpListener::bind("127.0.0.1:20000").unwrap();
     println!("Neu-Ulm running.");
-    for stream in listener.incoming() {
-        thread::spawn(|| {
-            let mut stream = stream.unwrap();
-            let mut session = Session::new();
-            session.run(&mut stream);
-        });
-    }
-
+    let mut session = Session::new();
+    session.run(&mut stdin(), &mut stdout());
 }
 
 use html5ever::{interface::QualName, local_name, namespace_url, ns};

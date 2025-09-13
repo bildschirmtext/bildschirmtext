@@ -321,7 +321,7 @@ impl Editor {
         self.last_c = c
     }
 
-	pub fn edit(&mut self, skip_entry: bool, stream: &mut (impl Write + Read)) -> (Option<String>, bool) {
+	pub fn edit(&mut self, skip_entry: bool, reader: &mut impl Read, writer: &mut impl Write) -> (Option<String>, bool) {
 		let mut start = true;
 		let mut dct = false;
 		let mut prefix = vec!();
@@ -330,7 +330,7 @@ impl Editor {
 		loop {
 			if start && !skip_entry {
 				start = false;
-				self.print_hint(stream);
+				self.print_hint(writer);
 				let mut cept = Cept::new();
 				self.y = 0;
 				if self.input_field.height > 1 || self.input_field.cursor_home {
@@ -348,7 +348,7 @@ impl Editor {
                     cept.set_bg_color(bgcolor);
                 }
 				cept.show_cursor();
-                write_stream(stream, cept.data());
+                write_stream(writer, cept.data());
             }
 
 			if skip_entry {
@@ -361,7 +361,7 @@ impl Editor {
 				c = i;
 				inject_char = None;
             } else {
-                c = readchar(stream);
+                c = readchar(reader);
             }
 			// println!("In: {:x}", c);
 
@@ -411,8 +411,8 @@ impl Editor {
                         };
                         let mut editor = Editor::new(&input_field);
                         editor.set_string(&(CEPT_INI as char).to_string());
-						editor.draw(stream);
-						let (val, dct) = editor.edit(false, stream);
+						editor.draw(writer);
+						let (val, dct) = editor.edit(false, reader, writer);
                         println!("exited command mode");
                         if let Some(val) = val {
                             // Editor.debug_print(val);
@@ -448,21 +448,21 @@ impl Editor {
                             }
                         } else { // "**" in command mode
                             self.set_string("");
-                            self.draw(stream);
+                            self.draw(writer);
                         }
 						start = true;
                         continue;
                     }
                 } else if c == CEPT_TER {
 					if self.input_field.echo_ter {
-                        write_stream(stream, &[b'#']);
+                        write_stream(writer, &[b'#']);
                     }
                     break
                 } else if c == CEPT_DCT {
 					dct = true;
                     break;
                 }
-				self.insert_control_character(c as char, stream)
+				self.insert_control_character(c as char, writer)
             } else { // c >= 0x20
 				let mut character_legal = true;
 				let mut string_legal = false;
@@ -494,12 +494,12 @@ impl Editor {
 				if character_legal || self.input_field.end_on_illegal_character {
 					if self.insert_character(c as char) {
 						if self.input_field.input_type == InputType::Password {
-                            write_stream(stream, &[b'*']);
+                            write_stream(writer, &[b'*']);
                         } else {
                             let mut cept = Cept::new();
                             let c = c as char;
                             cept.add_str(&c.to_string());
-                            write_stream(stream, cept.data());
+                            write_stream(writer, cept.data());
                         }
                     }
                 }
@@ -524,20 +524,20 @@ pub fn readchar(stream: &mut impl Read) -> u8 {
     }
 }
 
-pub fn wait_for_ter(stream: &mut (impl Read + Write)) {
+pub fn wait_for_ter(reader: &mut impl Read, writer: &mut impl Write) {
     // TODO: use an editor for this, too!
     let mut cept = Cept::new();
     cept.sequence_end_of_page();
-    write_stream(stream, cept.data());
+    write_stream(writer, cept.data());
     loop {
-        let c = readchar(stream);
+        let c = readchar(reader);
         if c == CEPT_TER {
-            write_stream(stream, &[c]);
+            write_stream(writer, &[c]);
             break
         }
     }
     // clear
-    show_sysmsg(&SysMsg::None, stream);
+    show_sysmsg(&SysMsg::None, reader, writer);
 }
 
 pub fn write_stream(stream: &mut impl Write, data: &[u8]) {
