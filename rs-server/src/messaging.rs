@@ -66,7 +66,7 @@ impl MessageBox {
 	fn database(&mut self) -> &mut MessageDatabase {
 		let filename = self.database_filename();
 		if !is_file(&filename) {
-			println!("messages file not found");
+			eprintln!("messages file not found");
 			self.database = MessageDatabase::default();
         } else {
             let f = File::open(&filename).unwrap();
@@ -130,7 +130,7 @@ pub fn send_message(from_userid: &UserId, to_userid: &UserId, body: &str) {
     database.messages.push(
         Message {
             from_address: from_userid.to_string(),
-            from_name: User::get(&from_userid).unwrap().name(),
+            from_name: User::get(&from_userid).ok().flatten().map(|u| u.display_name()).unwrap_or("Unknown".to_string()),
             timestamp: Utc::now().timestamp(),
             body: body.to_owned(),
             is_read: false,

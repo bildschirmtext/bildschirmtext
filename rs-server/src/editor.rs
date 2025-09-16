@@ -352,7 +352,7 @@ impl Editor {
             }
 
 			if skip_entry {
-				println!("skipping");
+				eprintln!("skipping");
                 break;
             }
 
@@ -363,7 +363,7 @@ impl Editor {
             } else {
                 c = readchar(reader);
             }
-			// println!("In: {:x}", c);
+			// eprintln!("In: {:x}", c);
 
 			if self.input_field.command_mode && c == CEPT_INI && self.string().chars().last().unwrap() == CEPT_INI as char {
 				// exit command mode, tell parent to clear
@@ -392,7 +392,7 @@ impl Editor {
 				prefix = vec!();
 				if c == CEPT_INI {
 					if !self.input_field.command_mode {
-                        println!("entering command mode");
+                        eprintln!("entering command mode");
                         let input_field = InputField {
                             name: "".to_owned(),
                             line: 24,
@@ -413,7 +413,7 @@ impl Editor {
                         editor.set_string(&(CEPT_INI as char).to_string());
 						editor.draw(writer);
 						let (val, dct) = editor.edit(false, reader, writer);
-                        println!("exited command mode");
+                        eprintln!("exited command mode");
                         if let Some(val) = val {
                             // Editor.debug_print(val);
                             let mut x = (CEPT_INI as char).to_string();
@@ -433,7 +433,7 @@ impl Editor {
                                 if let Some(c) = c {
                                     inject_char = Some(c as u8);
                                 } else {
-                                    println!("ignoring invalid editor code");
+                                    eprintln!("ignoring invalid editor code");
                                 }
                             } else {
 								// global code
@@ -444,7 +444,7 @@ impl Editor {
                                     if !self.prohibit_command_mode || val == x1 || val == x2 {
                                     return (Some(val), false);
                                 }
-                                println!("ignoring navigation");
+                                eprintln!("ignoring navigation");
                             }
                         } else { // "**" in command mode
                             self.set_string("");
@@ -459,7 +459,9 @@ impl Editor {
                     }
                     break
                 } else if c == CEPT_DCT {
-					dct = true;
+					if self.input_field.echo_ter {
+                        write_stream(writer, &[b'#']);
+                    }
                     break;
                 }
 				self.insert_control_character(c as char, writer)

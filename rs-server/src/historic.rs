@@ -27,9 +27,6 @@ impl<'a> PageSession<'a> for HistoricPageSession {
         }
     }
 
-    fn validate(&self, _: &str, _: &HashMap<String, String>) -> ValidateResult {
-        unreachable!()
-    }
 
     fn send(&self, _: &HashMap<String, String>) -> UserRequest {
         unreachable!()

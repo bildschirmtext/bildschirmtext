@@ -492,7 +492,7 @@ impl Cept {
                     u8::from_str_radix(&hexcolor[3..4], 16).unwrap_or(0) << 4,
                 )
             } else {
-                println!("incorrect palette encoding.");
+                eprintln!("incorrect palette encoding.");
                 ( 0, 0, 0)
             };
 			let r0 = (r >> 4) & 1;
@@ -671,7 +671,7 @@ impl Cept {
                 }
                 let tag: Vec<&str> = tag.split(|c| c == ':' || c == ',').collect();
                 let tag = &tag[..];
-                println!("{:?}", tag);
+                eprintln!("{:?}", tag);
                 match &tag {
                     ["r"]		    => self.add_raw(b"\r"),
                     ["n"]	    	=> self.add_raw(b"\n"),
@@ -713,7 +713,7 @@ impl Cept {
                     ["lfgs", c]	=> self.set_line_fg_color_simple(u8::from_str(c).unwrap()),
                     _ => {
                         // warn, ignore
-                        println!("unsupported tag: {:?}", tag)
+                        eprintln!("unsupported tag: {:?}", tag)
                     }
                 }
             } else {

@@ -131,7 +131,7 @@ impl Session {
             let (publisher_name, page_session) = super::dispatch::dispatch_pageid(&target_pageid, &self.user, &self.anonymous_user);
 
             // *** show page
-            println!("showing page: {}", target_pageid.to_string());
+            eprintln!("showing page: {}", target_pageid.to_string());
             let page = page_session.create();
             if let Some(mut page) = page {
                 page.meta.publisher_name = Some(publisher_name.to_owned());
@@ -145,7 +145,7 @@ impl Session {
                     self.history.push(self.current_pageid.clone());
                 };
             } else {
-                println!("ERROR: Page not found: {}", target_pageid.to_string());
+                eprintln!("ERROR: Page not found: {}", target_pageid.to_string());
                 let error = if target_pageid.sub > 0 {
                     SysMsgCode::SubPageDoesNotExist
                 } else {
@@ -174,14 +174,14 @@ impl Session {
                 };
                 match req {
                     UserRequest::Login(userid, password) => {
-                        if let Some(user) = User::login(&userid, &password) {
-                            println!("login ok");
+                        if let Ok(user) = User::login(&userid, &password) {
+                            eprintln!("login ok");
                             self.user = user;
                             target_pageid = PageId::from_str("000001").unwrap();
                             add_to_history = false;
                             continue 'main;
                         } else {
-                            println!("login incorrect");
+                            eprintln!("login incorrect");
                             show_sysmsg(&SysMsg::Custom("Ungültiger Teilnehmer/Kennwort -> #".to_owned()), reader, writer);
                             continue 'input;
                         }
@@ -216,7 +216,7 @@ impl Session {
     // In both cases, it is possible to escape into command mode.
     fn get_inputs(&self, inputs: Option<&mut Inputs>, links: Option<&Vec<Link>>, page_session: &Box<dyn PageSession<'static>>, reader: &mut impl Read, writer: &mut impl Write) -> InputEvent {
         if self.autoplay {
-            println!("autoplay!");
+            eprintln!("autoplay!");
             InputEvent::Navigation("".to_owned()) // inject "#"
         } else {
             let mut i;
@@ -384,9 +384,9 @@ impl Session {
     fn decode_command(&mut self, command_input: &str) -> UserRequest {
         if command_input == "" {
             // *# = back
-            println!("command: back {:?}", self.history);
+            eprintln!("command: back {:?}", self.history);
             if self.history.len() < 2 {
-                println!("ERROR: No history.");
+                eprintln!("ERROR: No history.");
                 UserRequest::Error(SysMsg::new(SysMsgCode::CantGoBack))
             } else {
                 let _ = self.history.pop();
@@ -402,14 +402,14 @@ impl Session {
             }
         } else if command_input == "09" {
             // hard reload
-            println!("command: hard reload");
+            eprintln!("command: hard reload");
             // invalidate palette and include
             self.client_state.cept_palette = None;
             self.client_state.cept_include = None;
             UserRequest::Goto(self.current_pageid.clone(), false)
         } else if command_input == "00" {
             // re-send CEPT data of current page
-            println!("command: resend");
+            eprintln!("command: resend");
             UserRequest::SendAgain
         } else {
             UserRequest::Goto(PageId::from_str(command_input).unwrap(), true)
@@ -430,7 +430,7 @@ impl Session {
             let pageid = PageId { page: self.current_pageid.page.clone(), sub: self.current_pageid.sub + 1 };
             UserRequest::Goto(pageid, true)
         } else {
-            println!("ERROR: Illegal navigation");
+            eprintln!("ERROR: Illegal navigation");
             UserRequest::Error(SysMsg::new(SysMsgCode::PageDoesNotExist))
         }
     }

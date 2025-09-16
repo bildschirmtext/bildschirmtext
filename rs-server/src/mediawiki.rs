@@ -66,7 +66,7 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
                 if !href.starts_with("/wiki/") || href.starts_with("/wiki/File:") || href.starts_with("/wiki/Special:") {
                     link.as_node().detach();
                 } else {
-                    println!("{}", href);
+                    eprintln!("{}", href);
                 }
             }
             // println!("{:?} {}", attributes.get("href"), link.text_contents());
@@ -136,9 +136,6 @@ impl<'a> PageSession<'a> for MediaWikiPageSession {
 
     }
 
-    fn validate(&self, _: &str, _: &HashMap<String, String>) -> ValidateResult {
-        unreachable!()
-    }
 
     fn send(&self, _: &HashMap<String, String>) -> UserRequest {
         unreachable!()

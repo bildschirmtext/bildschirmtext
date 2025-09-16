@@ -25,13 +25,13 @@ impl<'a> PageSession<'a> for StaticPageSession {
 
         // read meta
         let filename_meta = resource_filename(&self.basedir, &filename, "meta");
-        println!("filename_meta: {}", filename_meta);
+        eprintln!("filename_meta: {}", filename_meta);
         let f = File::open(&filename_meta).ok()?;
         let meta: Meta = serde_json::from_reader(f).ok()?;
 
         // read text
         let filename_cept = resource_filename(&self.basedir, &filename, "cept");
-        println!("filename_cept: {}", filename_cept);
+        eprintln!("filename_cept: {}", filename_cept);
         let mut buf : Vec<u8> = vec!();
         let mut f = File::open(&filename_cept).ok()?;
         f.read_to_end(&mut buf).ok()?;
@@ -49,9 +49,6 @@ impl<'a> PageSession<'a> for StaticPageSession {
         });
     }
 
-    fn validate(&self, _: &str, _: &HashMap<String, String>) -> ValidateResult {
-        unreachable!()
-    }
 
     fn send(&self, _: &HashMap<String, String>) -> UserRequest {
         unreachable!()
@@ -79,7 +76,7 @@ fn resource_filename(basedir: &str, resource_name: &str, extention: &str) -> Str
 fn load_palette(palette_name: Option<&String>, basedir: &str) -> Option<Cept> {
     if let Some(palette_name) = palette_name {
         let filename = resource_filename(basedir, palette_name, "pal");
-        println!("loading: {}", filename);
+        eprintln!("loading: {}", filename);
         if let Ok(f) = File::open(&filename) {
             let palette: Result<Palette, _> = serde_json::from_reader(f);
             if let Ok(palette) = palette {
@@ -87,11 +84,11 @@ fn load_palette(palette_name: Option<&String>, basedir: &str) -> Option<Cept> {
                 cept.define_palette(&palette.palette, palette.start_color);
                 return Some(cept);
             } else {
-                println!("ERROR reading palette file! [1]");
+                eprintln!("ERROR reading palette file! [1]");
                 return None;
             }
         } else {
-            println!("ERROR reading palette file! [2]");
+            eprintln!("ERROR reading palette file! [2]");
             return None;
         }
     } else {
@@ -103,15 +100,15 @@ fn load_include(include_name: Option<&String>, basedir: &str) -> Option<Cept> {
     if let Some(include_name) = include_name {
         let filename = resource_filename(basedir, include_name, "inc");
         let mut cept_include : Vec<u8> = vec!();
-        println!("loading: {}", filename);
+        eprintln!("loading: {}", filename);
         if let Ok(mut f) = File::open(&filename) {
             if let Ok(_) = f.read_to_end(&mut cept_include) {
                 // ok
             } else {
-                println!("ERROR reading include file! [1]");
+                eprintln!("ERROR reading include file! [1]");
             }
         } else {
-            println!("ERROR creating user! [1]");
+            eprintln!("ERROR creating user! [1]");
         }
         let mut cept = Cept::new();
         // palette definition has to end with 0x1f; add one if

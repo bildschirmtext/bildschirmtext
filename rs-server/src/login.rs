@@ -30,10 +30,6 @@ impl<'a> PageSession<'a> for LoginPageSession {
         }
     }
 
-    fn validate(&self, _: &str, _: &HashMap<String, String>) -> ValidateResult {
-        unreachable!()
-    }
-
     fn send(&self, input_data: &HashMap<String, String>) -> UserRequest {
         if self.pageid.page == "00000" {
             UserRequest::Login(
@@ -184,7 +180,7 @@ fn create_start(user: &User) -> Page {
         links.push(Link::new("8", "88"));
     }
 
-    if !user.is_anonymous() {
+    if user.is_anonymous() {
         links.push(Link::new("7", "77"));
     }
 
@@ -201,23 +197,26 @@ fn create_start(user: &User) -> Page {
     let (last_date, last_time) = last_use(user);
 
     let mut user_name = String::new();
-    match &user.public {
-        UserDataPublic::Person(person) => {
-            if let Some(salutation) = &person.salutation {
-                user_name += &salutation;
-                user_name.push('\n');
-            }
-            if let Some(first_name) = &person.first_name {
+    if let Some(profile) = &user.profile {
+        match profile {
+            crate::user::UserProfile::Person { salutation, first_name, last_name, .. } => {
+                if let Some(salutation) = salutation {
+                    user_name += &salutation;
+                    user_name.push('\n');
+                }
                 user_name += &first_name;
                 user_name.push('\n');
-            }
-            if let Some(last_name) = &person.last_name {
                 user_name += &last_name;
                 user_name.push('\n');
+            },
+            crate::user::UserProfile::Organization { org_name, org_add_name, .. } => {
+                user_name += &org_name;
+                user_name.push('\n');
+                if let Some(add_name) = org_add_name {
+                    user_name += &add_name;
+                    user_name.push('\n');
+                }
             }
-        },
-        UserDataPublic::Organization(organization) => {
-
         }
     }
 

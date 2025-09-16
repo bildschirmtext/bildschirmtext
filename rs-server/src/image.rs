@@ -28,9 +28,6 @@ impl<'a> PageSession<'a> for ImagePageSession {
         }
     }
 
-    fn validate(&self, _: &str, _: &HashMap<String, String>) -> ValidateResult {
-        unreachable!()
-    }
 
     fn send(&self, _: &HashMap<String, String>) -> UserRequest {
         unreachable!()
@@ -85,7 +82,7 @@ impl Image {
 		if url == "" {
             return None;
         }
-        println!("URL: {}", url);
+        eprintln!("URL: {}", url);
         // let image = if url.starts_with("http://") || url.starts_with("https://") {
         //     ImageLib.open(urllib.request.urlopen(url))
         // } else {
@@ -93,14 +90,14 @@ impl Image {
         // };
         let image = image::open(url).unwrap();
 		let (width, height) = image.dimensions();
-		println!("color: {:?}, resolution: {}*{}", image.color(), width, height);
+		eprintln!("color: {:?}, resolution: {}*{}", image.color(), width, height);
 
 		// 4 shades of gray instead of 16, but double resolution
 		if !image.color().has_color() {
             num_colors = 4;
         }
 
-		println!("target colors: {}", num_colors);
+		eprintln!("target colors: {}", num_colors);
 
 		let mut num_drcs: u8 = 0x7f - drcs_start;
 		if num_colors == 16 {
@@ -156,7 +153,7 @@ impl Image {
         let res_x = res_x as u32;
         let res_y = res_y as u32;
 
-		println!("char resolution:   {}*{}, error: {}", res_x, res_y, error);
+		eprintln!("char resolution:   {}*{}, error: {}", res_x, res_y, error);
 
 		// resample
         let image = image.resize_exact(res_x * 6, res_y * 10, imageops::FilterType::Lanczos3);
@@ -231,7 +228,7 @@ impl Image {
             }
         }
 
-		println!("DRCs compressed {} down to {}", (40 * res_x * res_y).to_string(), (si.drcs.data().len()).to_string());
+		eprintln!("DRCs compressed {} down to {}", (40 * res_x * res_y).to_string(), (si.drcs.data().len()).to_string());
 
 		let mut drcs_header = Cept::new();
 		if num_colors == 4 {

@@ -35,18 +35,18 @@ impl<'a> PageSession<'a> for UsersPageSession {
     }
 
     fn send(&self, input_data: &HashMap<String, String>) -> UserRequest {
-        if User::create(
+        if User::create_person(
             input_data.get("user_id").unwrap(),
             "1", // ext
             input_data.get("password").unwrap(),
-            input_data.get("salutation").unwrap(),
-            input_data.get("last_name").unwrap(),
+            input_data.get("salutation").map(|s| s.to_string()),
             input_data.get("first_name").unwrap(),
-            input_data.get("street").unwrap(),
-            input_data.get("zip").unwrap(),
-            input_data.get("city").unwrap(),
-            input_data.get("country").unwrap()
-        ) {
+            input_data.get("last_name").unwrap(),
+            input_data.get("street").map(|s| s.to_string()),
+            input_data.get("zip").map(|s| s.to_string()),
+            input_data.get("city").map(|s| s.to_string()),
+            input_data.get("country").map(|s| s.to_string())
+        ).is_ok() {
             UserRequest::MessageGoto(SysMsg::Custom("Benutzer angelegt. Bitte neu anmelden. -> #".to_string()), PageId::from_str("00000").unwrap(), true)
         } else {
             UserRequest::Error(SysMsg::Custom("Benutzer konnte nicht angelegt werden. -> #".to_string()))
@@ -295,7 +295,7 @@ fn create_add_user() -> Page {
 }
 
 fn callback_validate_user_id(_: &PageId, input_data: &HashMap<String, String>) -> ValidateResult {
-    if User::exists(&UserId::new(input_data.get("user_id").unwrap(), "1")) {
+    if User::exists(&UserId::new(input_data.get("user_id").unwrap(), "1")).unwrap_or(false) {
         ValidateResult::Error(SysMsg::Custom("Teilnehmernummer bereits vergeben! -> #".to_string()))
     } else {
         ValidateResult::Ok

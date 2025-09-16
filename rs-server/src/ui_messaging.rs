@@ -51,14 +51,14 @@ impl<'a> PageSession<'a> for MessagingPageSession {
         if self.pageid.page == "810" {
             match name {
                 "user_id" => {
-                    if User::exists(&UserId::new(input_data.get("user_id").unwrap(), "1")) { // XXX
+                    if User::exists(&UserId::new(input_data.get("user_id").unwrap(), "1")).unwrap_or(false) { // XXX
                         ValidateResult::Ok
                     } else {
                         ValidateResult::Error(SysMsg::Custom("Teilnehmerkennung ungültig! -> #".to_owned()))
                     }
                 },
                 "ext" => {
-                    if User::exists(&UserId::new(input_data.get("user_id").unwrap(), input_data.get("ext").unwrap())) {
+                    if User::exists(&UserId::new(input_data.get("user_id").unwrap(), input_data.get("ext").unwrap())).unwrap_or(false) {
                         ValidateResult::Ok
                     } else {
                         ValidateResult::Error(SysMsg::Custom("Mitbenutzernummer ungültig! -> #".to_owned()))
@@ -265,7 +265,7 @@ fn messaging_create_message_detail(userid: &UserId, index: usize, is_read: bool)
     cept.add_str(&userid.to_string());
     cept.add_raw(b"\r\n");
     cept.repeat(b' ', 4);
-    cept.add_str(&User::get(&userid).unwrap().name());
+    cept.add_str(&User::get(&userid).ok().flatten().map(|u| u.display_name()).unwrap_or("Unknown".to_string()));
     cept.add_raw(b"\r\n\n");
     cept.add_str(&message.body);
     cept.set_cursor(23, 1);
@@ -375,7 +375,7 @@ fn messaging_create_compose(user: &User) -> Page {
     cept.set_cursor(5, 25);
     cept.add_str(&userid.ext);
     cept.set_cursor(6, 10);
-    cept.add_str(&user.name());
+    cept.add_str(&user.display_name());
     cept.set_cursor(5, 31);
     cept.add_str(&current_date);
     cept.set_cursor(6, 31);

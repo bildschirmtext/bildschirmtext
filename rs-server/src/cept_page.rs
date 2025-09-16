@@ -195,7 +195,7 @@ impl CeptPage {
     }
 
     pub fn set_italics_on(&mut self) {
-		println!("set_italics_on");
+		eprintln!("set_italics_on");
 		return;
 
 		self.italics = true;
@@ -203,7 +203,7 @@ impl CeptPage {
     }
 
     pub fn set_italics_off(&mut self) {
-		println!("set_italics_off");
+		eprintln!("set_italics_off");
 		return;
 
 		self.italics = false;
@@ -211,7 +211,7 @@ impl CeptPage {
     }
 
     pub fn set_bold_on(&mut self) {
-		println!("set_bold_on");
+		eprintln!("set_bold_on");
 		return;
 
 		self.bold = true;
@@ -219,7 +219,7 @@ impl CeptPage {
     }
 
     pub fn set_bold_off(&mut self) {
-		println!("set_bold_off");
+		eprintln!("set_bold_off");
 		return;
 
 		self.bold = false;
@@ -227,7 +227,7 @@ impl CeptPage {
     }
 
     pub fn set_link_on(&mut self) {
-		println!("set_link_on");
+		eprintln!("set_link_on");
 		return;
 
 		self.link = true;
@@ -235,7 +235,7 @@ impl CeptPage {
     }
 
     pub fn set_link_off(&mut self) {
-		println!("set_link_off");
+		eprintln!("set_link_off");
 		return;
 
 		self.link = false;
@@ -243,7 +243,7 @@ impl CeptPage {
     }
 
     pub fn set_code_on(&mut self) {
-		println!("set_code_on");
+		eprintln!("set_code_on");
 		return;
 
 		self.code = true;
@@ -251,7 +251,7 @@ impl CeptPage {
     }
 
     pub fn set_code_off(&mut self) {
-		println!("set_code_off");
+		eprintln!("set_code_off");
 		return;
 
 		self.code = false;
@@ -259,7 +259,7 @@ impl CeptPage {
     }
 
 	pub fn print(&mut self, s: &str, ignore_lf: bool) {
-		println!("print: \"{}\"", s);
+		eprintln!("print: \"{}\"", s);
 		return;
 
 		self.prev_sheet = self.current_sheet();
@@ -277,7 +277,7 @@ impl CeptPage {
     }
 
 	pub fn print_heading(&mut self, level: i32, s: &str) {
-		println!("print_heading: {}, \"{}\"", level, s);
+		eprintln!("print_heading: {}, \"{}\"", level, s);
 		return;
 
 		self.prev_sheet = self.current_sheet();
@@ -571,7 +571,7 @@ impl CeptFromHtmlGenerator {
 					self.ignore_lf = true;
 				},
 				_ => {
-					println!("ignoring tag: {:?}", t1.name());
+					eprintln!("ignoring tag: {:?}", t1.name());
 				}
 			}
         }

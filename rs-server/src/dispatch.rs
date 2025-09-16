@@ -6,7 +6,9 @@ use super::user::*;
 
 pub trait PageSession<'a> {
     fn create(&self) -> Option<Page>;
-    fn validate(&self, name: &str, input_data: &HashMap<String, String>) -> ValidateResult;
+    fn validate(&self, _name: &str, _input_data: &HashMap<String, String>) -> ValidateResult {
+        ValidateResult::Ok
+    }
     fn send(&self, input_data: &HashMap<String, String>) -> UserRequest;
 }
 

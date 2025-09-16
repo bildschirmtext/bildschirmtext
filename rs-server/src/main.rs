@@ -1,5 +1,6 @@
 mod cept;
 mod cept_page;
+mod database;
 mod dispatch;
 mod editor;
 mod historic;
@@ -33,7 +34,7 @@ fn main() {
     // println!("{}", make());
     // exit(0);
 
-    println!("Neu-Ulm running.");
+    eprintln!("Neu-Ulm running.");
     let mut session = Session::new();
     session.run(&mut stdin(), &mut stdout());
 }
@@ -60,7 +61,7 @@ pub fn make() -> String {
     let mut link_count = 10;
 
     for element in paragraph {
-        println!("{:?}", element);
+        eprintln!("{:?}", element);
         // let par = NodeRef::new_element(
         //     QualName::new(None, ns!(html), local_name!("p")),
         //     Some((
