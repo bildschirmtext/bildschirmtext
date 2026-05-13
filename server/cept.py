@@ -865,6 +865,10 @@ class Cept(bytearray):
 		return b'\x14'
 
 	@staticmethod
+	def send_dct():
+		return b'\x1a'
+
+	@staticmethod
 	def cursor_home():
 		return b'\x1e'
 

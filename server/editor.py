@@ -232,6 +232,7 @@ class Editor:
 					cept_data.extend(Cept.set_fg_color(self.fgcolor))
 				if self.bgcolor:
 					cept_data.extend(Cept.set_bg_color(self.bgcolor))
+				cept_data.extend(Cept.send_dct())
 				cept_data.extend(Cept.show_cursor())
 				sys.stdout.buffer.write(cept_data)
 				sys.stdout.flush()
